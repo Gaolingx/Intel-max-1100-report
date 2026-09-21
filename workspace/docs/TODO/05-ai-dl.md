@@ -180,6 +180,37 @@ torchrun --nproc_per_node=2 train_ddp.py
 
 ---
 
+## 3.8 §3 逐条覆盖核验（2026-09-22 收尾）
+
+| TODO 条目 | 状态 | 证据 / 说明 |
+|---|---|---|
+| §3.1 GEMM sweep（shape × dtype） | ✅ | `gemm` suite；含 16384³ 与 `--large` INT8 |
+| §3.1 Attention / LayerNorm / Softmax / Activation | ✅ | `attention`（SDPA prefill/decode/causal + 朴素对照）+ `reduce`（sum/softmax/log_softmax/layer_norm/rms_norm/l2_normalize/dot） |
+| §3.1 Triton 自定义 kernel | ⬜ 未做 | 已记入 `Conclusion/05-ai-dl/01-training-throughput.md` §7 与 `05-conclusion.md` §7.4 |
+| §3.2 ResNet-50 FP32 vs AMP+BF16 | ✅ | 415.0 vs **1212.3** img/s → `01-training-throughput.md` §2.2 |
+| §3.2 batch 扫描 32/64/128/256/512 | ⚠️ 部分 | 做 64/128/256；**512 因显存未做**（已记录，b256 已饱和 +8%） |
+| §3.2 channels_last | ✅ | `01-training-throughput.md` §2.3 |
+| §3.2 `torch.compile` 开关对比 | ✅ | §2.4（b64 NCHW +82% / b128 NHWC −1.3%） |
+| §3.3 BERT（HuggingFace） | ✅ | transformers 5.17.0（uv + hf-mirror 安装）；**base + large** 均实测 → §3 |
+| §3.4 1 卡 vs 2 卡 DDP | ✅ | **93.75%~95.88%** → `03-scaling.md` §2 |
+| §3.4 通信开销占比量化 | ✅ | `no_sync()` 差分；`03-scaling.md` §4 |
+| §3.4 `--backend=ccl` vs `xccl` | ❌ 不可行 | torch 2.14.0+xpu 只注册 `xccl`/`gloo`；已如实记录（§1.3 / §8） |
+| §3.5 LLM prefill / decode / TTFT / 显存 | ✅ | `02-inference.md`（batch 1/4/8/16 × L128/512/2048） |
+| §3.5 batch 1/4/8/16/32 | ⚠️ 部分 | 32 未做（decode-only 扫描止于 16，已记录） |
+| §3.5 输入长度 128/512/2048/4096 | ⚠️ 部分 | 止于 2048；L4096 受 logits 显存限制（已记录） |
+| §3.5 量化（INT8/INT4，GPTQ/AWQ 的 XPU 支持） | ✅ **已作答** | `quant` suite + `precision-support.md`：INT8 原生可用；**W8A16 慢 ~30×**、W4A16 峰值仅 0.11× INT8 → **decode 量化无益** |
+| §3.5 IPEX-LLM / vLLM-XPU / KV cache 优化 | ⬜ 未做 | 未安装；KV cache 已证明非瓶颈（188 MiB） |
+| §3.6 DataLoader worker 曲线 | ✅ | 最优 **8**（9539 img/s） |
+| §3.6 `pin_memory=True` 收益 | ✅ | pinned **27.57** vs pageable **12.03** GB/s |
+| §3.6 host→device 带宽与耗时 | ✅ | `pipeline` suite |
+| §3.6 CPU 时间 vs GPU 时间占比 | ✅ | 真实训练 GPU **99.5%**；合成管线 **2.83%~8.97%** |
+| §3.7 数值格式支持矩阵 | ✅ | 2026-09-21 完成 → `precision-support.md` |
+
+> 统计：**16 项完成 / 4 项部分 / 2 项未做 / 1 项不可行**。所有未完成项均已在
+> `Conclusion/05-ai-dl/` 对应的「未做 / 待补充」表中**如实记录原因**，无静默缺口。
+
+---
+
 ## 4. 指标记录表
 
 > ✅ 已全部填写。数据来源：`benchmark/05-ai-dl/results/bench_20260922-*.{json,md}`。

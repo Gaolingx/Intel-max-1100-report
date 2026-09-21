@@ -296,9 +296,13 @@ env -u LD_LIBRARY_PATH $PY run_bench.py --suite gemm --large
 
 ## 7. 待补充（未完成的测试）
 
+> ✅ **已补齐**：BERT-Large 曾列在"未做"，后已实测完成，见 **§3.3**
+> （`bert-large-uncased` 335.2 M，bf16 L512 b16 = 28,475 tok/s / **57.27 TFLOPS**，
+> 单卡 XMX 达成率 **24.6%**）。运行记录：`results/bench_20260922-014644.{json,md}`。
+
 | 项 | 状态 | 原因 |
 |---|---|---|
-| BERT-Large | ⬜ 未做 | `bert-large-uncased`（335 M）需额外下载；本报告用 BERT-base 已足以给出结论 |
 | ResNet-50 batch=512 | ⬜ 未做 | fp32 b512 需 ~42 GiB，接近 48 GiB 上限，收益已在 b256 饱和（+8%），不做 |
 | AMP + GradScaler | ⬜ 未做 | bf16 无需缩放；如需 fp16 训练须补做 |
-| IPEX 融合算子 / oneDNN Graph | ⬜ 未做 | 若目标是提高 BF16 达成率（当前 13%），这是下一步最有希望的方向 |
+| Triton 自定义 kernel | ⬜ 未做 | 见 TODO §3.1；`attention`（SDPA）与 `conv`/`gemm` suite 已覆盖同等的 XMX 利用率问题，手写 kernel 属探索项 |
+| IPEX 融合算子 / oneDNN Graph | ⬜ 未做 | 若目标是提高 BF16 达成率（ResNet-50 当前 12.8%），这是下一步最有希望的方向 |

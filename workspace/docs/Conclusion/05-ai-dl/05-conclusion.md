@@ -17,7 +17,7 @@
 | 2 | **混合精度收益 → 验证 XMX 是否启用** | ResNet-50 **2.92×**、BERT-base **3.56×**、BERT-large **3.88×**（均远超 1.5× 阈值）；且 Amdahl 模型能**定量预测**这两个数字 | ✅ **XMX 满速工作** |
 | 3 | **多卡扩展效率** | 2 卡 DDP **93.75%~95.88%**（vs 纯计算基线），**97.59%~97.69%**（扣掉 DDP 包装） | ✅ **达标** |
 | 4 | **推理性能**（LLM prefill/decode/TTFT/显存） | prefill **76,648 tok/s**（b8 L2048）；decode **45.7 → 716.8 tok/s**（batch 1→16）；TTFT **23.1 ms** 地板；显存模型见 02 §4 | ✅ 但 **decode 偏低** |
-| 5 | **算子级基准** | FP32 **22.16** / BF16 **232.8** / INT8 **398.9** TFLOPS；HBM 拷贝 **797 GB/s** | ✅ 见 [`precision-support.md`](../precision-support.md) |
+| 5 | **算子级基准** | FP32 **22.16** / BF16 **232.8** / INT8 **398.9** TFLOPS；HBM 拷贝 **797 GB/s** | ✅ 见 [`precision-support.md`](../../precision-support.md) |
 | 6 | **找出主机侧瓶颈**（内存倒挂） | 真实训练 GPU 忙碌率 **99.5%（不触发）**；但轻量 GPU 任务 + 强 CPU 预处理时 GPU 只忙 **2.83%~8.97%** | ⚠️ **分场景，见 §5** |
 
 ### 0.2 一句话
@@ -119,7 +119,7 @@
 | 4 | **小 batch 吞吐极低** → launch 开销/未压满 | ✅ **成立，但仅限 LLM decode** | decode: 1×896×4864 GEMM（2.1 MB 权重）耗时 **22.8 µs**，896×896 GEMM（1.6 MB）**20.7 µs**，而 896×9728 GEMM（**17.4 MB**，8.3× 权重）只要 **20.9 µs** → 完全由 launch 地板决定；但 **ResNet-50 b64 709 vs b256 693 img/s**（几乎与 batch 无关）、BERT 8× token 只涨 1.92× → **不可外推到训练** |
 | 5 | **`torch.compile` 无收益甚至变慢** → 后端不完善 | ⚠️ **部分成立** | decode `default` **1.20×**、`reduce-overhead` **0.99×**；ResNet b128 NHWC **−1.3%**；但 ResNet b64 NCHW **+82%**（等价于布局修正）。根因：**XPU 后端无 CUDA-Graph 等价物**，吃不掉每算子固定开销 → "后端支持不完善"这条**成立** |
 | 6 | **显存 OOM 早于预期** → 45.6 GiB 上限/碎片 | ⚠️ **定位到具体原因** | **不是 45.6 GiB 单次分配上限**，也**不是 KV cache**（L2048 只有 188 MiB/token 序列）。真凶是 **logits**：b8×L2048×151936×2 B = **4.64 GiB**。修法：`logits_to_keep=1` |
-| 7 | FP16 与 BF16 峰值几乎重合 / 想开 fp16 累加无收益 | ✅ **正常** | 由硬件决定，见 [`precision-support.md` §7.2](../precision-support.md) |
+| 7 | FP16 与 BF16 峰值几乎重合 / 想开 fp16 累加无收益 | ✅ **正常** | 由硬件决定，见 [`precision-support.md` §7.2](../../precision-support.md) |
 
 ---
 
@@ -280,6 +280,9 @@ $$\text{Speedup} = \frac{1}{\frac{1-f}{2} + \frac{f}{10.5}},\quad f = \text{XMX 
 | 用 VTune / PTI 交叉验证 kernel 成分 | 中 —— 属 ⑦ 的范围 |
 | 长时满载功耗与降频 | 中 —— 属 ① 的范围 |
 | LLM 的 L4096 输入 | 低 —— TODO §3.5 提到但本次最大到 L2048 |
+| Triton 自定义 kernel | 低 —— TODO §3.1 提到；`attention` / `conv` / `gemm` suite 已从另一个角度覆盖 XMX 利用率 |
+| LLM batch=32、PagedAttention | 低 —— TODO §3.5 提到；§4.3 已证明 KV cache 不是瓶颈 |
+| GPTQ / AWQ 库路径（而非 torch 原生算子） | 低 —— TODO §3.5 "XPU 支持需确认"已由 `quant` suite 间接回答（W4A16 峰值仅 0.11× INT8） |
 
 ---
 

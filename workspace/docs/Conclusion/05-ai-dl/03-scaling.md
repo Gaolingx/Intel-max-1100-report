@@ -230,6 +230,6 @@ env -u LD_LIBRARY_PATH $PY -m torch.distributed.run --standalone \
 | `--backend=ccl` 对比 | ❌ **做不了** | torch 2.14 未注册 `ccl`，也不是 `is_backend_available` |
 | `bucket_cap_mb` 扫描 | ⬜ 未做 | §4 显示"暴露成本是纯传输的 4~7 倍"，**这是最有希望的一个调优旋钮**，建议补做（8/25/50/100 MB） |
 | gradient compression / `find_unused_parameters` | ⬜ 未做 | 低优先级 |
-| BERT / LLM 的 DDP | ⬜ 未做 | 本次只做 ResNet-50。BERT-base 梯度 219 MB，通信占比会略高，可用 `--ddp-model bert` 补做 |
+| BERT / LLM 的 DDP | ⬜ 未做 | 本次只做 ResNet-50。BERT-base 梯度 219 MB，通信占比会略高，可用 `--model bert` 补做 |
 | 4 卡扩展 | ❌ 不可行 | 本机只有 2 张卡 |
 | 真正的 Xe Link 点对点带宽 | ⬜ 未做 | 属 ④ 范畴（`ze_peak` / IMB-MPI1-GPU 未安装需自建） |
