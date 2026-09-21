@@ -1,0 +1,19 @@
+# 依赖说明
+#
+# 本工具**不需要**额外安装 PyTorch：XPU 版 torch 已装在
+# /usr/bin/python3.13 的 system site-packages 中，必须通过带
+# --system-site-packages 的 venv 使用：
+#
+#   uv venv --python /usr/bin/python3.13 --system-site-packages /root/workspace/venv1
+#   source /root/workspace/venv1/bin/activate
+#
+# 已验证版本（hwt 机器）：
+#   torch        2.14.0+xpu   (torch.xpu, 2 devices)
+#   triton       3.8.0        (triton-xpu，本工具暂未直接依赖)
+#   numpy        随 torch 提供
+#
+# 若在别的机器上从头搭建，可用 Intel 的 XPU wheel 源安装：
+#
+#   pip install torch --index-url https://download.pytorch.org/whl/xpu
+#
+# 本文件仅作记录，`run_bench.py` 只依赖 torch 标准库，无第三方包要求。
