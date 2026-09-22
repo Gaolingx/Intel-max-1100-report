@@ -661,10 +661,16 @@ _SHORT_RE = re.compile(r"ze_peak_short_dev(?P<dev>\d+)_rep(?P<rep>\d+)\.log$")
 # 温度可达 101 °C、功耗冲到 305~330 W —— 已越过 300 W 名义上限），
 # 而 `-i 3 -w 1` 的短跑跨 2 卡 × 2 次重复性 ≈ 10⁻⁵。故以短跑为可信口径。
 ZE_PEAK_LONGRUN_NOTE = (
-    "长跑（`-i 50 -w 10`，单卡约 20 min）期间 i915 的 `gt_act_freq_mhz` 实测会漂移到 "
-    "1350 / 1250 / 800 / 350 MHz（`gt_cur/max/min_freq_mhz` 始终报 1550 的**请求值**），"
-    "导致 fp64 / int32 段偏低；fp32 / fp16 段尚未进入漂移区，跨卡跨次完全一致。"
-    "**判读纪律：绝对值引用短跑（`-a -i 3 -w 1`）或漂移前的分段结果，长跑整轮值仅供参考。**"
+    "长跑（`-i 50 -w 10`，单卡约 20 min）期间 GPU 持续满载会触发热/功耗降额："
+    "实测温度 92 → **101 °C**、功耗 305 → **330 W**（越过 300 W 名义上限），"
+    "而 `gt_cur/max/min_freq_mhz` 始终报 1550 的**请求值**（唯一位于负载变化的 "
+    "`gt_act_freq_mhz` 噪声极大，只能作定性证据）。"
+    "降额**逐段推进**：同一 section 内按向量宽度顺序（=时间顺序）单调衰减；"
+    "且**起始热态决定整轮水平** —— dev1 紧接前几轮再跑一次全量（起始 ~94 °C）时，"
+    "连第一个 section `global_bw` 都掉到 307 GB/s（冷态 688），"
+    "sp 21872→18497，dp 12213→11492，int 3640→3533。"
+    "**判读纪律：绝对值引用短跑（`-a -i 3 -w 1`）或冷启分段结果，"
+    "长跑整轮值仅供参考。**"
 )
 
 # 长跑遥测：外部采样脚本每 5 s 追加一行 `时间,gt_act_freq_mhz,power_W,temp_C`。
@@ -761,14 +767,24 @@ def suite_zepeak(store: ResultStore, env: dict, quick: bool) -> None:
 
     for d in devices:
         first = logs / f"ze_peak_dev{d}.log"
-        again = logs / f"ze_peak_dev{d}_rerun.log"
-        # 重跑（干净长跑）优先于首跑：首跑可能撞上 DVFS 漂移。
-        if zp_complete(again):
-            log, text = again, again.read_text(errors="replace")
-            print(f"[zepeak] reusing {log.name} (prefer clean rerun)", flush=True)
-        elif zp_complete(first):
-            log, text = first, first.read_text(errors="replace")
-            print(f"[zepeak] reusing {log.name}", flush=True)
+
+        # 候选：本设备所有**完整**的全量日志（部分跑 `-t xxx` 不含 kernel_lat，
+        # 会被 zp_complete() 滤掉）。
+        cands = sorted(p for p in logs.glob(f"ze_peak_dev{d}*.log")
+                       if zp_complete(p))
+
+        # 基准日志 = **降额最轻**的那份（热/功耗降额会压低 dp/int，故取最大者）。
+        # 不能简单地"重跑优先"：实测 dev1 的第二次全量是紧接前几轮跑的，
+        # 起始温度已 ~94 °C，反而比首跑更差（连 global_bw 都掉到 307 GB/s）。
+        def _least_derated(p: Path) -> float:
+            _, r = parse_ze_peak(p.read_text(errors="replace"))
+            return zp_best(r, "dp_compute") + zp_best(r, "int_compute")
+
+        if cands:
+            log = max(cands, key=_least_derated)
+            text = log.read_text(errors="replace")
+            print(f"[zepeak] reusing {log.name} "
+                  f"(least-derated of {len(cands)} full log(s))", flush=True)
         else:
             log = first
             proc = run_soft([str(ZE_PEAK_BIN), "-d", str(d), "-a",
@@ -776,24 +792,28 @@ def suite_zepeak(store: ResultStore, env: dict, quick: bool) -> None:
                             cwd=str(ZE_PEAK_BIN.parent), env=env, timeout=7200)
             text = proc.stdout
             log.write_text(text)
+            cands = [log]
 
-        # 首跑 vs 重跑：量化长跑 DVFS 漂移（只在两者都完整时记录）
-        if again.exists() and first.exists() and again != first and \
-                zp_complete(again) and zp_complete(first):
-            _, r_first = parse_ze_peak(first.read_text(errors="replace"))
-            _, r_again = parse_ze_peak(again.read_text(errors="replace"))
+        # 跨日志对照：量化同一设备**冷启 vs 热态**的长跑降额。
+        if len(cands) > 1:
+            parsed = {p.name: parse_ze_peak(p.read_text(errors="replace"))[1]
+                      for p in cands}
             m: dict[str, float] = {}
-            for sec, dst in (("sp_compute", "fp32"), ("hp_compute", "fp16"),
-                             ("dp_compute", "fp64"), ("int_compute", "int32")):
-                a, b = zp_best(r_first, sec), zp_best(r_again, sec)
-                if a and b:
-                    m[f"{dst}_firstrun_gflops"] = round(a, 1)
-                    m[f"{dst}_rerun_gflops"] = round(b, 1)
-                    m[f"{dst}_rerun_over_first"] = round(b / a, 3)
+            for dst, sec in (("fp32", "sp_compute"), ("fp16", "hp_compute"),
+                             ("fp64", "dp_compute"), ("int32", "int_compute"),
+                             ("gbw", "global_bw")):
+                vals = {n: zp_best(r, sec) for n, r in parsed.items()}
+                base = vals.get(log.name, 0.0)
+                for n, v in vals.items():
+                    if v and base:
+                        m[f"{dst}.{n}.value"] = round(v, 1)
+                        m[f"{dst}.{n}.over_ref"] = round(v / base, 3)
             if m:
                 store.add(
-                    "ze_peak", f"dev{d}.longrun_dvfs_drift",
-                    params={"device": d, "iters": iters, "warmup": warm},
+                    "ze_peak", f"dev{d}.longrun_derate",
+                    params={"device": d, "iters": iters, "warmup": warm,
+                            "reference": log.name,
+                            "logs": sorted(parsed)},
                     metrics=m, note=ZE_PEAK_LONGRUN_NOTE,
                 )
 
@@ -820,6 +840,8 @@ def suite_zepeak(store: ResultStore, env: dict, quick: bool) -> None:
                 store.add(
                     "ze_peak", f"dev{d}.longrun_telemetry",
                     params={"device": d, "source": csv.name,
+                            "accompanies":
+                                csv.name.replace("_clock.csv", ".log"),
                             "interval_s": 5, "samples": len(clocks)},
                     metrics={
                         "act_freq_min_mhz": min(clocks),

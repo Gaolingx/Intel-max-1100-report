@@ -1,0 +1,1859 @@
+{
+  "meta": {
+    "tag": "ze_peak_arbiter",
+    "title": "02 · 算力峰值（ALU / XMX-DPAS）基准报告",
+    "timestamp": "2026-09-22T22:52:28",
+    "host": "hwt",
+    "kernel": "6.14.0-37-generic",
+    "python": "3.13.3",
+    "gpu_count": 1,
+    "ze_affinity_mask": "(unset)",
+    "nominal_fp32_alu_tflops": 22.2208
+  },
+  "highlights": [
+    "`ze_peak`（**第三方**：`oneapi-src/level-zero-tests/perf_tests/ze_peak`，clpeak 的 Level Zero 移植）本轮已成功构建并运行。它只测**向量/SIMD**路径，**没有 XMX/DPAS**，因此不能替代自研 `xmx_peak`；它的价值在于**仲裁**：它给出 FP32 向量峰值 21.87 TFLOPS = 公式值 22.22 的 **98.4%**，与 oneDNN fp32 GEMM 的 22.13（99.6%）一起，**互相独立地确认了 22.22 口径**，把自研探针的 50.75（2.28×）判为探针侧 artefact。另一收获：ze_peak 的 fp64/fp32 = 16.07/21.87 = **0.734**，第三次独立确认「FP64 ≠ FP32/2」的修正（前两次：torch GEMM 0.78、0.77）。",
+    "**重复性与时长口径**：`-a -i 3 -w 1` 的短跑跨 **2 卡 × 2 次** 完全一致（fp32 21871.6/21873.2/21872.1/21871.6；fp64 16074.1/16074.7/16074.0/16074.2），但 `-i 50 -w 10` 的**长跑整轮**（单卡约 20 min）会因 **DVFS 漂移**（`gt_act_freq_mhz`实测出现 1350/1250/800/350 MHz）在 fp64 / int32 段偏低（fp64 16074→14279，−11%）。fp32 / fp16 段在漂移发生前已测完，故跨卡跨次一致。**引用绝对值请用短跑或分段结果。** 长跑（`-i 50 -w 10`，单卡约 20 min）期间 GPU 持续满载会触发热/功耗降额：实测温度 92 → **101 °C**、功耗 305 → **330 W**（越过 300 W 名义上限），而 `gt_cur/max/min_freq_mhz` 始终报 1550 的**请求值**（唯一位于负载变化的 `gt_act_freq_mhz` 噪声极大，只能作定性证据）。降额**逐段推进**：同一 section 内按向量宽度顺序（=时间顺序）单调衰减；且**起始热态决定整轮水平** —— dev1 紧接前几轮再跑一次全量（起始 ~94 °C）时，连第一个 section `global_bw` 都掉到 307 GB/s（冷态 688），sp 21872→18497，dp 12213→11492，int 3640→3533。**判读纪律：绝对值引用短跑（`-a -i 3 -w 1`）或冷启分段结果，长跑整轮值仅供参考。**",
+    "公式标称 FP32 ALU 峰值 = 448 EU × 16 lane × 2 × 1.55 GHz = **22.22 TFLOPS**；XMX 公式标称 = 256 MAC/clk/EU → **356 TFLOPS (bf16)** / **711 GOPS (int8)**。所有自研探针均已通过「饱和区 ×2 工作量 → ×2 耗时」自校验。"
+  ],
+  "results": [
+    {
+      "suite": "ze_peak",
+      "name": "dev0.device",
+      "params": {
+        "device": 0
+      },
+      "stats": null,
+      "metrics": {
+        "coreClockRate_mhz": "1550",
+        "deviceId": "0bda",
+        "subdeviceId": "0",
+        "isSubdevice": "FALSE"
+      },
+      "status": "ok",
+      "note": "Intel(R) Data Center GPU Max 1100；UUID=00000000-0000-0000-74d8-64836dad91a4"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev0.fp32.float",
+      "params": {
+        "device": 0,
+        "test": "sp_compute",
+        "kernel": "float"
+      },
+      "stats": null,
+      "metrics": {
+        "gflops": 21843.3
+      },
+      "status": "ok",
+      "note": "GFLOPS"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev0.fp32.float2",
+      "params": {
+        "device": 0,
+        "test": "sp_compute",
+        "kernel": "float2"
+      },
+      "stats": null,
+      "metrics": {
+        "gflops": 21820.9
+      },
+      "status": "ok",
+      "note": "GFLOPS"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev0.fp32.float4",
+      "params": {
+        "device": 0,
+        "test": "sp_compute",
+        "kernel": "float4"
+      },
+      "stats": null,
+      "metrics": {
+        "gflops": 21871.6
+      },
+      "status": "ok",
+      "note": "GFLOPS"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev0.fp32.float8",
+      "params": {
+        "device": 0,
+        "test": "sp_compute",
+        "kernel": "float8"
+      },
+      "stats": null,
+      "metrics": {
+        "gflops": 21759.7
+      },
+      "status": "ok",
+      "note": "GFLOPS"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev0.fp32.float16",
+      "params": {
+        "device": 0,
+        "test": "sp_compute",
+        "kernel": "float16"
+      },
+      "stats": null,
+      "metrics": {
+        "gflops": 21533.1
+      },
+      "status": "ok",
+      "note": "GFLOPS"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev0.fp64.double",
+      "params": {
+        "device": 0,
+        "test": "dp_compute",
+        "kernel": "double"
+      },
+      "stats": null,
+      "metrics": {
+        "gflops": 16005.9
+      },
+      "status": "ok",
+      "note": "GFLOPS"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev0.fp64.double2",
+      "params": {
+        "device": 0,
+        "test": "dp_compute",
+        "kernel": "double2"
+      },
+      "stats": null,
+      "metrics": {
+        "gflops": 15904.7
+      },
+      "status": "ok",
+      "note": "GFLOPS"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev0.fp64.double4",
+      "params": {
+        "device": 0,
+        "test": "dp_compute",
+        "kernel": "double4"
+      },
+      "stats": null,
+      "metrics": {
+        "gflops": 16074.0
+      },
+      "status": "ok",
+      "note": "GFLOPS"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev0.fp64.double8",
+      "params": {
+        "device": 0,
+        "test": "dp_compute",
+        "kernel": "double8"
+      },
+      "stats": null,
+      "metrics": {
+        "gflops": 15792.6
+      },
+      "status": "ok",
+      "note": "GFLOPS"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev0.fp64.double16",
+      "params": {
+        "device": 0,
+        "test": "dp_compute",
+        "kernel": "double16"
+      },
+      "stats": null,
+      "metrics": {
+        "gflops": 13978.7
+      },
+      "status": "ok",
+      "note": "GFLOPS"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev0.fp16.half",
+      "params": {
+        "device": 0,
+        "test": "hp_compute",
+        "kernel": "half"
+      },
+      "stats": null,
+      "metrics": {
+        "gflops": 34545.5
+      },
+      "status": "ok",
+      "note": "GFLOPS"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev0.fp16.half2",
+      "params": {
+        "device": 0,
+        "test": "hp_compute",
+        "kernel": "half2"
+      },
+      "stats": null,
+      "metrics": {
+        "gflops": 43118.3
+      },
+      "status": "ok",
+      "note": "GFLOPS"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev0.fp16.half4",
+      "params": {
+        "device": 0,
+        "test": "hp_compute",
+        "kernel": "half4"
+      },
+      "stats": null,
+      "metrics": {
+        "gflops": 43381.3
+      },
+      "status": "ok",
+      "note": "GFLOPS"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev0.fp16.half8",
+      "params": {
+        "device": 0,
+        "test": "hp_compute",
+        "kernel": "half8"
+      },
+      "stats": null,
+      "metrics": {
+        "gflops": 43188.7
+      },
+      "status": "ok",
+      "note": "GFLOPS"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev0.fp16.half16",
+      "params": {
+        "device": 0,
+        "test": "hp_compute",
+        "kernel": "half16"
+      },
+      "stats": null,
+      "metrics": {
+        "gflops": 42842.5
+      },
+      "status": "ok",
+      "note": "GFLOPS"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev0.int32.int",
+      "params": {
+        "device": 0,
+        "test": "int_compute",
+        "kernel": "int"
+      },
+      "stats": null,
+      "metrics": {
+        "gflops": 6333.53
+      },
+      "status": "ok",
+      "note": "GFLOPS"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev0.int32.int2",
+      "params": {
+        "device": 0,
+        "test": "int_compute",
+        "kernel": "int2"
+      },
+      "stats": null,
+      "metrics": {
+        "gflops": 6342.54
+      },
+      "status": "ok",
+      "note": "GFLOPS"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev0.int32.int4",
+      "params": {
+        "device": 0,
+        "test": "int_compute",
+        "kernel": "int4"
+      },
+      "stats": null,
+      "metrics": {
+        "gflops": 6333.76
+      },
+      "status": "ok",
+      "note": "GFLOPS"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev0.int32.int8",
+      "params": {
+        "device": 0,
+        "test": "int_compute",
+        "kernel": "int8"
+      },
+      "stats": null,
+      "metrics": {
+        "gflops": 4840.5
+      },
+      "status": "ok",
+      "note": "GFLOPS"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev0.int32.int16",
+      "params": {
+        "device": 0,
+        "test": "int_compute",
+        "kernel": "int16"
+      },
+      "stats": null,
+      "metrics": {
+        "gflops": 5399.32
+      },
+      "status": "ok",
+      "note": "GFLOPS"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev0.global_bw.float",
+      "params": {
+        "device": 0,
+        "kernel": "float"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 688.66
+      },
+      "status": "ok",
+      "note": "GB/s"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev0.global_bw.float2",
+      "params": {
+        "device": 0,
+        "kernel": "float2"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 685.09
+      },
+      "status": "ok",
+      "note": "GB/s"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev0.global_bw.float4",
+      "params": {
+        "device": 0,
+        "kernel": "float4"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 661.77
+      },
+      "status": "ok",
+      "note": "GB/s"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev0.global_bw.float8",
+      "params": {
+        "device": 0,
+        "kernel": "float8"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 674.02
+      },
+      "status": "ok",
+      "note": "GB/s"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev0.global_bw.float16",
+      "params": {
+        "device": 0,
+        "kernel": "float16"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 678.28
+      },
+      "status": "ok",
+      "note": "GB/s"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev0.transfer_bw.enqueueWriteBuffer",
+      "params": {
+        "device": 0
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 39.02
+      },
+      "status": "ok",
+      "note": "GB/s"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev0.transfer_bw.enqueueReadBuffer",
+      "params": {
+        "device": 0
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 53.04
+      },
+      "status": "ok",
+      "note": "GB/s"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev0.transfer_bw.GPU_Copy_Host_to_Shared_Memory",
+      "params": {
+        "device": 0
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 39.18
+      },
+      "status": "ok",
+      "note": "GB/s"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev0.transfer_bw.GPU_Copy_Shared_Memory_to_Host",
+      "params": {
+        "device": 0
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 53.04
+      },
+      "status": "ok",
+      "note": "GB/s"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev0.transfer_bw.System_Memory_Copy_to_Shared_Memory",
+      "params": {
+        "device": 0
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 8.09
+      },
+      "status": "ok",
+      "note": "GB/s"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev0.transfer_bw.System_Memory_Copy_from_Shared_Memory",
+      "params": {
+        "device": 0
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 8.21
+      },
+      "status": "ok",
+      "note": "GB/s"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev0.kernel_lat.Kernel_launch_latency",
+      "params": {
+        "device": 0
+      },
+      "stats": null,
+      "metrics": {
+        "us": 5.491
+      },
+      "status": "ok",
+      "note": "us"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev0.kernel_lat.Kernel_launch_latency_with_Immediate_Command_List",
+      "params": {
+        "device": 0
+      },
+      "stats": null,
+      "metrics": {
+        "us": 5.496
+      },
+      "status": "ok",
+      "note": "us"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev0.kernel_lat.Kernel_duration",
+      "params": {
+        "device": 0
+      },
+      "stats": null,
+      "metrics": {
+        "us": 15.693
+      },
+      "status": "ok",
+      "note": "us"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "crosscheck.dev0",
+      "params": {
+        "third_party": "oneapi-src/level-zero-tests/ze_peak",
+        "ours": "sycl/alu_peak.cpp + BabelStream"
+      },
+      "stats": null,
+      "metrics": {
+        "ze_peak_sp_compute_tflops": 21.87,
+        "ze_peak_hp_compute_tflops": 43.38,
+        "ze_peak_dp_compute_tflops": 16.07,
+        "ze_peak_hp_over_sp": 1.98,
+        "ze_peak_dp_over_sp": 0.735,
+        "our_probe_sp_tflops": 50.75,
+        "our_probe_hp_over_sp": 1.04,
+        "our_probe_dp_over_sp": 1.02,
+        "oneDNN_gemm_tflops": 22.13,
+        "formula_nominal_tflops": 22.22,
+        "ze_peak_vs_formula": 0.984,
+        "ze_peak_global_bw_gbps": 688.7
+      },
+      "status": "ok",
+      "note": "第三方（Intel 官方仓库、非本项目代码）的向量数字。关键不是绝对值而是**位宽比**：ze_peak 给出 fp16/fp32=1.98、fp64/fp32=0.735，与 Xe-HPC 的 ALU 位宽比（2× / ½~¾×）一致；自研探针给出 1.04 / 1.02，**根本分辨不出 dtype** —— 这正是判定探针绝对值不可信的独立依据之一。"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "arbitration.fp32_vector_peak",
+      "params": {
+        "question": "FP32 向量峰值到底是 22.22 还是 50.75 TFLOPS",
+        "nominal_formula": "448 EU x 16 lane x 2 FLOP x 1.55 GHz"
+      },
+      "stats": null,
+      "metrics": {
+        "formula_tflops": 22.22,
+        "oneDNN_gemm_tflops": 22.13,
+        "oneDNN_vs_formula": 0.996,
+        "ze_peak_tflops": 21.87,
+        "ze_peak_vs_formula": 0.984,
+        "our_probe_tflops": 50.75,
+        "our_probe_vs_formula": 2.284,
+        "verdict_tflops": 22.22
+      },
+      "status": "ok",
+      "note": "**裁定：以 22.22 TFLOPS 为准，自研探针的 50.75 撤回。**两个互相独立的第三方实现同时落在公式值上（oneDNN 99.6%、ze_peak 98.4%）；探针的 2.28× 等价于每 EU 37 条 FP32 lane（架构 16 条），且它分辨不出 dtype 的位宽比，ISA 显示其 vec8 FMA 被 IGC 完全标量化。"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev1.longrun_derate",
+      "params": {
+        "device": 1,
+        "iters": 50,
+        "warmup": 10,
+        "reference": "ze_peak_dev1.log",
+        "logs": [
+          "ze_peak_dev1.log",
+          "ze_peak_dev1_hot_rerun.log"
+        ]
+      },
+      "stats": null,
+      "metrics": {
+        "fp32.ze_peak_dev1.log.value": 21871.9,
+        "fp32.ze_peak_dev1.log.over_ref": 1.0,
+        "fp32.ze_peak_dev1_hot_rerun.log.value": 19092.8,
+        "fp32.ze_peak_dev1_hot_rerun.log.over_ref": 0.873,
+        "fp16.ze_peak_dev1.log.value": 43386.5,
+        "fp16.ze_peak_dev1.log.over_ref": 1.0,
+        "fp16.ze_peak_dev1_hot_rerun.log.value": 43355.0,
+        "fp16.ze_peak_dev1_hot_rerun.log.over_ref": 0.999,
+        "fp64.ze_peak_dev1.log.value": 14278.8,
+        "fp64.ze_peak_dev1.log.over_ref": 1.0,
+        "fp64.ze_peak_dev1_hot_rerun.log.value": 11615.0,
+        "fp64.ze_peak_dev1_hot_rerun.log.over_ref": 0.813,
+        "int32.ze_peak_dev1.log.value": 3640.0,
+        "int32.ze_peak_dev1.log.over_ref": 1.0,
+        "int32.ze_peak_dev1_hot_rerun.log.value": 3542.8,
+        "int32.ze_peak_dev1_hot_rerun.log.over_ref": 0.973,
+        "gbw.ze_peak_dev1.log.value": 688.3,
+        "gbw.ze_peak_dev1.log.over_ref": 1.0,
+        "gbw.ze_peak_dev1_hot_rerun.log.value": 307.0,
+        "gbw.ze_peak_dev1_hot_rerun.log.over_ref": 0.446
+      },
+      "status": "ok",
+      "note": "长跑（`-i 50 -w 10`，单卡约 20 min）期间 GPU 持续满载会触发热/功耗降额：实测温度 92 → **101 °C**、功耗 305 → **330 W**（越过 300 W 名义上限），而 `gt_cur/max/min_freq_mhz` 始终报 1550 的**请求值**（唯一位于负载变化的 `gt_act_freq_mhz` 噪声极大，只能作定性证据）。降额**逐段推进**：同一 section 内按向量宽度顺序（=时间顺序）单调衰减；且**起始热态决定整轮水平** —— dev1 紧接前几轮再跑一次全量（起始 ~94 °C）时，连第一个 section `global_bw` 都掉到 307 GB/s（冷态 688），sp 21872→18497，dp 12213→11492，int 3640→3533。**判读纪律：绝对值引用短跑（`-a -i 3 -w 1`）或冷启分段结果，长跑整轮值仅供参考。**"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev1.device",
+      "params": {
+        "device": 1
+      },
+      "stats": null,
+      "metrics": {
+        "coreClockRate_mhz": "1550",
+        "deviceId": "0bda",
+        "subdeviceId": "0",
+        "isSubdevice": "FALSE"
+      },
+      "status": "ok",
+      "note": "Intel(R) Data Center GPU Max 1100；UUID=00000000-0000-0000-76d6-44d7fa576257"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev1.fp32.float",
+      "params": {
+        "device": 1,
+        "test": "sp_compute",
+        "kernel": "float"
+      },
+      "stats": null,
+      "metrics": {
+        "gflops": 21843.5
+      },
+      "status": "ok",
+      "note": "GFLOPS"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev1.fp32.float2",
+      "params": {
+        "device": 1,
+        "test": "sp_compute",
+        "kernel": "float2"
+      },
+      "stats": null,
+      "metrics": {
+        "gflops": 21821.2
+      },
+      "status": "ok",
+      "note": "GFLOPS"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev1.fp32.float4",
+      "params": {
+        "device": 1,
+        "test": "sp_compute",
+        "kernel": "float4"
+      },
+      "stats": null,
+      "metrics": {
+        "gflops": 21871.9
+      },
+      "status": "ok",
+      "note": "GFLOPS"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev1.fp32.float8",
+      "params": {
+        "device": 1,
+        "test": "sp_compute",
+        "kernel": "float8"
+      },
+      "stats": null,
+      "metrics": {
+        "gflops": 21760.1
+      },
+      "status": "ok",
+      "note": "GFLOPS"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev1.fp32.float16",
+      "params": {
+        "device": 1,
+        "test": "sp_compute",
+        "kernel": "float16"
+      },
+      "stats": null,
+      "metrics": {
+        "gflops": 21533.1
+      },
+      "status": "ok",
+      "note": "GFLOPS"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev1.fp64.double",
+      "params": {
+        "device": 1,
+        "test": "dp_compute",
+        "kernel": "double"
+      },
+      "stats": null,
+      "metrics": {
+        "gflops": 14278.8
+      },
+      "status": "ok",
+      "note": "GFLOPS"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev1.fp64.double2",
+      "params": {
+        "device": 1,
+        "test": "dp_compute",
+        "kernel": "double2"
+      },
+      "stats": null,
+      "metrics": {
+        "gflops": 12355.7
+      },
+      "status": "ok",
+      "note": "GFLOPS"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev1.fp64.double4",
+      "params": {
+        "device": 1,
+        "test": "dp_compute",
+        "kernel": "double4"
+      },
+      "stats": null,
+      "metrics": {
+        "gflops": 12212.5
+      },
+      "status": "ok",
+      "note": "GFLOPS"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev1.fp64.double8",
+      "params": {
+        "device": 1,
+        "test": "dp_compute",
+        "kernel": "double8"
+      },
+      "stats": null,
+      "metrics": {
+        "gflops": 11092.3
+      },
+      "status": "ok",
+      "note": "GFLOPS"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev1.fp64.double16",
+      "params": {
+        "device": 1,
+        "test": "dp_compute",
+        "kernel": "double16"
+      },
+      "stats": null,
+      "metrics": {
+        "gflops": 9046.96
+      },
+      "status": "ok",
+      "note": "GFLOPS"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev1.fp16.half",
+      "params": {
+        "device": 1,
+        "test": "hp_compute",
+        "kernel": "half"
+      },
+      "stats": null,
+      "metrics": {
+        "gflops": 34546.1
+      },
+      "status": "ok",
+      "note": "GFLOPS"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev1.fp16.half2",
+      "params": {
+        "device": 1,
+        "test": "hp_compute",
+        "kernel": "half2"
+      },
+      "stats": null,
+      "metrics": {
+        "gflops": 43117.8
+      },
+      "status": "ok",
+      "note": "GFLOPS"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev1.fp16.half4",
+      "params": {
+        "device": 1,
+        "test": "hp_compute",
+        "kernel": "half4"
+      },
+      "stats": null,
+      "metrics": {
+        "gflops": 43386.5
+      },
+      "status": "ok",
+      "note": "GFLOPS"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev1.fp16.half8",
+      "params": {
+        "device": 1,
+        "test": "hp_compute",
+        "kernel": "half8"
+      },
+      "stats": null,
+      "metrics": {
+        "gflops": 43194.4
+      },
+      "status": "ok",
+      "note": "GFLOPS"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev1.fp16.half16",
+      "params": {
+        "device": 1,
+        "test": "hp_compute",
+        "kernel": "half16"
+      },
+      "stats": null,
+      "metrics": {
+        "gflops": 42840.1
+      },
+      "status": "ok",
+      "note": "GFLOPS"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev1.int32.int",
+      "params": {
+        "device": 1,
+        "test": "int_compute",
+        "kernel": "int"
+      },
+      "stats": null,
+      "metrics": {
+        "gflops": 3640.03
+      },
+      "status": "ok",
+      "note": "GFLOPS"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev1.int32.int2",
+      "params": {
+        "device": 1,
+        "test": "int_compute",
+        "kernel": "int2"
+      },
+      "stats": null,
+      "metrics": {
+        "gflops": 3494.22
+      },
+      "status": "ok",
+      "note": "GFLOPS"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev1.int32.int4",
+      "params": {
+        "device": 1,
+        "test": "int_compute",
+        "kernel": "int4"
+      },
+      "stats": null,
+      "metrics": {
+        "gflops": 3503.36
+      },
+      "status": "ok",
+      "note": "GFLOPS"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev1.int32.int8",
+      "params": {
+        "device": 1,
+        "test": "int_compute",
+        "kernel": "int8"
+      },
+      "stats": null,
+      "metrics": {
+        "gflops": 2775.09
+      },
+      "status": "ok",
+      "note": "GFLOPS"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev1.int32.int16",
+      "params": {
+        "device": 1,
+        "test": "int_compute",
+        "kernel": "int16"
+      },
+      "stats": null,
+      "metrics": {
+        "gflops": 3086.02
+      },
+      "status": "ok",
+      "note": "GFLOPS"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev1.global_bw.float",
+      "params": {
+        "device": 1,
+        "kernel": "float"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 688.33
+      },
+      "status": "ok",
+      "note": "GB/s"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev1.global_bw.float2",
+      "params": {
+        "device": 1,
+        "kernel": "float2"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 684.87
+      },
+      "status": "ok",
+      "note": "GB/s"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev1.global_bw.float4",
+      "params": {
+        "device": 1,
+        "kernel": "float4"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 661.97
+      },
+      "status": "ok",
+      "note": "GB/s"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev1.global_bw.float8",
+      "params": {
+        "device": 1,
+        "kernel": "float8"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 674.61
+      },
+      "status": "ok",
+      "note": "GB/s"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev1.global_bw.float16",
+      "params": {
+        "device": 1,
+        "kernel": "float16"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 678.58
+      },
+      "status": "ok",
+      "note": "GB/s"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev1.transfer_bw.enqueueWriteBuffer",
+      "params": {
+        "device": 1
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 31.43
+      },
+      "status": "ok",
+      "note": "GB/s"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev1.transfer_bw.enqueueReadBuffer",
+      "params": {
+        "device": 1
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 35.19
+      },
+      "status": "ok",
+      "note": "GB/s"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev1.transfer_bw.GPU_Copy_Host_to_Shared_Memory",
+      "params": {
+        "device": 1
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 33.24
+      },
+      "status": "ok",
+      "note": "GB/s"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev1.transfer_bw.GPU_Copy_Shared_Memory_to_Host",
+      "params": {
+        "device": 1
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 37.28
+      },
+      "status": "ok",
+      "note": "GB/s"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev1.transfer_bw.System_Memory_Copy_to_Shared_Memory",
+      "params": {
+        "device": 1
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 7.97
+      },
+      "status": "ok",
+      "note": "GB/s"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev1.transfer_bw.System_Memory_Copy_from_Shared_Memory",
+      "params": {
+        "device": 1
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 8.15
+      },
+      "status": "ok",
+      "note": "GB/s"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev1.kernel_lat.Kernel_launch_latency",
+      "params": {
+        "device": 1
+      },
+      "stats": null,
+      "metrics": {
+        "us": 5.222
+      },
+      "status": "ok",
+      "note": "us"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev1.kernel_lat.Kernel_launch_latency_with_Immediate_Command_List",
+      "params": {
+        "device": 1
+      },
+      "stats": null,
+      "metrics": {
+        "us": 5.349
+      },
+      "status": "ok",
+      "note": "us"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "dev1.kernel_lat.Kernel_duration",
+      "params": {
+        "device": 1
+      },
+      "stats": null,
+      "metrics": {
+        "us": 15.75
+      },
+      "status": "ok",
+      "note": "us"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "repeatability.global_bw.float",
+      "params": {
+        "devices": [
+          0,
+          1
+        ],
+        "runs": 4,
+        "iters": 3,
+        "warmup": 1
+      },
+      "stats": null,
+      "metrics": {
+        "min": 687.116,
+        "max": 688.922,
+        "median": 688.31,
+        "spread_pct": 0.262
+      },
+      "status": "ok",
+      "note": "短跑 `-a -i 3 -w 1` 跨 **2 张卡 × 2 次** 的重复性；spread = (max-min)/max。用于判定长跑值的可信度。"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "repeatability.global_bw.float2",
+      "params": {
+        "devices": [
+          0,
+          1
+        ],
+        "runs": 4,
+        "iters": 3,
+        "warmup": 1
+      },
+      "stats": null,
+      "metrics": {
+        "min": 684.553,
+        "max": 686.15,
+        "median": 685.096,
+        "spread_pct": 0.233
+      },
+      "status": "ok",
+      "note": "短跑 `-a -i 3 -w 1` 跨 **2 张卡 × 2 次** 的重复性；spread = (max-min)/max。用于判定长跑值的可信度。"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "repeatability.global_bw.float4",
+      "params": {
+        "devices": [
+          0,
+          1
+        ],
+        "runs": 4,
+        "iters": 3,
+        "warmup": 1
+      },
+      "stats": null,
+      "metrics": {
+        "min": 659.178,
+        "max": 660.831,
+        "median": 660.396,
+        "spread_pct": 0.25
+      },
+      "status": "ok",
+      "note": "短跑 `-a -i 3 -w 1` 跨 **2 张卡 × 2 次** 的重复性；spread = (max-min)/max。用于判定长跑值的可信度。"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "repeatability.global_bw.float8",
+      "params": {
+        "devices": [
+          0,
+          1
+        ],
+        "runs": 4,
+        "iters": 3,
+        "warmup": 1
+      },
+      "stats": null,
+      "metrics": {
+        "min": 469.616,
+        "max": 676.239,
+        "median": 571.802,
+        "spread_pct": 30.555
+      },
+      "status": "ok",
+      "note": "短跑 `-a -i 3 -w 1` 跨 **2 张卡 × 2 次** 的重复性；spread = (max-min)/max。用于判定长跑值的可信度。"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "repeatability.global_bw.float16",
+      "params": {
+        "devices": [
+          0,
+          1
+        ],
+        "runs": 4,
+        "iters": 3,
+        "warmup": 1
+      },
+      "stats": null,
+      "metrics": {
+        "min": 467.371,
+        "max": 680.487,
+        "median": 573.91,
+        "spread_pct": 31.318
+      },
+      "status": "ok",
+      "note": "短跑 `-a -i 3 -w 1` 跨 **2 张卡 × 2 次** 的重复性；spread = (max-min)/max。用于判定长跑值的可信度。"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "repeatability.hp_compute.half",
+      "params": {
+        "devices": [
+          0,
+          1
+        ],
+        "runs": 4,
+        "iters": 3,
+        "warmup": 1
+      },
+      "stats": null,
+      "metrics": {
+        "min": 34544.8,
+        "max": 34546.9,
+        "median": 34545.9,
+        "spread_pct": 0.006
+      },
+      "status": "ok",
+      "note": "短跑 `-a -i 3 -w 1` 跨 **2 张卡 × 2 次** 的重复性；spread = (max-min)/max。用于判定长跑值的可信度。"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "repeatability.hp_compute.half2",
+      "params": {
+        "devices": [
+          0,
+          1
+        ],
+        "runs": 4,
+        "iters": 3,
+        "warmup": 1
+      },
+      "stats": null,
+      "metrics": {
+        "min": 43119.8,
+        "max": 43121.4,
+        "median": 43120.45,
+        "spread_pct": 0.004
+      },
+      "status": "ok",
+      "note": "短跑 `-a -i 3 -w 1` 跨 **2 张卡 × 2 次** 的重复性；spread = (max-min)/max。用于判定长跑值的可信度。"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "repeatability.hp_compute.half4",
+      "params": {
+        "devices": [
+          0,
+          1
+        ],
+        "runs": 4,
+        "iters": 3,
+        "warmup": 1
+      },
+      "stats": null,
+      "metrics": {
+        "min": 43384.7,
+        "max": 43397.4,
+        "median": 43388.5,
+        "spread_pct": 0.029
+      },
+      "status": "ok",
+      "note": "短跑 `-a -i 3 -w 1` 跨 **2 张卡 × 2 次** 的重复性；spread = (max-min)/max。用于判定长跑值的可信度。"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "repeatability.hp_compute.half8",
+      "params": {
+        "devices": [
+          0,
+          1
+        ],
+        "runs": 4,
+        "iters": 3,
+        "warmup": 1
+      },
+      "stats": null,
+      "metrics": {
+        "min": 43172.5,
+        "max": 43206.0,
+        "median": 43195.0,
+        "spread_pct": 0.078
+      },
+      "status": "ok",
+      "note": "短跑 `-a -i 3 -w 1` 跨 **2 张卡 × 2 次** 的重复性；spread = (max-min)/max。用于判定长跑值的可信度。"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "repeatability.hp_compute.half16",
+      "params": {
+        "devices": [
+          0,
+          1
+        ],
+        "runs": 4,
+        "iters": 3,
+        "warmup": 1
+      },
+      "stats": null,
+      "metrics": {
+        "min": 42829.1,
+        "max": 42861.9,
+        "median": 42841.75,
+        "spread_pct": 0.077
+      },
+      "status": "ok",
+      "note": "短跑 `-a -i 3 -w 1` 跨 **2 张卡 × 2 次** 的重复性；spread = (max-min)/max。用于判定长跑值的可信度。"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "repeatability.sp_compute.float",
+      "params": {
+        "devices": [
+          0,
+          1
+        ],
+        "runs": 4,
+        "iters": 3,
+        "warmup": 1
+      },
+      "stats": null,
+      "metrics": {
+        "min": 21843.9,
+        "max": 21844.1,
+        "median": 21843.9,
+        "spread_pct": 0.001
+      },
+      "status": "ok",
+      "note": "短跑 `-a -i 3 -w 1` 跨 **2 张卡 × 2 次** 的重复性；spread = (max-min)/max。用于判定长跑值的可信度。"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "repeatability.sp_compute.float2",
+      "params": {
+        "devices": [
+          0,
+          1
+        ],
+        "runs": 4,
+        "iters": 3,
+        "warmup": 1
+      },
+      "stats": null,
+      "metrics": {
+        "min": 21820.8,
+        "max": 21822.8,
+        "median": 21821.4,
+        "spread_pct": 0.009
+      },
+      "status": "ok",
+      "note": "短跑 `-a -i 3 -w 1` 跨 **2 张卡 × 2 次** 的重复性；spread = (max-min)/max。用于判定长跑值的可信度。"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "repeatability.sp_compute.float4",
+      "params": {
+        "devices": [
+          0,
+          1
+        ],
+        "runs": 4,
+        "iters": 3,
+        "warmup": 1
+      },
+      "stats": null,
+      "metrics": {
+        "min": 21871.6,
+        "max": 21873.2,
+        "median": 21871.85,
+        "spread_pct": 0.007
+      },
+      "status": "ok",
+      "note": "短跑 `-a -i 3 -w 1` 跨 **2 张卡 × 2 次** 的重复性；spread = (max-min)/max。用于判定长跑值的可信度。"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "repeatability.sp_compute.float8",
+      "params": {
+        "devices": [
+          0,
+          1
+        ],
+        "runs": 4,
+        "iters": 3,
+        "warmup": 1
+      },
+      "stats": null,
+      "metrics": {
+        "min": 21760.5,
+        "max": 21760.7,
+        "median": 21760.6,
+        "spread_pct": 0.001
+      },
+      "status": "ok",
+      "note": "短跑 `-a -i 3 -w 1` 跨 **2 张卡 × 2 次** 的重复性；spread = (max-min)/max。用于判定长跑值的可信度。"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "repeatability.sp_compute.float16",
+      "params": {
+        "devices": [
+          0,
+          1
+        ],
+        "runs": 4,
+        "iters": 3,
+        "warmup": 1
+      },
+      "stats": null,
+      "metrics": {
+        "min": 21533.4,
+        "max": 21533.7,
+        "median": 21533.6,
+        "spread_pct": 0.001
+      },
+      "status": "ok",
+      "note": "短跑 `-a -i 3 -w 1` 跨 **2 张卡 × 2 次** 的重复性；spread = (max-min)/max。用于判定长跑值的可信度。"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "repeatability.dp_compute.double",
+      "params": {
+        "devices": [
+          0,
+          1
+        ],
+        "runs": 4,
+        "iters": 3,
+        "warmup": 1
+      },
+      "stats": null,
+      "metrics": {
+        "min": 16002.2,
+        "max": 16005.9,
+        "median": 16004.9,
+        "spread_pct": 0.023
+      },
+      "status": "ok",
+      "note": "短跑 `-a -i 3 -w 1` 跨 **2 张卡 × 2 次** 的重复性；spread = (max-min)/max。用于判定长跑值的可信度。"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "repeatability.dp_compute.double2",
+      "params": {
+        "devices": [
+          0,
+          1
+        ],
+        "runs": 4,
+        "iters": 3,
+        "warmup": 1
+      },
+      "stats": null,
+      "metrics": {
+        "min": 15902.3,
+        "max": 15905.6,
+        "median": 15905.05,
+        "spread_pct": 0.021
+      },
+      "status": "ok",
+      "note": "短跑 `-a -i 3 -w 1` 跨 **2 张卡 × 2 次** 的重复性；spread = (max-min)/max。用于判定长跑值的可信度。"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "repeatability.dp_compute.double4",
+      "params": {
+        "devices": [
+          0,
+          1
+        ],
+        "runs": 4,
+        "iters": 3,
+        "warmup": 1
+      },
+      "stats": null,
+      "metrics": {
+        "min": 16074.0,
+        "max": 16074.7,
+        "median": 16074.15,
+        "spread_pct": 0.004
+      },
+      "status": "ok",
+      "note": "短跑 `-a -i 3 -w 1` 跨 **2 张卡 × 2 次** 的重复性；spread = (max-min)/max。用于判定长跑值的可信度。"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "repeatability.dp_compute.double8",
+      "params": {
+        "devices": [
+          0,
+          1
+        ],
+        "runs": 4,
+        "iters": 3,
+        "warmup": 1
+      },
+      "stats": null,
+      "metrics": {
+        "min": 15792.3,
+        "max": 15793.8,
+        "median": 15793.45,
+        "spread_pct": 0.009
+      },
+      "status": "ok",
+      "note": "短跑 `-a -i 3 -w 1` 跨 **2 张卡 × 2 次** 的重复性；spread = (max-min)/max。用于判定长跑值的可信度。"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "repeatability.dp_compute.double16",
+      "params": {
+        "devices": [
+          0,
+          1
+        ],
+        "runs": 4,
+        "iters": 3,
+        "warmup": 1
+      },
+      "stats": null,
+      "metrics": {
+        "min": 13970.6,
+        "max": 13979.0,
+        "median": 13977.95,
+        "spread_pct": 0.06
+      },
+      "status": "ok",
+      "note": "短跑 `-a -i 3 -w 1` 跨 **2 张卡 × 2 次** 的重复性；spread = (max-min)/max。用于判定长跑值的可信度。"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "repeatability.int_compute.int",
+      "params": {
+        "devices": [
+          0,
+          1
+        ],
+        "runs": 4,
+        "iters": 3,
+        "warmup": 1
+      },
+      "stats": null,
+      "metrics": {
+        "min": 6195.12,
+        "max": 6449.76,
+        "median": 6319.32,
+        "spread_pct": 3.948
+      },
+      "status": "ok",
+      "note": "短跑 `-a -i 3 -w 1` 跨 **2 张卡 × 2 次** 的重复性；spread = (max-min)/max。用于判定长跑值的可信度。"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "repeatability.int_compute.int2",
+      "params": {
+        "devices": [
+          0,
+          1
+        ],
+        "runs": 4,
+        "iters": 3,
+        "warmup": 1
+      },
+      "stats": null,
+      "metrics": {
+        "min": 6175.92,
+        "max": 6431.43,
+        "median": 6301.955,
+        "spread_pct": 3.973
+      },
+      "status": "ok",
+      "note": "短跑 `-a -i 3 -w 1` 跨 **2 张卡 × 2 次** 的重复性；spread = (max-min)/max。用于判定长跑值的可信度。"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "repeatability.int_compute.int4",
+      "params": {
+        "devices": [
+          0,
+          1
+        ],
+        "runs": 4,
+        "iters": 3,
+        "warmup": 1
+      },
+      "stats": null,
+      "metrics": {
+        "min": 6182.11,
+        "max": 6428.18,
+        "median": 6303.985,
+        "spread_pct": 3.828
+      },
+      "status": "ok",
+      "note": "短跑 `-a -i 3 -w 1` 跨 **2 张卡 × 2 次** 的重复性；spread = (max-min)/max。用于判定长跑值的可信度。"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "repeatability.int_compute.int8",
+      "params": {
+        "devices": [
+          0,
+          1
+        ],
+        "runs": 4,
+        "iters": 3,
+        "warmup": 1
+      },
+      "stats": null,
+      "metrics": {
+        "min": 4693.45,
+        "max": 4972.01,
+        "median": 4824.7,
+        "spread_pct": 5.603
+      },
+      "status": "ok",
+      "note": "短跑 `-a -i 3 -w 1` 跨 **2 张卡 × 2 次** 的重复性；spread = (max-min)/max。用于判定长跑值的可信度。"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "repeatability.int_compute.int16",
+      "params": {
+        "devices": [
+          0,
+          1
+        ],
+        "runs": 4,
+        "iters": 3,
+        "warmup": 1
+      },
+      "stats": null,
+      "metrics": {
+        "min": 4991.3,
+        "max": 5527.95,
+        "median": 5270.57,
+        "spread_pct": 9.708
+      },
+      "status": "ok",
+      "note": "短跑 `-a -i 3 -w 1` 跨 **2 张卡 × 2 次** 的重复性；spread = (max-min)/max。用于判定长跑值的可信度。"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "repeatability.transfer_bw.enqueueWriteBuffer",
+      "params": {
+        "devices": [
+          0,
+          1
+        ],
+        "runs": 4,
+        "iters": 3,
+        "warmup": 1
+      },
+      "stats": null,
+      "metrics": {
+        "min": 33.13,
+        "max": 37.156,
+        "median": 34.964,
+        "spread_pct": 10.835
+      },
+      "status": "ok",
+      "note": "短跑 `-a -i 3 -w 1` 跨 **2 张卡 × 2 次** 的重复性；spread = (max-min)/max。用于判定长跑值的可信度。"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "repeatability.transfer_bw.enqueueReadBuffer",
+      "params": {
+        "devices": [
+          0,
+          1
+        ],
+        "runs": 4,
+        "iters": 3,
+        "warmup": 1
+      },
+      "stats": null,
+      "metrics": {
+        "min": 38.007,
+        "max": 47.065,
+        "median": 42.108,
+        "spread_pct": 19.246
+      },
+      "status": "ok",
+      "note": "短跑 `-a -i 3 -w 1` 跨 **2 张卡 × 2 次** 的重复性；spread = (max-min)/max。用于判定长跑值的可信度。"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "repeatability.transfer_bw.GPUCopyHosttoSharedMemory",
+      "params": {
+        "devices": [
+          0,
+          1
+        ],
+        "runs": 4,
+        "iters": 3,
+        "warmup": 1
+      },
+      "stats": null,
+      "metrics": {
+        "min": 33.528,
+        "max": 37.41,
+        "median": 35.133,
+        "spread_pct": 10.379
+      },
+      "status": "ok",
+      "note": "短跑 `-a -i 3 -w 1` 跨 **2 张卡 × 2 次** 的重复性；spread = (max-min)/max。用于判定长跑值的可信度。"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "repeatability.transfer_bw.GPUCopySharedMemorytoHost",
+      "params": {
+        "devices": [
+          0,
+          1
+        ],
+        "runs": 4,
+        "iters": 3,
+        "warmup": 1
+      },
+      "stats": null,
+      "metrics": {
+        "min": 38.059,
+        "max": 47.054,
+        "median": 42.02,
+        "spread_pct": 19.117
+      },
+      "status": "ok",
+      "note": "短跑 `-a -i 3 -w 1` 跨 **2 张卡 × 2 次** 的重复性；spread = (max-min)/max。用于判定长跑值的可信度。"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "repeatability.transfer_bw.SystemMemoryCopytoSharedMemory",
+      "params": {
+        "devices": [
+          0,
+          1
+        ],
+        "runs": 4,
+        "iters": 3,
+        "warmup": 1
+      },
+      "stats": null,
+      "metrics": {
+        "min": 7.863,
+        "max": 8.124,
+        "median": 8.052,
+        "spread_pct": 3.217
+      },
+      "status": "ok",
+      "note": "短跑 `-a -i 3 -w 1` 跨 **2 张卡 × 2 次** 的重复性；spread = (max-min)/max。用于判定长跑值的可信度。"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "repeatability.transfer_bw.SystemMemoryCopyfromSharedMemory",
+      "params": {
+        "devices": [
+          0,
+          1
+        ],
+        "runs": 4,
+        "iters": 3,
+        "warmup": 1
+      },
+      "stats": null,
+      "metrics": {
+        "min": 7.965,
+        "max": 8.359,
+        "median": 8.224,
+        "spread_pct": 4.714
+      },
+      "status": "ok",
+      "note": "短跑 `-a -i 3 -w 1` 跨 **2 张卡 × 2 次** 的重复性；spread = (max-min)/max。用于判定长跑值的可信度。"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "repeatability.kernel_lat.Kernellaunchlatency",
+      "params": {
+        "devices": [
+          0,
+          1
+        ],
+        "runs": 4,
+        "iters": 3,
+        "warmup": 1
+      },
+      "stats": null,
+      "metrics": {
+        "min": 6.027,
+        "max": 7.68,
+        "median": 6.333,
+        "spread_pct": 21.528
+      },
+      "status": "ok",
+      "note": "短跑 `-a -i 3 -w 1` 跨 **2 张卡 × 2 次** 的重复性；spread = (max-min)/max。用于判定长跑值的可信度。"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "repeatability.kernel_lat.KernellaunchlatencywithImmediateCommandList",
+      "params": {
+        "devices": [
+          0,
+          1
+        ],
+        "runs": 4,
+        "iters": 3,
+        "warmup": 1
+      },
+      "stats": null,
+      "metrics": {
+        "min": 6.24,
+        "max": 6.987,
+        "median": 6.613,
+        "spread_pct": 10.687
+      },
+      "status": "ok",
+      "note": "短跑 `-a -i 3 -w 1` 跨 **2 张卡 × 2 次** 的重复性；spread = (max-min)/max。用于判定长跑值的可信度。"
+    },
+    {
+      "suite": "ze_peak",
+      "name": "repeatability.kernel_lat.Kernelduration",
+      "params": {
+        "devices": [
+          0,
+          1
+        ],
+        "runs": 4,
+        "iters": 3,
+        "warmup": 1
+      },
+      "stats": null,
+      "metrics": {
+        "min": 18.72,
+        "max": 47.04,
+        "median": 26.587,
+        "spread_pct": 60.204
+      },
+      "status": "ok",
+      "note": "短跑 `-a -i 3 -w 1` 跨 **2 张卡 × 2 次** 的重复性；spread = (max-min)/max。用于判定长跑值的可信度。"
+    }
+  ]
+}
