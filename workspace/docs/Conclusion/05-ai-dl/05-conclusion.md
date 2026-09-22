@@ -264,7 +264,7 @@ $$\text{Speedup} = \frac{1}{\frac{1-f}{2} + \frac{f}{10.5}},\quad f = \text{XMX 
 | `comm_pct` 的含义 | 6.28% **高估**互连贡献（其中 39%~61% 是 DDP 包装开销） |
 | 通信占比的测法 | `no_sync()` 差分测的是**暴露成本**，不含与 backward 重叠的部分 |
 | ES 硅片 + Xe Link "Not Calibrated" | 所有互连数字应视为**下界** |
-| 频率锁定 | 1550 MHz（min == max），无频率波动，也**无法测 boost 行为** |
+| 频率请求值固定 | 1550 MHz（`gt_min == gt_max`）只是**请求值**，不反映真实降额，也**无法测 boost 行为**；实测长时满载会被热/功耗降额（详见 `docs/TODO/08-power-efficiency.md`） |
 | 系统盘 91% 满 | `/dev/nvme0n1p2` 468 G / 已用 404 G / 剩 41 G → 真实数据集实验受限 |
 | **已修复的报告 bug** | BERT suite 曾硬编码 `model=bert-base-mlm, layers=12, hidden=768`，因此 BERT-Large 的 JSON/MD 元数据被标错（`params_m=335.2` 是真的，结构字段是假的）。已改为从 `model.config` 回填（`xpu_bench/models.py`）。**§3.3 表格中的数字全部来自实测，不受影响。** |
 

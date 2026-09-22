@@ -4,18 +4,24 @@
 [`docs/hardware.md`](../../docs/hardware.md)（硬件规格）、
 [`docs/Conclusion/02-compute-peak/`](../../docs/Conclusion/02-compute-peak/)（结论报告）。
 
-本目录用 **三条互相独立的路径** 测算力，避免「自己验证自己」：
+本目录用 **四条互相独立的路径** 测算力，避免「自己验证自己」：
 
 | # | 路径 | 工具 | 测的是什么 | 可信度 |
 |---|---|---|---|---|
-| 1 | 自研 SYCL 探针 `alu_peak` | icpx/DPC++ | 纯 FMA 循环（非可折叠递推）→ **ALU 峰值** | 待验证上界 |
-| 2 | 自研 SYCL 探针 `xmx_peak` | icpx + `joint_matrix` | 直接发射 **DPAS**（XMX）→ 原始矩阵峰值 | 已自校验 |
-| 3 | PyTorch / oneDNN GEMM | `torch.matmul`、`torch._int_mm` | 成熟软件栈能达到的实际峰值 | **可信下界** |
+| 1 | 自研 SYCL 探针 `alu_peak` | icpx/DPC++ | 纯 FMA 循环（非可折叠递推）→ **ALU 峰值** | ❌ **绝对值已撤回**（见 §5.2） |
+| 2 | 自研 SYCL 探针 `xmx_peak` | icpx + `joint_matrix` | 直接发射 **DPAS**（XMX）→ 原始矩阵峰值 | ✅ 已自校验 |
+| 3 | PyTorch / oneDNN GEMM | `torch.matmul`、`torch._int_mm` | 成熟软件栈能达到的实际峰值 | ✅ **可信下界** |
+| 4 | **`ze_peak`（Intel 官方）** | Level Zero + icpx | clpeak 移植 → **FP32/FP64/FP16 向量峰值**（第三方实现） | ✅ **仲裁者** |
 
 再加一条取证：`clock` —— 主频 / 功耗 / 是否降频。
 
-> ⚠ 三者给出的是**不同的量**，不要混用：自研探针测的是「硬件上限」，
-> oneDNN 测的是「工程可达」。本目录把两者都报出来，并**显式标注差异**。
+> ⚠ 四条路径给出的是**不同的量**，不要混用：自研探针测的是「硬件上限」，
+> oneDNN 测的是「工程可达」，`ze_peak` 则是「别人写的硬件上限」。
+> 本目录把三者都报出来，并**显式标注差异**。
+
+> ✅ **2026-09-22 裁定**：FP32 向量峰值 = **22.22 TFLOPS**（路径 3 给出 22.13 = 99.6%，
+> 路径 4 给出 21.87 = 98.4%），路径 1 的 50.75 是探针 artefact，**已撤回**。
+> 证据链见 `sycl/exp/README.md` 与 §5.2。
 
 ---
 
@@ -24,11 +30,22 @@
 ```
 benchmark/02-compute-peak/
 ├── README.md                  本文档
-├── run_bench.py               CLI 入口（4 个 suite：alu / xmx / torch / clock）
+├── run_bench.py               CLI 入口（5 个 suite：alu / xmx / torch / clock / zepeak）
 ├── sycl/
-│   ├── alu_peak.cpp           自研 ALU 峰值探针（VEC/ACC/UNROLL 可宏定义）
+│   ├── alu_peak.cpp           自研 ALU 峰值探针（VEC/ACC/UNROLL 可宏定义）⚠️ 绝对值已撤回
 │   ├── xmx_peak.cpp           自研 XMX/DPAS 峰值探针（sycl joint_matrix）
-│   └── alu_clock_probe.cpp    【死路，仅留档】用 SYCL 读 GPU 时钟 —— 本机不支持
+│   ├── alu_clock_probe.cpp    【死路，仅留档】用 SYCL 读 GPU 时钟 —— 本机不支持
+│   └── exp/                   ★ 探针证伪实验（5 组对照 + ISA 证据）
+│       ├── README.md          完整的裁定过程记录
+│       └── alu_u1/u4/v1/acc4  4 个对照二进制
+├── ze_peak_src/               ★ 第三方仲裁：Intel 官方 ze_peak 源码
+│   ├── README.md              仓库出处 / 测试表 / 构建配方 / 网络坑
+│   ├── PATCHES.md             1 行补丁 + shim 原因
+│   ├── build.sh               一键构建（`./build.sh` / `./build.sh run 0`）
+│   ├── shim/level_zero/       vendored v1.15.31 头文件（16 个）
+│   ├── common/ ze_peak/       上游源码（25 文件）
+│   ├── build/ze_peak          构建产物（271 KB）+ 5 个 .spv
+│   └── logs/ze_peak_dev{0,1}.log
 ├── probes/
 │   └── torch_gemm_peak.py     PyTorch GEMM / int8 / vector 交叉验证
 ├── build/                     探针编译产物（alu_peak、xmx_peak、alu_peak_vecN）
@@ -42,14 +59,22 @@ benchmark/02-compute-peak/
 ```bash
 cd /root/workspace/benchmark/02-compute-peak
 
-python3 run_bench.py                    # 全部 4 个 suite，写 results/bench_<tag>.{json,md}
+python3 run_bench.py                    # 全部 5 个 suite，写 results/bench_<tag>.{json,md}
 python3 run_bench.py --quick            # 冒烟（约 1/5 时间）
 python3 run_bench.py alu xmx            # 只跑指定 suite
+python3 run_bench.py zepeak             # 只跑第三方 ze_peak（会复用已有日志）
 python3 run_bench.py --tag 20260922-194139
 
 # PyTorch 路径需要 venv1（system-site-packages 里才有 torch+xpu）
 ZE_AFFINITY_MASK=0 /root/workspace/venv1/bin/python run_bench.py torch
 ```
+
+**`zepeak` suite 的运行方式**：它**不**编译任何东西，而是：
+1. 检查 `ze_peak_src/build/ze_peak` 是否存在（不存在则提示先跑 `./build.sh`）；
+2. 检查 `ze_peak_src/logs/ze_peak_dev{d}.log` 里有没有 `"Kernel duration"`；
+   **有则直接复用**（`ze_peak` 每卡要跑 ~15 min，重跑很贵），没有才现场跑；
+3. 解析 7 个 section（`sp/hp/dp/int_compute`、`global_bw`、`transfer_bw`、`kernel_lat`）
+   并产出 crosscheck / arbitration 记录。
 
 `run_bench.py` 会自动用 `icpx -fsycl -O3` 编译两个探针到 `build/`
 （`icpx` 路径写死为 `/opt/intel/oneapi/compiler/2026.1/bin/icpx`）。
@@ -60,7 +85,7 @@ ZE_AFFINITY_MASK=0 /root/workspace/venv1/bin/python run_bench.py torch
 
 ---
 
-## 3. 四个 suite 分别测什么
+## 3. 五个 suite 分别测什么
 
 ### 3.1 `alu` —— ALU 峰值（自研 SYCL）
 
@@ -124,28 +149,121 @@ FLOP 计数  = dpas_count × 2 × M × N × K        (bf16/fp16: M8N16K16；int8
 - `xpu-smi stats -d 0`：Frequency / Power / Utilization
 - **关键做法**：在**后台跑满载 ALU 的同时**采样，否则读到的全是空闲值
   （空闲时 `gt_act_freq_mhz` 会读 **0**）
+- ⚠️ **注意**：`gt_cur/min/max/boost/RP0_freq_mhz` 都是**请求值**，不会反映自主降额；
+  `gt_act_freq_mhz` 是**唯一会随负载变化**的节点，但其**绝对值噪声极大**、不收敛到标准 P-state
+  （已观测 200~1400 乱跳）⇒ **只能当定性证据**。硬证据是 `xpu-smi stats` 的**温度与功耗**。
 - 最后从实测算「等效执行宽度」，见 §5.3
+
+### 3.5 `zepeak` —— 第三方向量峰值仲裁（★ 补做）
+
+**源码**：`ze_peak_src/`，来自 **`oneapi-src/level-zero-tests/perf_tests/ze_peak`**
+（Intel 官方，clpeak 的 Level Zero 移植，25 文件零外部依赖）。
+**它不是 XMX 基准**（没有 DPAS），但恰好是 FP32 向量峰值的第三方独立实现。
+
+构建（已写好脚本，`git clone` 在本机不通 → 逐文件抓，见 `ze_peak_src/README.md`）：
+
+```bash
+cd ze_peak_src
+./build.sh          # 只构建 → build/ze_peak
+./build.sh run 0    # 构建 + 跑 device 0 全量（⚠️ ~20 min）→ logs/ze_peak_dev0.log
+./build.sh run 1    # 同上 device 1
+```
+
+覆盖 7 个 section：`sp_compute` / `hp_compute` / `dp_compute` / `int_compute` /
+`global_bw` / `transfer_bw` / `kernel_lat`，每个 section 内部还会扫不同向量宽度变体
+（`float` / `float2` / `float4` / `float8` / `float16`）。
+
+> ⚠ **必须 `cd build/` 再启动** —— `.spv` 是按相对路径加载的。
+> ⚠ stdout 重定向是**块缓冲**的：日志长时间不涨 ≠ 卡死，用 `ps` / `xpu-smi` 确认。
 
 ---
 
-## 4. 关键实测结果（tag `20260922-194139`）
+## 4. 关键实测结果（tag `20260922-194139` + `ze_peak` 补做）
 
-### 4.1 ALU 峰值（自研 SYCL，`global=114688`）
+### 4.1 ALU 峰值（自研 SYCL，`global=114688`）⚠️ **绝对数值已撤回**
 
-| dtype | 实测 | 单位 | vs 公式标称 22.22 |
-|---|---:|---|---|
-| fp32 | **50 750** | GFLOPS | **228.4%** |
-| fp64 | **51 900** | GFLOPS | 233.6% |
-| fp16 | **52 600** | GFLOPS | 236.7% |
-| int32 | 18 000 | GOPS | 81% |
+> ❌ 下表的 fp32/fp64/fp16 绝对数值**不可信**（见 §5.2 与
+> [`sycl/exp/README.md`](sycl/exp/README.md)）。请直接看 §4.0 的 `ze_peak` 第三方结果。
 
-> ⚠️ fp64 / fp16 的探针值甚至**高于** fp32。在一条纯 FMA 链上这是正常的
-> （fp64 与 fp32 共用发射路径；fp16 可以打包）。
-> **没有哪个 dtype 落在公式的 1/2。**
+| dtype | 实测 ⚠️ | 单位 | vs 公式标称 22.22 | 裁定 |
+|---|---:|---|---|---|
+| fp32 | ~~50 750~~ | GFLOPS | ~~228.4%~~ | ❌ 撤回 |
+| fp64 | ~~51 900~~ | GFLOPS | ~~233.6%~~ | ❌ 撤回 |
+| fp16 | ~~52 600~~ | GFLOPS | ~~236.7%~~ | ❌ 撤回 |
+| int32 | 18 000 | GOPS | 81% | ⚠️ 同源，不可信 |
+
+### 4.0 ★ `ze_peak` 第三方向量峰值（device 0，`logs/ze_peak_dev0.log`，EXIT=0）
+
+设备：`Intel(R) Data Center GPU Max 1100`，`deviceId 0x0bda`，`coreClockRate 1550`，
+`maxMemAllocSize 48 946 688 000 B`。
+
+| section | 最佳内核 | 值 | 同 section 其它变体 |
+|---|---|---:|---|
+| `sp_compute` (fp32) | **`float4`** | **21 871.6 GFLOPS** | `float` 21 843.3 / `float2` 21 820.9 / `float8` 21 759.7 / `float16` 21 533.1 |
+| `hp_compute` (fp16) | **`half4`** | **43 381.3 GFLOPS** | `half` 34 545.5 / `half2` 43 118.3 / `half8` 43 188.7 / `half16` 42 842.5 |
+| `dp_compute` (fp64) | **`double4`** | **16 074.0 GFLOPS** | `double` 16 005.9 / `double2` 15 904.7 / `double8` 15 792.6 / `double16` 13 978.7 |
+| `int_compute` | **`int2`** | **6 342.5 GOPS** | `int` 6 333.5 / `int4` 6 333.8 / `int8` 4 840.5 / `int16` 5 399.3 |
+| `global_bw` | `float` | **688.7 GB/s** | `float2` 685.1 / `float4` 661.8 / `float8` 674.0 / `float16` 678.3 |
+| `transfer_bw` | GPU Copy Shared→Host | 53.04 GB/s | Write 39.02 / Read 53.04 / Host→S 39.18 / SysMem→S 8.09 / SysMem←S 8.21 |
+| `kernel_lat` | Kernel duration | 15.69 µs | launch 5.49 / immediate-CL 5.50 |
+
+**推导比值**（这就是裁定依据）：
+
+| 比值 | `ze_peak`（第三方） | 自研 `alu_peak` | Xe-HPC 架构应为 |
+|---|---:|---:|---|---|
+| `sp / 公式 22.2208` | **0.9843** | 2.2839 | 1.0 |
+| `hp / sp` | **1.9835** | 1.037 | 2.0 |
+| `dp / sp` | **0.7349** | 1.022 | 0.5~0.75 |
+
+⇒ **`ze_peak` 既复现了公式绝对值，又复现了 dtype 位宽比；自研探针两项都做不到。**
+⇒ **裁定：FP32 向量峰值 = 22.22 TFLOPS，自研探针绝对值撤回。**
+
+#### 4.0.1 ⚠️ 时长口径：长跑整轮会遇到热/功耗降额（2026-09-22 新发现）
+
+`-i 50 -w 10` 的**整轮**约 20 min/卡（每测试项 `get_max_work_items() × 512~2048` ≈ 10⁹~10¹⁰
+work-item；fp64 用 512，fp16/fp32/int 用 2048）。
+期间 i915 的 **`gt_act_freq_mhz`**（**唯一会随负载变化**的频率节点，空闲读 0）**在 200~1400 MHz
+之间乱跳**（1350/1250/1150/1000/950/800/700/650/600/500/450/400/350/300…，
+**几乎每次采样都不同**），而 `gt_cur/max/min_freq_mhz` 与 xpu-smi 的 `GPU Frequency`
+始终只报 **1550（请求值）**。
+
+> ⚠️ **`gt_act_freq_mhz` 只能当定性证据**：其绝对值噪声极大、不收敛到标准 P-state
+> （标准态只有 RP0=1550 / RP1=1000 / RPn=200）⇒ **可引用的是「它在大幅摆动 ⇒ DVFS 很活跃」
+> 这个定性事实，而不是它的数值**。降额的**硬证据是温度与功耗**：
+> fp64 单项跑 = 233–243 W / 86–89 °C；整轮长跑采样到 **305 → 330 W
+> （> 300 W 名义上限）/ 92 → 101 °C**。101 °C 已逼近 PVC 结温上限。
+
+**后果：`logs/ze_peak_dev1.log`（整轮）在 fp64 与 int32 段偏低，不可用。**
+
+| 题项 | dev0 整轮 | dev1 整轮（降额） | 短跑 `-i 3 -w 1`（dev0 / dev1 ×2 次） |
+|---|---:|---:|---|
+| fp32 `float4` | 21 871.6 | 21 871.9 ✅ | 21 871.6 / 21 873.2 / 21 872.1 / 21 871.6 |
+| fp16 `half4` | 43 381.3 | 43 386.5 ✅ | 43 397.4 / 43 385.8 / 43 384.7 / 43 391.2 |
+| fp64 `double4` | 16 074.0 | **14 278.8（−11%）** ⚠️ | 16 074.1 / 16 074.7 / 16 074.0 / 16 074.2 |
+| int32 `int2` | 6 342.5 | **3 640.0（−43%）** ⚠️ | dev0 6 431.4 / 6 425.2；dev1 6 178.8 / 6 175.9 |
+
+- **机制：`ze_peak` 报的是「平均吞吐」而不是「峰值吞吐」。**
+  `run_kernel()`（`ze_peak.cpp:861`）算的是 `总工作量 / 总墙钟时间`，时间由
+  `for (i < iters) { run_command_queue(); synchronize_command_queue(); }`
+  **累计 50 次发射**测得 ⇒ **这 50 次里任何一段变慢都会拉低平均值**。
+  而 `-a` 的分段顺序是 `sp → hp → dp → int → global_bw → transfer_bw → kernel_lat`，
+  即 **dp/int 最晚测**，恰好落在降额已建立之后；`sp`/`hp` 最早测，完全不受影响。
+- 同段的宽度序列 `d → d2 → d4 → d8 → d16` 也是按时间先后排列的：dev1 整轮 dp 段
+  14 278.8 > 12 355.7 > 12 212.5 > 11 092.3 > 9 046.96 GFLOPS 的**单调恶化**，
+  正是「测试途中持续降额」的时间签名；dev0 整轮同序列基本平（仅最后一个 d16 掉到 13 978.7，
+  是刚进入降额的开端）。dev1 整轮紧跟 dev0 运行、起始温度已 86 °C，故落后得多。
+- **短跑跨 2 卡 × 2 次重复性 ≈ 10⁻⁵**，是唯一可信的绝对值口径；`fp32`/`fp16` 段恰好在降额
+  发生前测完，故跨卡跨次完全一致 —— 这也是 FP32 裁定可信的旁证。
+- ⇒ **硬件结论（已同步进 `docs/TODO/08-power-efficiency.md` 与 Conclusion 02）：
+  长时间满载确实会触发热/功耗降额（温度峰值 101 °C、功耗 305~330 W 越过 300 W 上限，
+  ≈0.87×）；先前「单卡永远不会碰上功耗墙」的说法作废。**
+
 
 ### 4.2 ALU 占用率扫描（fp32）—— 找拐点
 
-| global | 每硬件 lane 的 work-item | TFLOPS | |
+> ⚠️ **吞吐列绝对值已作废**；拐点位置与线性度形状仍有效。
+
+| global | 每硬件 lane 的 work-item | TFLOPS ⚠️ | |
 |---:|---:|---:|---|
 | 7 168 | 1 | 10.09 | 1/5 峰值，延迟受限 |
 | 14 336 | 2 | 16.67 | |
@@ -155,13 +273,17 @@ FLOP 计数  = dpas_count × 2 × M × N × K        (bf16/fp16: M8N16K16；int8
 | 229 376 | 32 | 50.76 | 线性 ✓ |
 | 458 752 | 64 | 50.83 | 线性 ✓ |
 
-### 4.3 ALU 向量宽度扫描（fp32）
+### 4.3 ALU 向量宽度扫描（fp32）⚠️
 
 | VEC | 1 | 2 | **4** | 8 | 16 |
 |---|---:|---:|---:|---:|---:|
-| TFLOPS | 34.8 | 45.6 | **52.8** | 50.8 | 51.3 |
+| TFLOPS ⚠️ | 34.8 | 45.6 | **52.8** | 50.8 | 51.3 |
 
 → VEC≥4 后拉平：该循环是 **issue 受限**，不是宽度受限。
+
+> ❌ **但 `VEC=1` = 34.8 TFLOPS > 22.22 硬件上限 ⇒ 这一条本身就否定了整个探针**
+> （单条标量 FMA/lane 怎么可能超过 16-lane 向量的两倍？）。详见
+> [`sycl/exp/README.md`](sycl/exp/README.md) 实验 C。
 
 ### 4.4 XMX / DPAS 峰值（自研 SYCL，`outer=8192, it=128, nacc=4`）
 
@@ -213,12 +335,27 @@ vector（64 Mi 元素）：
 | `gt_max_freq_mhz` | 1550 |
 | `gt_boost_freq_mhz` | 1550 |
 | `gt_RP0 / RP1 / RPn` | 1550 / 1000 / 200 |
-| `gt_cur_freq_mhz` | 1550（空载/满载同） |
-| `gt_act_freq_mhz`（空载 / 满载） | **0**（读不到）／ **1550** |
-| `xpu-smi` GPU Utilization（满载） | **100%** |
-| `xpu-smi` GPU Power（满载） | **171 W**（上限 300 W → **不节流**） |
+| `gt_cur_freq_mhz` | 1550（空载/满载同；**只是请求值**） |
+| `gt_act_freq_mhz`（空载 / 短时满载 / **长时满载**） | **0**（读不到）／ 1550 ／ **200~1400 之间乱跳** |
+| `xpu-smi` GPU Utilization | **100%** |
+| `xpu-smi` GPU Power（短时满载） | **171 W** |
+| `xpu-smi` GPU Power（**`ze_peak` 长时满载**） | **305 → 330 W ⚠️（已越过 300 W 上限）** |
+| `xpu-smi` Temp / Mem Temp（长时满载） | **92 → 101 °C ⚠️ / 76 °C** |
 
-**min == max** ⇒ 频率被**锁定**，没有 boost 空间；满载不降频、不撞功耗墙。
+**min == max** ⇒ 频率在**请求侧**被锁定、没有 boost 空间；**短时**满载不降额。
+
+> ⚠️ **修正（2026-09-22）**：此前「满载仅 171 W ⇒ 远低于 300 W ⇒ 不节流」的结论
+> **只在短负载下成立**。`ze_peak` 每卡连续 ~20 min 实测
+> **305 → 330 W / 92 → 101 °C** —— **长时间满载确实会触发热/功耗降额，−13%，≈0.87×**。
+> ⇒ 引用峰值数字必须注明是**短时**读数；长时稳态性能打 ~0.87 折扣。
+>
+> ⚠️ **`gt_act_freq_mhz` 只能当定性证据**：它是 i915 上**唯一会随负载变化**的频率节点，
+> 但其**绝对值噪声极大、不收敛到标准 P-state**（标准态只有 RP0=1550 / RP1=1000 / RPn=200；
+> 实测还出现 1400/1150/950/650/600/450/400/350/300 等几乎每次都不同的值）。
+> **可引用的是「它在大幅摆动 ⇒ DVFS 很活跃」，不是它的数值。**
+> 降额的**硬证据是温度与功耗**（101 °C / 330 W）以及
+> `ze_peak` 长跑整轮 fp64/int32 段的单调偏低（见 §4.0.1）。
+> 该修正同时影响 `docs/TODO/08-power-efficiency.md`。
 
 ---
 
@@ -261,26 +398,36 @@ XMX 流水线要每 EU ≥8 个并发 sub-group 才打满，否则同样的活�
 `run_bench.py` 把这三件事都做成了记录：`saturation_knee`、`linearity_check`、
 `linearity_check_below_knee`（故意跨拐点留档）。
 
-### 5.2 ★ 第二重要的坑：标称公式与实际不符（口径冲突）
+### 5.2 ★ 第二重要的坑：标称公式与实际不符（口径冲突）【✅ 已裁定 2026-09-22】
 
 | 口径 | fp32 ALU 峰值 | 说明 |
 |---|---:|---|
-| 公式标称 `448 EU × 16 lane × 2 × 1.55 GHz` | **22.22 TFLOPS** | 与 clinfo 的 448 CU 一致 |
-| oneDNN GEMM 实测 | **22.1 TFLOPS** | 恰好 100% 公式值 |
-| 自研纯 FMA 探针实测 | **50.75 TFLOPS** | **2.28×** |
+| 公式标称 `448 EU × 16 lane × 2 × 1.55 GHz` | **22.2208 TFLOPS** | 与 clinfo 的 448 CU 一致 |
+| oneDNN GEMM 实测 | **22.13 TFLOPS** | 99.6% 公式值 |
+| **`ze_peak` `sp_compute`（第三方）** | **21.8716 TFLOPS** | **98.4% 公式值** |
+| ~~自研纯 FMA 探针~~ | ~~50.75 TFLOPS~~ | ~~2.28×~~ ❌ **已撤回** |
 
-三者**不可能同时为真**。主频已锁定 1550 MHz、满载不降频 → 不能拿主频解释。
-候选解释（**均未证实**）：
+**裁定：以 22.22 TFLOPS 为准。自研探针的绝对值是 artefact。**
 
-- (a) 本 ES 部件的实际 EU 数与 clinfo 报告的 448 不符（实测 > 报告）；
-- (b) EU 内 FP32 通道宽度 >16（`448 × 16` 模型低估）；
-- (c) 探针的 FLOP 计数口径偏低（但 VEC/ACC/UNROLL 都是显式参数，
-      且 `logistic map` 递推链上无冗余可消，**(c) 的可能性最低**）。
+证据链（5 组实验 + ISA，完整版见 [`sycl/exp/README.md`](sycl/exp/README.md)）：
 
-**判读纪律：以 oneDNN（22.1 TFLOPS）为可信下界，自研探针（50.75）为待验证上界。**
-需要 `docs/TODO/07-profiling.md` 的硬件计数器（EU active / XMX pipe util）才能裁决。
-**本目录不修改** `common/bench.py:alu_tflops()` 与 `docs/` 中的 22.22 标称值，
-只把差异显式写进结论。
+1. **位宽比（★ 决定性）**：`ze_peak` `hp/sp`=**1.98**、`dp/sp`=**0.735**（符合 Xe-HPC 架构）；
+   自研探针 `hp/sp`=**1.04**、`dp/sp`=**1.02**（**分辨不出 dtype**）
+   ⇒ 一个把所有 dtype 都测成同样速度的「峰值探针」测的不是 FMA 吞吐。
+2. **`VEC=1` 超限**：自研探针 `VEC=1` = **34.8 TFLOPS > 22.22 硬件上限**（157%）→ 不可能。
+3. **ISA 事实**：`IGC_ShaderDumpEnable=1` 两次独立导出，FP32 kernel 主循环
+   231 条指令中 **209 条是 `mad (1|M0)`**（1-wide 标量寄存器运算，源操作互不相同）
+   ⇒ `sycl::vec<T,8>` 的 FMA 循环被 IGC **完全标量化**，与探针的 FLOP 模型不符。
+4. **EU 数无争议**：同一份 `HardwareCaps.txt` 给出 `EUCount = 448`、
+   `ThreadCount = 3584`（=8 线程/EU）⇒ 旧猜想「本 ES 部件 EU 数 ≠ 448」排除。
+5. **旧猜想「探针计数偏低」 (c) 才是真相**。
+
+**保留的探针结论**（定性，不受 FLOP 口径影响）：占用率拐点位置、饱和区线性度 ×2.00、
+`VEC ≥ 4` 后拉平。**作废**：`peak.fp32/fp64/fp16/int32` 绝对值、
+`implied_exec_width.implied_lanes_per_eu`（旧值 36.5）、以及「每 EU 37 条 FP32 lane」的推断。
+
+**附带收获**：`ze_peak` `dp/sp = 0.735` 是 FP64 ≠ FP32/2 的**第三次独立确认**
+（前两次：torch 0.78、0.77）。
 
 ### 5.3 其它坑
 
@@ -305,13 +452,13 @@ XMX 流水线要每 EU ≥8 个并发 sub-group 才打满，否则同样的活�
 
 | TODO 中的判读标准 | 本次实测 | 结论 |
 |---|---|---|
-| fp32 ALU 达到标称 22.2 TFLOPS 的 ≥90% | oneDNN 22.1（**100%**）/ 自研 50.75 | ✅ 达成（但两口径冲突，见 §5.2） |
+| fp32 ALU 达到标称 22.2 TFLOPS 的 ≥90% | oneDNN 22.13（**99.6%**）/ `ze_peak` 21.87（**98.4%**）/ ~~自研 50.75~~ | ✅ **达成，口径已定标为 22.22**（见 §5.2） |
 | bf16 XMX ≥ 150 TFLOPS | 自研 355 / oneDNN 227 | ✅ 远超 |
 | int8 XMX ≥ 300 TOPS | 自研 710 / oneDNN 427 | ✅ 远超 |
-| fp64 ≥ 标称的 90% | 自研 51.9 TFLOPS（与 fp32 同速） | ✅ 达成；**说明 fp64:fp32 ≠ 1:2**，文档里「FP64 = FP32/2」的假设需要修正 |
-| 实测 ≥ 标称值的 90% 视为通过 | fp32 自研 228% 反而「超纲」 | ⚠ 触发 §5.2 的复核流程 |
-| 满载主频不低于标称 90% | 锁定 1550 MHz、无降频 | ✅ |
-| 满载不撞功耗墙 | 远低于 300 W | ✅ |
+| fp64 ≥ 标称的 90% | torch 17.37（**0.78× fp32**）/ `ze_peak` 16.07（**0.735× fp32**） | ✅ 达成；但**标称本身错**：「FP64 = FP32/2」需改为 0.735~0.78 |
+| 实测 ≥ 标称值的 90% 视为通过 | ~~fp32 自研 228%~~ → 已判定为探针 artefact | ✅ 异常已解释，非硬件超标 |
+| 满载主频不低于标称 90% | 短时 1550（请求侧锁定）；**长时降额，温度 101 °C / 功耗 330 W** | ⚠️ **需注明时长**；`gt_act_freq_mhz` 仅作定性 |
+| 满载不撞功耗墙 | 短时 171 W；**长时 305 → 330 W（越过 300 W 上限）** | ⚠️ **修正：长时会撞墙** |
 
 ---
 
@@ -319,23 +466,27 @@ XMX 流水线要每 EU ≥8 个并发 sub-group 才打满，否则同样的活�
 
 | 本目录的发现 | 影响 |
 |---|---|
-| fp64 与 fp32 **同速**（≈51 TFLOPS） | `docs/precision-support.md` 的 `FP64_ALU_RATIO = 0.78` 应复核为 ≈1.0（但口径冲突未解前不动） |
+| **fp32 ALU = 22.22 TFLOPS（已裁定）** | `docs/precision-support.md` 的 `FP64_ALU_RATIO = 0.78` **保持不动**（torch 口径）；若改用 `ze_peak` 向量口径则为 0.735 |
+| **fp64 = 0.735~0.78 × fp32**（三次独立确认） | `docs/hardware.md` / `docs/TODO/` 里「FP64 = FP32/2」全部改为实测比值 |
+| **长时满载：温度 92 → 101 °C、功耗 305 → 330 W（越过 300 W 上限）** | → `docs/TODO/08-power-efficiency.md`：**删除「单卡永远不会碰上功耗墙」**，改用「短时 vs 长时」双口径；长时性能需打 ~0.87 折扣。⚠️ `gt_act_freq_mhz` 的绝对值**不可引用**（噪声大），只能当定性证据 |
 | bf16 = fp16 = 355 TFLOPS，int8 = 2× | 佐证 `05-ai-dl` 的 XMX 结论（bf16 237 / int8 400 TOPS） |
-| vector 只有 ~530 GB/s | 那是 torch 元素级算子下限，**不是**带宽峰值 → 带宽看 `03-memory-bandwidth` |
+| vector 只有 ~530 GB/s（`ze_peak` 688.7 GB/s） | 那是 torch/单探针的下限，**不是**带宽峰值 → 带宽看 `03-memory-bandwidth` |
 | XMX 需要 ≥8 sg/EU 才打满 | 给 `05-ai-dl` 的调优留了空间：小 batch/小 shape 会掉进延迟受限区 |
 | oneDNN 只到自研 DPAS 的 60~64% | 说明 oneDNN 的 GEMM 还有 ~35% 的调优空间（或受 L2/调度限制） |
-| 需要硬件计数器 | 依赖 [`docs/TODO/07-profiling.md`](../../docs/TODO/07-profiling.md)（VTune / PTI） |
+| **`ze_peak` 二进制已就绪** | `06-hpc-apps` / `08-power-efficiency` 可直接用 `ze_peak_src/build/ze_peak` 做稳态降频/功耗实验 |
+| 需要硬件计数器 | 依赖 [`docs/TODO/07-profiling.md`](../../docs/TODO/07-profiling.md)（VTune / PTI）—— 但 FP32 口径冲突**已不再需要它** |
 
 ---
 
 ## 8. 未做 / 待补充
 
-| 项 | 原因 |
+| 项 | 状态 |
 |---|---|
-| 硬件计数器佐证（EU active、XMX pipe util、FP32 pipe util） | 属 `07-profiling`；本轮未接入 VTune/PTI |
-| `ze_peak`（Level Zero 官方向量/带宽峰值） | 未构建。**它不是 XMX 基准** —— `ze_peak` 是 clpeak 移植，只有向量测试（`sp/dp/hp/int_compute`、`global_bw`、`transfer_bw`、`kernel_lat`），**没有 DPAS/XMX**，产不出本目录最关键的 355 TFLOPS / 710 TOPS / 占用率拐点。<br>但它可作为 **FP32 向量峰值的第三方独立仲裁**（`22.13 vs 50.75` 冲突）—— 出处是 `oneapi-src/level-zero-tests/perf_tests/ze_peak`（**不是** `intel/compute-runtime`），零外部依赖、约 10 分钟可补做；本机 `git clone` 报 `GnuTLS recv error (-110)` 需逐文件抓取。完整说明见 [`docs/TODO/02-compute-peak.md`](../../docs/TODO/02-compute-peak.md) §3.6 |
+| 硬件计数器佐证（EU active、XMX pipe util、FP32 pipe util） | ⚠️ 属 `07-profiling`；本轮未接入 VTune/PTI。**但 FP32 口径冲突已由 `ze_peak` 独立解决，不依赖它** |
+| **`ze_peak`（Level Zero 官方向量/带宽峰值）** | ✅ **已补做（2026-09-22）**。源码 `ze_peak_src/`（25 文件，`oneapi-src/level-zero-tests/perf_tests/ze_peak`），产物 `build/ze_peak`，日志 `logs/ze_peak_dev{0,1}.log`，runner 已接入 `zepeak` suite。<br>**FP32 `sp_compute` = 21 871.6 GFLOPS = 公式 98.4%** ⇒ 据以裁定 §5.2 的口径冲突。构建踩坑见 `ze_peak_src/PATCHES.md` 与 [`docs/TODO/02-compute-peak.md`](../../docs/TODO/02-compute-peak.md) §3.7 |
+| **自研 ALU 探针重写** | ⬜ 建议。若还要 ALU 绝对数字，照 `ze_peak` 的写法重写（宽向量 + 少量独立依赖链 + 常数总 FLOP 数），不要再用 logistic 递推 |
 | `benchdnn`（oneDNN 微基准） | 本机未安装 |
 | nvfp4/mxfp8 等低精度**峰值** | 见 `docs/precision-support.md`：PVC 上全是软件回退，比 bf16 慢，无峰值可言 |
 | TF32 / FP6 | torch 无对应 dtype，无法测试 |
-| 双卡并发算力（2×448 EU） | 属 `04-interconnect-xelink` 与 `06-hpc-apps` 的范畴 |
-| 反汇编验证（SPIR-V / ISA） | `icpx` 在本机无法产出设备 IR（见 §5.3） |
+| 双卡并发算力（2×448 EU） | 属 `04-interconnect-xelink` 与 `06-hpc-apps` 的范畴。`ze_peak` 的 `run 1` 已在做 dev1 单卡满载，可扩展为双卡并发 |
+| 反汇编验证（SPIR-V / ISA） | ⚠️ **部分可做**：`icpx` 仍产不出设备 IR，但 `IGC_ShaderDumpEnable=1` 可以导出 IGC 后端的 `.asm`/`HardwareCaps.txt`（本次裁定的关键证据之一） |

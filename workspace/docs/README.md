@@ -44,7 +44,7 @@
 ### 测试结论
 | 文档 | 内容 |
 |---|---|
-| [`Conclusion/02-compute-peak/README.md`](./Conclusion/02-compute-peak/README.md) | **② 计算峰值结论**：XMX/DPAS **355 TFLOPS**（bf16，为"标称 176"的 2 倍）、ALU 口径冲突（标称 22.2 vs 自研探针 50.75 TFLOPS）、占用率拐点扫描、向量宽度扫描、`torch`/oneDNN 交叉验证 |
+| [`Conclusion/02-compute-peak/README.md`](./Conclusion/02-compute-peak/README.md) | **② 计算峰值结论**：XMX/DPAS **355 TFLOPS**（bf16，为"标称 176"的 2 倍）、ALU **22.22 TFLOPS【✅ 已裁定】**（oneDNN 99.6% + 第三方 `ze_peak` 98.4% 双重确认；自研探针 50.75 已撤回）、FP64 = **0.735~0.78 × FP32**、占用率拐点扫描、向量宽度扫描、`torch`/oneDNN 交叉验证、**长时满载热/功耗降额：温度 101 °C、功耗 305~330 W（越过 300 W 上限）** |
 | [`Conclusion/03-memory-bandwidth/README.md`](./Conclusion/03-memory-bandwidth/README.md) | **③ 显存带宽结论**：HBM copy **900 GB/s**（73% 规格）、双卡完美线性 **1.68 TB/s**、PCIe pinned **31.9 GB/s**、**主机 DRAM 仅 39.6 GB/s**（真瓶颈）；L2=192 MB / L3=432 MB 的"cache 陷阱" |
 | [`Conclusion/04-interconnect-xelink/README.md`](./Conclusion/04-interconnect-xelink/README.md) | **④ 互连（Xe Link）结论**：卡间 **95.5 GB/s**（PCIe Gen5 的 1.52×，但仅名义 318 GB/s 的 30%，`Not Calibrated` 是首要嫌疑）；GPU-aware MPI 仅 43.7 GB/s（裸 L0 的 46%）；xccl broadcast **94.6 ≈ 裸带宽** |
 | [`Conclusion/05-ai-dl/05-conclusion.md`](./Conclusion/05-ai-dl/05-conclusion.md) | **⑤ AI/DL 总体结论**：测试目标逐条回答、全部关键数字总表、判读标准裁定、3 个反直觉发现、建议清单、诚实性声明 |

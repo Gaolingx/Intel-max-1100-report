@@ -18,6 +18,8 @@ __pycache__/
 build/
 *.o
 *.a
+# 上游源码改前的备份（唯一改动见 ze_peak_src/PATCHES.md，无需入库）
+*.orig
 
 # ---------- 日志 / 运行时输出 ----------
 *.log

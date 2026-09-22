@@ -232,4 +232,4 @@ env -u LD_LIBRARY_PATH $PY -m torch.distributed.run --standalone \
 | gradient compression / `find_unused_parameters` | ⬜ 未做 | 低优先级 |
 | BERT / LLM 的 DDP | ⬜ 未做 | 本次只做 ResNet-50。BERT-base 梯度 219 MB，通信占比会略高，可用 `--model bert` 补做 |
 | 4 卡扩展 | ❌ 不可行 | 本机只有 2 张卡 |
-| 真正的 Xe Link 点对点带宽 | ⬜ 未做 | 属 ④ 范畴（`ze_peak` / IMB-MPI1-GPU 未安装需自建） |
+| 真正的 Xe Link 点对点带宽 | ⬜ 未做 | 属 ④ 范畴；④ 已用 `IMB-MPI1-GPU` + `fi_pingpong` 覆盖（`ze_peak` 无 Xe Link 项，它的 `transfer_bw` 只是 host↔device） |

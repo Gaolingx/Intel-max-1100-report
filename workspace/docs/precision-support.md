@@ -50,7 +50,7 @@
 
 ```
 GPU     : Intel(R) Data Center GPU Max 1100（1 tile，56 Xe-core / 448 EU / L2 192 MB / 47.98 GiB HBM ECC）
-频率    : 1550 MHz（min == max，**锁定，无法调频**）
+频率    : 1550 MHz（`gt_min == gt_max`，**请求值固定**；实测长时满载会自主降额）
 驱动    : 1.6.33578+77（i915）/ Level Zero 1.24.0 / xpu-smi 1.2.43
 torch   : 2.14.0+xpu      triton : 3.8.0      python : 3.13.3
 运行参数: warmup=5, iters=20, --large（含 16384³）；PYTHON 环境 /root/workspace/venv1
@@ -134,7 +134,14 @@ TensorWise / RowWise / BlockWise-1x128 / BlockWise-128x128 / MXFP8-1x32 / MXFP4-
 
 ## 3. matmul 路径实测吞吐（开 XMX）
 
-单位：TFLOPS（INT8 为 TOPS）。全 1550 MHz 锁频下测量，预热 5 次、计时 20 次。
+单位：TFLOPS（INT8 为 TOPS）。测量时请求频率为 1550 MHz，预热 5 次、计时 20 次。
+
+> ⚠️ **口径提示（2026-09-22）**：`1550 MHz` 是**请求值**（`gt_cur/max/min_freq_mhz` 恒为 1550），
+> 不代表实际时钟不变 —— 长时间满载（`ze_peak` 每卡 ~20 min）实测温度升到 **101 °C**、
+> 功耗冲到 **305~330 W（越过 300 W 名义上限）**，触发**热/功耗降额**。
+> 频率节点的绝对读数**不可引用**（`gt_act_freq_mhz` 在 200~1400 MHz 乱跳、不收敛到 P-state）。
+> 本节各点均为**秒级短跑**，未受降额影响；但不要把本节的数当作
+> 长时稳态性能。详见 [`TODO/02-compute-peak.md`](./TODO/02-compute-peak.md) §3.7.3.1。
 
 ### 3.1 方阵扫描
 
@@ -637,7 +644,12 @@ accuracy     :  4 项
 
 ## 10. 待办
 
-- [ ] 修正 `xpu_bench/common.py` 中 `theoretical_tflops('fp64')`（应为 FP32 的 ~0.78×，非 1/2）。
+- [x] 修正 `xpu_bench/common.py` 中 `theoretical_tflops('fp64')`（已改为 `FP64_ALU_RATIO = 0.78`）。
 - [ ] 定位 16384³ 吞吐悬崖的真实原因（oneDNN kernel 选择？L2 tiling？workspace？）。
-- [ ] 用 `ze_peak` / BabelStream 交叉验证 XMX 峰值（当前未安装，需构建）。
+- [x] 用 `ze_peak` / BabelStream 交叉验证峰值 —— **部分完成（2026-09-22）**：
+      `ze_peak` 已构建并跑通（`benchmark/02-compute-peak/ze_peak_src/`），但它**只测向量，
+      没有 XMX/DPAS 项**，因此**无法**交叉验证 XMX 峰值。它实际完成的两件事是：
+      (a) 裁定 FP32 向量峰值 = 22.22 TFLOPS（`sp_compute` 21.87 = 98.4%）；
+      (b) 第 3 次确认 FP64 ≠ FP32/2（`dp/sp` = 0.735，见 §3 FP64 一行）。
+      XMX 峰值（bf16 355 / int8 710 TFLOPS）的交叉验证由 oneDNN（225.9 / 416.2）承担。
 - [ ] 若需要 FP8 收益，评估 **M 小（decode）+ FP8 权重** 的组合是否比 BF16 更快。

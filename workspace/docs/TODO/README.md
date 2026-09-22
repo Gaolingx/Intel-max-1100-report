@@ -16,10 +16,11 @@
 | 5 | AI / 深度学习 | 训练/推理吞吐、算子基准、双卡扩展 | [`05-ai-dl.md`](./05-ai-dl.md) | **P1** | ✅ **已完成** → [`../Conclusion/05-ai-dl/`](../Conclusion/05-ai-dl/) |
 | 6 | HPC 应用 | 真实科学计算应用性能 | [`06-hpc-apps.md`](./06-hpc-apps.md) | P2 | ⬜ 未做 |
 | 7 | Profiling | 瓶颈定位（算力受限 vs 带宽受限） | [`07-profiling.md`](./07-profiling.md) | P2 | ⚠️ 部分（②③④ 内含定向 profiling，未用 VTune/Advisor） |
-| 8 | 功耗 / 能效 / 调度 | perf/W、功耗-性能曲线、锁频影响 | [`08-power-efficiency.md`](./08-power-efficiency.md) | P2 | ⚠️ 部分（② 锁频取证 + ③④ 满载功耗，未做功耗曲线） |
+| 8 | 功耗 / 能效 / 调度 | perf/W、功耗-性能曲线、锁频影响 | [`08-power-efficiency.md`](./08-power-efficiency.md) | P2 | ⚠️ 部分（②③④ 短时+长时满载功耗；**长时热/功耗降额已实测取证**：温度峰值 101 °C、功耗冲到 305~330 W 越过 300 W 上限；未做功耗-性能曲线） |
 
 > **完成度统计**：P1 的四项（②③④⑤）**全部完成**；P0 的 ① 与 P2 的 ⑥⑧ **未做**，
 > ⑦ 由 ②③④ 内的定向 profiling 部分覆盖。逐条核验见各 TODO 文档的 §4.6 / §4.7 / §4.9。
+> ℹ️ ② 的 `ze_peak` 已于 2026-09-22 **补做完成**（原记为「已跳过」）。
 
 ---
 
@@ -29,8 +30,8 @@
 
 | 指标 | 计算公式 / 值 | 实测结果与裁定 |
 |---|---|---|
-| **FP32 峰值** | 448 EU × 16 lane × 2 (FMA) × 1.55 GHz ≈ **22.2 TFLOPS** | ✅ oneDNN **22.13**（99.6%）；⚠ 自研纯 FMA 探针 **50.75**（228.4%）→ **口径冲突，未解决**（见 ②） |
-| **FP64 峰值** | PVC 上 FP64 速率 = FP32 的 1/2 ≈ ~~11.1 TFLOPS~~ | ❌ **原假设已证伪**：实测 **0.78 × FP32**（17.37 TFLOPS） |
+| **FP32 峰值** | 448 EU × 16 lane × 2 (FMA) × 1.55 GHz ≈ **22.2 TFLOPS** | ✅ **已裁定：以 22.2 为准**。oneDNN **22.13**（99.6%）+ 第三方 `ze_peak` **21.87**（98.4%）两个独立实现确认；自研纯 FMA 探针 ~~50.75~~（228%）已判定为探针 artefact 并**撤回**（见 ② §3.2） |
+| **FP64 峰值** | PVC 上 FP64 速率 = FP32 的 1/2 ≈ ~~11.1 TFLOPS~~ | ❌ **原假设已证伪**：实测 **0.78 × FP32**（torch 17.37 TFLOPS）/**0.735 × FP32**（`ze_peak` 16.07）—— 两个独立来源互相吻合 |
 | **XMX (BF16/FP16)** | 量级为 FP32 的数倍 | ✅ 裸 DPAS **355 TFLOPS = 16 × FP32**（99.8% 公式）；oneDNN 路径仅 226~238（覆盖 **58~67%**） |
 | **XMX (INT8)** | 通常为 BF16 的 2 倍 | ✅ 裸 DPAS **710 TFLOPS = 2.0 × BF16**（99.8% 公式）；oneDNN 416（58.5%） |
 | **HBM 带宽** | 量级 1–2.5 TB/s | ✅ BabelStream **900 GB/s** = 规格 1229 的 **73%**；双卡并发 **1679 GB/s（2.00× 线性）** |
@@ -39,8 +40,20 @@
 
 > ✅ 上表已由 `benchmark/{02,03,04,05-ai-dl}` 实测填充，结论见
 > [`../Conclusion/`](../Conclusion/) 下各自 README。
-> ⚠️ **FP32 一行仍存在未解冲突**（标称 22.2 vs 自研探针 50.75），处理策略：保留公式值并标注
-> **「标称值（公式）」**，不做重标 —— 见 [`02-compute-peak.md`](./02-compute-peak.md) §6。
+> ✅ **FP32 口径冲突已于 2026-09-22 裁定：以公式值 22.2 TFLOPS 为准**
+> （oneDNN 99.6% + 第三方 `ze_peak` 98.4%），自研探针的 50.75 已撤回 ——
+> 见 [`02-compute-peak.md`](./02-compute-peak.md) §3.7 与
+> [`../Conclusion/02-compute-peak/README.md`](../Conclusion/02-compute-peak/README.md) §3.2。
+> ⚠️ **引用峰值时的时长纪律（2026-09-22 新增）**：以上峰值均为**短时**读数。
+> `ze_peak` 整轮长跑（~20 min/卡）实测 **温度 92 → 101 °C**、功耗冲到 **305~330 W**
+> （**已越过 300 W 名义上限**），同时 `gt_act_freq_mhz`（本机**唯一**随负载变化的频率节点）
+> 在大幅摆动 ⇒ **长时满载确实会热/功耗降额**，长时稳态性能需打 ~0.87 折扣。
+> ⚠️ 但 `gt_act_freq_mhz` 的**绝对值噪声极大**、并不收敛到标准 P-state
+> （标准态只有 RP0=1550 / RP1=1000 / RPn=200；实测还出现 1400/1150/950/650/600/450/400/350/300 等
+> 几乎每次采样都不同的值）⇒ **只能当定性证据**（"该节点在大幅摆动说明 DVFS 很活跃"），
+> **不可用它反算性能**。硬证据是**温度与功耗**。详见
+> [`02-compute-peak.md`](./02-compute-peak.md) §3.7.3.1 与
+> [`08-power-efficiency.md`](./08-power-efficiency.md) §2。
 
 ### 硬件配置
 
@@ -48,7 +61,8 @@
 GPU 数            : 2 × Intel Data Center GPU Max 1100 (PVC, Production ES)
 Tile / 卡         : 1
 Xe-core / 卡      : 56        EU / 卡 : 448      SIMD 宽 : 16
-核心频率          : 1550 MHz（min = max，锁定）
+核心频率          : 1550 MHz（=`gt_cur/max/min_freq_mhz` 的**请求值**；
+                    长时满载会自主降额，真实活跃频率见 `gt_act_freq_mhz`）
 HBM / 卡          : 48 GiB，ECC 开
 Xe Link           : XL24（6 端口 × 4 lane，直连）
 PCIe              : Gen5 x16
@@ -117,11 +131,18 @@ CPU               : 72c/144t ES，1 NUMA 节点
 - [ ] 压力期间遥测：频率是否掉、温度、ECC/Reset/Driver Error 计数
 
 ### ② 算力峰值（P1）— ✅ **已完成**（结论：[`../Conclusion/02-compute-peak/`](../Conclusion/02-compute-peak/)，逐条核验见 [`02-compute-peak.md`](./02-compute-peak.md) §4.6）
-- [x] `ze_peak` → FP32 / FP64 / INT　⚠️ **替代**：未构建 `ze_peak`，改用自研 SYCL 探针（`sycl/alu_peak.cpp`、`sycl/xmx_peak.cpp`），并**多出占用率拐点扫描**
+- [x] `ze_peak` → FP32 / FP64 / INT　✅ **已补做（2026-09-22）**：Intel 官方
+  `oneapi-src/level-zero-tests/perf_tests/ze_peak` 已抓取、构建（25 文件 / 零外部依赖 / 1 行补丁）
+  并跑通双卡，作为**第三方仲裁者**裁定了 FP32 口径冲突（21.87 = 公式 98.4%）；
+  自研 SYCL 探针仍保留（`sycl/alu_peak.cpp`、`sycl/xmx_peak.cpp`，多出占用率拐点扫描），
+  但其**绝对值已撤回**。详见 [`02-compute-peak.md`](./02-compute-peak.md) §3.7
 - [x] BabelStream 派生算力项　→ 由 ③ 的 BabelStream + ② 的 SYCL 探针覆盖
 - [x] PyTorch/Triton GEMM sweep　→ PyTorch ✅（23 条）；Triton ⬜ **未做**（与 ⑤ 同一缺口）
 - [x] 各 dtype 相对 FP32 的加速比　→ fp64 0.78× / fp16 16.0× / bf16 16.0× / int8 32.0×（裸 DPAS 口径）
 - [x] 附加：oneDNN 交叉验证、XMX 正确性校验、频率锁定取证
+- [x] 附加：**`ze_peak` 跨卡重复性**（短跑跨 2 卡 × 2 次离散度 ≈10⁻⁵）+ **长跑降额取证**
+  （温度 92→101 °C、功耗 305~330 W 越过 300 W 上限；`gt_act_freq_mhz` 大幅摆动但绝对值噪声大，
+  仅作定性 ⇒ 长跑整轮 fp64/int 段偏低，**绝对值只引用短跑**）
 
 ### ③ 显存带宽（P1）— ✅ **已完成**（结论：[`../Conclusion/03-memory-bandwidth/`](../Conclusion/03-memory-bandwidth/)，逐条核验见 [`03-memory-bandwidth.md`](./03-memory-bandwidth.md) §4.7）
 - [x] BabelStream SYCL：Copy / Mul / Add / Triad　→ 实测峰值 **899.6 GB/s**（= 规格 73%），含 Dot
@@ -240,6 +261,16 @@ cmake -B build -H. -DMODEL=sycl -DCMAKE_CXX_COMPILER=icpx && cmake --build build
 ./build/babelstream
 ```
 
+```bash
+# ze_peak (Level Zero, 第三方向量基准) —— ✅ 已构建于 benchmark/02-compute-peak/ze_peak_src/
+cd /root/workspace/benchmark/02-compute-peak/ze_peak_src
+./build.sh                    # 仅 g++ + <shim>/level_zero + -lze_loader，无外部依赖
+cd build && ./ze_peak -h      # 必须在 build/ 下运行（.spv 以相对路径加载）
+./ze_peak -d 0 -t sp_compute -i 10 -w 5      # fp32 向量峰值
+./ze_peak -d 0 -a -i 3 -w 1   # ⭐ 全量但短跑（~60 s/卡）—— 引用绝对值的推荐口径
+./ze_peak -d 0 -a -i 50 -w 10 # ⚠️ 整轮 ~20 min/卡，会撞热/功耗降额（实测 101 °C / 305~330 W）
+```
+
 ---
 
 ## 六、结果记录模板
@@ -252,7 +283,7 @@ cmake -B build -H. -DMODEL=sycl -DCMAKE_CXX_COMPILER=icpx && cmake --build build
 - oneAPI 版本（icpx --version 输出）：
 - 驱动版本：I915_25.2.57_PSB_250224.65
 - xpu-smi 版本：1.2.43
-- Power Limit：300 W  /  频率：1550 MHz 锁定
+- Power Limit：300 W  /  频率：短时满载 1550 MHz（⚠️ 长时满载会自主降频，见 02-compute-peak §3.7.3.1）
 - 测试命令（完整）：
 
 | 配置 | 指标 | 第1次 | 第2次 | 第3次 | 中位数 |
@@ -274,5 +305,5 @@ cmake -B build -H. -DMODEL=sycl -DCMAKE_CXX_COMPILER=icpx && cmake --build build
 2. **硬件能力基线表** — 算力 / 带宽 / 互连 实测 vs 理论　✅ 已交付：②③④ 各自 `Conclusion/0X-…/README.md`
 3. **应用性能报告** — AI（训练/推理）+ HPC　⚠️ 部分：AI ✅ `Conclusion/05-ai-dl/`；HPC（⑥）未做
 4. **扩展性报告** — 单卡 → 双卡 scaling efficiency　✅ 已交付：③ 内存带宽 2.00× + ⑤ `05-ai-dl/03-scaling.md`
-5. **能效报告** — perf/W 与功耗-性能曲线　⚠️ 部分：有单点 perf/W（②171 W / ③260 W / ④），**未做功耗-性能曲线**
+5. **能效报告** — perf/W 与功耗-性能曲线　⚠️ 部分：有单点 perf/W（②短时 171 W / 长时 **305~330 W**、③260 W、④），**未做功耗-性能曲线**；⚠️ ② 的 `ze_peak` 长时满载已实测出**热/功耗降额**（温度峰值 **101 °C**、功耗越过 **300 W** 名义上限、`gt_act_freq_mhz` 大幅摆动；稳态性能约 **0.87×**），该项优先级应上调 —— 最值得补的是「**时长 → 稳态频率/功耗**」曲线（`--frequencyrange` 扫点不可行，因请求频率被固定）
 6. **瓶颈分析报告** — VTune Roofline 结果与优化建议　⚠️ 部分：②③④⑤ 均含定向 profiling 与瓶颈结论，**未用 VTune/Advisor Roofline**

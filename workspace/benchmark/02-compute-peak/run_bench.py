@@ -8,6 +8,8 @@ ALU / XMX 理论算力峰值基准。对应 docs/TODO/02-compute-peak.md。
   xmx    自研 SYCL joint_matrix 探针：直接发射 DPAS，bf16/fp16/int8
   torch  PyTorch(oneDNN) GEMM 交叉验证：fp32/bf16/fp16/int8 + vector 对照
   clock  真实主频/功耗取证：sysfs + xpu-smi（**在负载进行中采样**）
+  zepeak **第三方**仲裁：Intel 官方 `level-zero-tests/perf_tests/ze_peak`
+         （clpeak 的 Level Zero 移植；只有向量测试，无 XMX）
 
 ═══════════════════════════════════════════════════════════════════════════
 ★ 本目录最重要的方法论（踩坑数小时得出，务必先读）
@@ -36,6 +38,7 @@ ALU / XMX 理论算力峰值基准。对应 docs/TODO/02-compute-peak.md。
     python3 run_bench.py                 # 全跑
     python3 run_bench.py --quick
     python3 run_bench.py alu xmx
+    python3 run_bench.py zepeak          # 只跑第三方仲裁者
 """
 
 from __future__ import annotations
@@ -43,6 +46,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import re
+import shutil
 import subprocess
 import sys
 import time
@@ -587,32 +591,400 @@ def suite_clock(store: ResultStore, env: dict, quick: bool) -> None:
         active_mhz = (loaded.get("card0/gt_act_freq_mhz")
                       or smi.get("gpu_freq_mhz") or 0)
         store.add(
-            "clock", "implied_exec_width",
+            "clock", "probe_soundness",
             params={"assumed_clock_mhz": active_mhz,
-                    "formula_nominal_tflops": round(NOMINAL_FP32_TFLOPS, 2)},
+                    "formula_nominal_tflops": round(NOMINAL_FP32_TFLOPS, 2),
+                    "arbiter": "ze_peak (Intel oneapi-src/level-zero-tests)"},
             metrics={"measured_tflops": round(measured, 2),
                      "excess_factor": round(factor, 2),
-                     "implied_lanes_per_eu": round(LANES_PER_EU * factor, 1)},
-            status="error" if factor > 1.15 else "ok",
-            note=(f"纯 FMA 实测 {measured:.2f} TFLOPS = 公式值 {NOMINAL_FP32_TFLOPS:.2f} 的 "
-                  f"{factor:.2f}×。主频可读、锁定 1550 MHz 且满载不降频，"
-                  f"**无法用「主频更高」解释**；等价于每 EU {LANES_PER_EU * factor:.0f} 条 FP32 "
-                  f"lane（模型假设 {LANES_PER_EU} 条）。未定论，候选解释："
-                  f"(a) 本 ES 部件的实际 EU 数与 clinfo 报告的 448 不符；"
-                  f"(b) EU 内 FP32 通道宽度 >16（Xe-HPC 为 2×8 FP32 可能在 >SIMD16 下双发？）；"
-                  f"(c) 探针 FLOP 计数偏低（编译器把 VEC/ACC/UNROLL 做了额外融合）。"
-                  f"**注意 oneDNN fp32 GEMM 只有 ~{NOMINAL_FP32_TFLOPS:.1f} TFLOPS"
-                  f"（= 公式值 100%）**，两口径相差 {factor:.2f}× 尚无定论，"
-                  f"需 TODO 07 profiling 的硬件计数器裁决。"),
+                     "implied_lanes_per_eu_void": round(LANES_PER_EU * factor, 1)},
+            status="error",
+            note=(f"自研纯 FMA 探针实测 {measured:.2f} TFLOPS = 公式值 "
+                  f"{NOMINAL_FP32_TFLOPS:.2f} 的 {factor:.2f}×。"
+                  f"**2026-09-22 已裁定为探针侧 artefact，绝对值撤回。**三条独立证据："
+                  f"① 2.28× 本身就超出硬件上限 —— 该值等价于每 EU "
+                  f"{LANES_PER_EU * factor:.0f} 条 FP32 lane（架构 16 条），而主频锁定 "
+                  f"1550 MHz、IGC 自报 EUCount=448，没有任何空间；"
+                  f"② 两个**互相独立**的第三方实现同时落在公式值：oneDNN fp32 GEMM "
+                  f"{NOMINAL_FP32_TFLOPS:.1f}（99.6%）、ze_peak sp_compute 21.87（98.4%）；"
+                  f"③ 探针**分辨不出 dtype**：它给出 fp16/fp32=1.04、fp64/fp32=1.02，"
+                  f"而 ze_peak 给出 fp16/fp32=1.98、fp64/fp32=0.735 —— 后者才符合 "
+                  f"Xe-HPC 的 ALU 位宽比。ISA 层证据：`IGC_ShaderDumpEnable=1` 显示 IGC "
+                  f"把 `sycl::vec<T,8>` 的 FMA 循环**完全标量化**成 1-wide `mad (1|M0)` "
+                  f"标量寄存器运算（循环体内约 209 条互不相同的 mad），生成的代码与探针 "
+                  f"的 FLOP 模型（每迭代 32 条向量 FMA）不符。"
+                  f"→ `implied_lanes_per_eu` 作废，**FP32 向量峰值以 "
+                  f"{NOMINAL_FP32_TFLOPS:.2f} TFLOPS 为准**。"
+                  f"详见 docs/TODO/02-compute-peak.md 第 3.7 节。"),
         )
         store.highlight(
-            f"⚠ **口径冲突（本目录最重要的待解问题）**：公式标称 FP32 = "
-            f"{NOMINAL_FP32_TFLOPS:.2f} TFLOPS；oneDNN GEMM 实测 "
-            f"{NOMINAL_FP32_TFLOPS:.1f}（恰好 100% 公式值）；但自研纯 FMA 探针实测 "
-            f"{measured:.1f} TFLOPS（{factor:.2f}×）。两者不能同时为真 —— 主频已锁定、满载不降频，"
-            "嫌疑集中在「FLOP 计数口径」或「clinfo 的 EU 数」。"
-            "**判读纪律：以 oneDNN 为可信下界，自研探针为待验证上界。**"
+            f"**FP32 向量峰值口径冲突已解决（2026-09-22）**：公式 {NOMINAL_FP32_TFLOPS:.2f} "
+            f"TFLOPS 被**两个独立第三方实现**复现 —— oneDNN fp32 GEMM "
+            f"{NOMINAL_FP32_TFLOPS:.1f}（99.6%）、ze_peak sp_compute 21.87（98.4%）。"
+            f"自研探针的 {measured:.1f} TFLOPS（{factor:.2f}×）已判定为探针 artefact 并撤回："
+            "它既超出硬件上限，又完全分辨不出 fp16/fp32/fp64 的架构位宽比。"
+            "**判读纪律：以 22.22 TFLOPS 为 FP32 向量峰值；引用 50.75 的段落一律作废。**"
         )
+
+
+# --------------------------------------------------------------------------- #
+# 5. ze_peak（第三方仲裁者）
+# --------------------------------------------------------------------------- #
+# 为什么这组特别重要：
+#   `ze_peak` 是 Intel 官方维护的 **第三方实现**（clpeak 的 Level Zero 移植），
+#   不是我们写的。它只测**向量（SIMD）**路径，因此**不能**给出 XMX 峰值，
+#   但正好可以用来**仲裁 FP32 向量峰值 22.13 vs 50.75 的口径冲突**。
+#   出处：https://github.com/oneapi-src/level-zero-tests  perf_tests/ze_peak
+#   代码已抓到 ze_peak_src/（25 个文件，零外部依赖，.spv 运行时按路径加载）。
+ZE_PEAK_DIR = HERE / "ze_peak_src"
+ZE_PEAK_BIN = ZE_PEAK_DIR / "build" / "ze_peak"
+
+# 输出形如：
+#   Global memory bandwidth (GB/s)
+#   float4 : 812.345 GB/s
+_VALUE_RE = re.compile(r"^\s*(?P<label>[A-Za-z0-9_ ]+?)\s*:\s*"
+                       r"(?P<val>[-+0-9.eE]+)\s*(?P<unit>\(?\w+/?\w*\)?)")
+_SECTION_KEYS = (("global memory bandwidth", "global_bw"),
+                 ("half precision compute", "hp_compute"),
+                 ("single precision compute", "sp_compute"),
+                 ("double precision compute", "dp_compute"),
+                 ("integer compute", "int_compute"),
+                 ("transfer bandwidth", "transfer_bw"),
+                 ("kernel launch latency", "kernel_lat"))
+
+# 短跑重复性日志：ze_peak_short_dev{0,1}_rep{1,2}.log（`-a -i 3 -w 1`，每轮约 60 s）
+_SHORT_RE = re.compile(r"ze_peak_short_dev(?P<dev>\d+)_rep(?P<rep>\d+)\.log$")
+
+# 长度口径：ze_peak 每轮测试会跑 get_max_work_items()×N 个 work-item
+# （N=2048 给 fp16/fp32/int，N=512 给 fp64），`-i 50 -w 10` 单卡约 20 min。
+# **长跑期间 GPU 会因持续满载而掉速**（热/功耗降额；`gt_act_freq_mhz` 在大幅摆动，
+# 温度可达 101 °C、功耗冲到 305~330 W —— 已越过 300 W 名义上限），
+# 而 `-i 3 -w 1` 的短跑跨 2 卡 × 2 次重复性 ≈ 10⁻⁵。故以短跑为可信口径。
+ZE_PEAK_LONGRUN_NOTE = (
+    "长跑（`-i 50 -w 10`，单卡约 20 min）期间 i915 的 `gt_act_freq_mhz` 实测会漂移到 "
+    "1350 / 1250 / 800 / 350 MHz（`gt_cur/max/min_freq_mhz` 始终报 1550 的**请求值**），"
+    "导致 fp64 / int32 段偏低；fp32 / fp16 段尚未进入漂移区，跨卡跨次完全一致。"
+    "**判读纪律：绝对值引用短跑（`-a -i 3 -w 1`）或漂移前的分段结果，长跑整轮值仅供参考。**"
+)
+
+# 长跑遥测：外部采样脚本每 5 s 追加一行 `时间,gt_act_freq_mhz,power_W,temp_C`。
+# ⚠️ `gt_act_freq_mhz` 是 i915 上**唯一会随负载变化**的频率节点（空闲读 0），
+#    但它的绝对值噪声很大、并不收敛到标准 P-state（RP0=1550 / RP1=1000 / RPn=200），
+#    因此只能当**定性**证据用："该节点在大幅摆动 ⇒ DVFS 很活跃"，
+#    不能当成精确时钟读数去反算性能。
+ZE_PEAK_TELEMETRY_NOTE = (
+    "长跑期间每 5 s 采样的 `gt_act_freq_mhz` / `GPU Power` / `Core Temp`。"
+    "⚠️ `gt_act_freq_mhz` 是本机**唯一会随负载变化**的频率节点，但其绝对值噪声大、"
+    "未收敛到标准 P-state（实测出现 1150/950/650/600/400/300/1400 等非典型值，"
+    "标准态只有 RP0=1550 / RP1=1000 / RPn=200）⇒ 仅作**定性**证据："
+    "该节点在大幅摆动说明 DVFS 活跃；不可用它反算性能。"
+    "温度与功耗才是硬证据（本机实测峰值温度可达 101 °C、功耗可冲到 305~330 W，"
+    "均已越过 300 W 名义上限，符合**持续负载热/功耗降额**）。"
+)
+
+
+def zp_complete(p: Path) -> bool:
+    """`-a` 的最后一项是 kernel_lat，其末尾必定打印 "Kernel duration :"。"""
+    return p.exists() and "Kernel duration" in p.read_text(errors="replace")
+
+
+def zp_best(res: dict, sec: str) -> float:
+    """某分类下的最大读数（ze_peak 每类有 1/2/4/8/16 五种向量宽度）。"""
+    return max((v for v, _ in res.get(sec, {}).values()), default=0.0)
+
+
+def build_ze_peak(env: dict) -> None:
+    """上游 CMake 的极简替代：一条 g++ 命令。
+
+    需要两处非上游改动，均已记录在 ze_peak_src/PATCHES.md：
+      1) shim/level_zero/  —— 本机 /usr/include/level_zero/ 缺 `zer_api.h`
+         （ze_app.cpp:9 无条件 include 它）；已用新版头文件补齐。
+      2) ze_peak.cpp:15    —— 上游回归：`bool verbose = false;` 与
+         common/src/ze_app.cpp:17 重复定义，会 link 失败；已改为 extern。
+    """
+    srcs = sorted((ZE_PEAK_DIR / "ze_peak" / "src").glob("*.cpp"))
+    newest = max([s.stat().st_mtime for s in srcs] +
+                 [(ZE_PEAK_DIR / "common" / "src" / "ze_app.cpp").stat().st_mtime])
+    if ZE_PEAK_BIN.exists() and ZE_PEAK_BIN.stat().st_mtime > newest:
+        return
+    ZE_PEAK_BIN.parent.mkdir(parents=True, exist_ok=True)
+    # .spv 内核由代码以**相对路径**加载 → 必须和可执行文件同目录
+    for spv in (ZE_PEAK_DIR / "ze_peak" / "kernels").glob("*.spv"):
+        shutil.copy2(spv, ZE_PEAK_BIN.parent / spv.name)
+    print("[build] ze_peak -> build/ze_peak", flush=True)
+    cmd = ["g++", "-O3", "-std=c++17", "-fcommon",
+           "-I", str(ZE_PEAK_DIR / "shim"),
+           "-I", str(ZE_PEAK_DIR / "ze_peak" / "include"),
+           "-I", str(ZE_PEAK_DIR / "common" / "include"),
+           *[str(s) for s in srcs],
+           str(ZE_PEAK_DIR / "common" / "src" / "ze_app.cpp"),
+           "-o", str(ZE_PEAK_BIN), "-lze_loader", "-lpthread"]
+    cp = run(cmd, env=env, timeout=1800, check=False)
+    if cp.returncode != 0 or not ZE_PEAK_BIN.exists():
+        raise RuntimeError(f"ze_peak build failed:\n{cp.stderr[-3000:]}")
+
+
+def parse_ze_peak(text: str) -> tuple[dict, dict]:
+    """解析 ze_peak 输出 → (设备信息, 分类结果)。"""
+    dev: dict = {}
+    out: dict = {}
+    section = "misc"
+    for line in text.splitlines():
+        s = line.strip()
+        if s.startswith("* ") and " : " in s:
+            k, v = s[2:].split(" : ", 1)
+            dev[k.strip()] = v.strip()
+            continue
+        low = s.lower()
+        for key, canon in _SECTION_KEYS:
+            if low.startswith(key):
+                section = canon
+                break
+        m = _VALUE_RE.match(line)
+        if m and "Destroyed" not in m.group("label"):
+            try:
+                val = float(m.group("val"))
+            except ValueError:
+                continue
+            unit = m.group("unit").strip("()")
+            out.setdefault(section, {})[m.group("label").strip()] = (val, unit)
+    return dev, out
+
+
+def suite_zepeak(store: ResultStore, env: dict, quick: bool) -> None:
+    build_ze_peak(env)
+    iters = 10 if quick else 50
+    warm = 5 if quick else 10
+    devices = (0,) if quick else (0, 1)
+    logs = ZE_PEAK_DIR / "logs"
+    logs.mkdir(exist_ok=True)
+
+    for d in devices:
+        first = logs / f"ze_peak_dev{d}.log"
+        again = logs / f"ze_peak_dev{d}_rerun.log"
+        # 重跑（干净长跑）优先于首跑：首跑可能撞上 DVFS 漂移。
+        if zp_complete(again):
+            log, text = again, again.read_text(errors="replace")
+            print(f"[zepeak] reusing {log.name} (prefer clean rerun)", flush=True)
+        elif zp_complete(first):
+            log, text = first, first.read_text(errors="replace")
+            print(f"[zepeak] reusing {log.name}", flush=True)
+        else:
+            log = first
+            proc = run_soft([str(ZE_PEAK_BIN), "-d", str(d), "-a",
+                             "-i", str(iters), "-w", str(warm)],
+                            cwd=str(ZE_PEAK_BIN.parent), env=env, timeout=7200)
+            text = proc.stdout
+            log.write_text(text)
+
+        # 首跑 vs 重跑：量化长跑 DVFS 漂移（只在两者都完整时记录）
+        if again.exists() and first.exists() and again != first and \
+                zp_complete(again) and zp_complete(first):
+            _, r_first = parse_ze_peak(first.read_text(errors="replace"))
+            _, r_again = parse_ze_peak(again.read_text(errors="replace"))
+            m: dict[str, float] = {}
+            for sec, dst in (("sp_compute", "fp32"), ("hp_compute", "fp16"),
+                             ("dp_compute", "fp64"), ("int_compute", "int32")):
+                a, b = zp_best(r_first, sec), zp_best(r_again, sec)
+                if a and b:
+                    m[f"{dst}_firstrun_gflops"] = round(a, 1)
+                    m[f"{dst}_rerun_gflops"] = round(b, 1)
+                    m[f"{dst}_rerun_over_first"] = round(b / a, 3)
+            if m:
+                store.add(
+                    "ze_peak", f"dev{d}.longrun_dvfs_drift",
+                    params={"device": d, "iters": iters, "warmup": warm},
+                    metrics=m, note=ZE_PEAK_LONGRUN_NOTE,
+                )
+
+        # 长跑期间的遥测时间序列（由外部采样脚本写入的 CSV）
+        csv = logs / f"ze_peak_dev{d}_rerun_clock.csv"
+        if csv.exists():
+            tvec = []
+            for line in csv.read_text(errors="replace").splitlines():
+                parts = line.split(",")
+                if len(parts) < 2:
+                    continue
+                try:
+                    tvec.append({
+                        "clock": int(parts[1]),
+                        "power": int(parts[2]) if len(parts) > 2 and parts[2] else 0,
+                        "temp": int(parts[3]) if len(parts) > 3 and parts[3] else 0,
+                    })
+                except ValueError:
+                    continue
+            clocks = [t["clock"] for t in tvec if t["clock"] > 0]
+            if clocks:
+                temps = [t["temp"] for t in tvec if t["temp"] > 0]
+                pows = [t["power"] for t in tvec if t["power"] > 0]
+                store.add(
+                    "ze_peak", f"dev{d}.longrun_telemetry",
+                    params={"device": d, "source": csv.name,
+                            "interval_s": 5, "samples": len(clocks)},
+                    metrics={
+                        "act_freq_min_mhz": min(clocks),
+                        "act_freq_max_mhz": max(clocks),
+                        "act_freq_avg_mhz": round(sum(clocks) / len(clocks)),
+                        "act_freq_distinct": len(set(clocks)),
+                        "power_max_w": max(pows) if pows else 0,
+                        "power_avg_w": round(sum(pows) / len(pows)) if pows else 0,
+                        "temp_max_c": max(temps) if temps else 0,
+                    },
+                    note=ZE_PEAK_TELEMETRY_NOTE,
+                )
+
+        dev, res = parse_ze_peak(text)
+        if not res:
+            store.error("ze_peak", f"dev{d}.all", text[-400:],
+                        params={"device": d})
+            continue
+
+        store.add(
+            "ze_peak", f"dev{d}.device",
+            params={"device": d},
+            metrics={"coreClockRate_mhz": dev.get("coreClockRate"),
+                     "deviceId": dev.get("deviceId"),
+                     "subdeviceId": dev.get("subdeviceId"),
+                     "isSubdevice": dev.get("isSubdevice")},
+            note=f"{dev.get('name')}；UUID={dev.get('UUID')}",
+        )
+
+        # ---- 向量算力（第三方数字）---------------------------------------- #
+        for sec, dst in (("sp_compute", "fp32"), ("dp_compute", "fp64"),
+                         ("hp_compute", "fp16"), ("int_compute", "int32")):
+            for label, (val, unit) in res.get(sec, {}).items():
+                store.add(
+                    "ze_peak", f"dev{d}.{dst}.{label.replace(' ', '')}",
+                    params={"device": d, "test": sec, "kernel": label},
+                    metrics={"gflops": round(val, 2)},
+                    note=unit,
+                )
+
+        # ---- 显存带宽 ------------------------------------------------------ #
+        for label, (val, unit) in res.get("global_bw", {}).items():
+            store.add(
+                "ze_peak", f"dev{d}.global_bw.{label.replace(' ', '')}",
+                params={"device": d, "kernel": label},
+                metrics={"gbps": round(val, 2)}, note=unit,
+            )
+
+        # ---- 传输带宽 / 延迟 ----------------------------------------------- #
+        for label, (val, unit) in res.get("transfer_bw", {}).items():
+            store.add(
+                "ze_peak", f"dev{d}.transfer_bw.{label.replace(' ', '_')}",
+                params={"device": d}, metrics={"gbps": round(val, 2)},
+                note=unit,
+            )
+        for label, (val, unit) in res.get("kernel_lat", {}).items():
+            store.add(
+                "ze_peak", f"dev{d}.kernel_lat.{label.replace(' ', '_')}",
+                params={"device": d}, metrics={"us": round(val, 3)},
+                note=unit,
+            )
+
+        # ---- 与自研探针的交叉核对 + 口径裁定 -------------------------------- #
+        sp = res.get("sp_compute", {})
+        hp = res.get("hp_compute", {})
+        dp = res.get("dp_compute", {})
+        bw = res.get("global_bw", {})
+        if d == 0 and sp and bw:
+            best_vec_sp = zp_best(res, "sp_compute")
+            best_hp = zp_best(res, "hp_compute")
+            best_dp = zp_best(res, "dp_compute")
+            best_bw = zp_best(res, "global_bw")
+            tflops_sp = best_vec_sp / 1000.0
+            rat = tflops_sp / NOMINAL_FP32_TFLOPS if NOMINAL_FP32_TFLOPS else 0
+            # 自研探针的历史读数（**已判定为 artefact，仅作留档**）
+            ours_sp, ours_hp, ours_dp = 50.75, 52.6, 51.9
+            store.add(
+                "ze_peak", "crosscheck.dev0",
+                params={"third_party": "oneapi-src/level-zero-tests/ze_peak",
+                        "ours": "sycl/alu_peak.cpp + BabelStream"},
+                metrics={"ze_peak_sp_compute_tflops": round(tflops_sp, 2),
+                         "ze_peak_hp_compute_tflops": round(best_hp / 1000.0, 2),
+                         "ze_peak_dp_compute_tflops": round(best_dp / 1000.0, 2),
+                         "ze_peak_hp_over_sp": round(best_hp / best_vec_sp, 2),
+                         "ze_peak_dp_over_sp": round(best_dp / best_vec_sp, 3),
+                         "our_probe_sp_tflops": ours_sp,
+                         "our_probe_hp_over_sp": round(ours_hp / ours_sp, 2),
+                         "our_probe_dp_over_sp": round(ours_dp / ours_sp, 2),
+                         "oneDNN_gemm_tflops": 22.13,
+                         "formula_nominal_tflops": round(NOMINAL_FP32_TFLOPS, 2),
+                         "ze_peak_vs_formula": round(rat, 3),
+                         "ze_peak_global_bw_gbps": round(best_bw, 1)},
+                note=("第三方（Intel 官方仓库、非本项目代码）的向量数字。"
+                      "关键不是绝对值而是**位宽比**：ze_peak 给出 fp16/fp32=1.98、"
+                      "fp64/fp32=0.735，与 Xe-HPC 的 ALU 位宽比（2× / ½~¾×）一致；"
+                      "自研探针给出 1.04 / 1.02，**根本分辨不出 dtype** —— "
+                      "这正是判定探针绝对值不可信的独立依据之一。"),
+            )
+            store.add(
+                "ze_peak", "arbitration.fp32_vector_peak",
+                params={"question": "FP32 向量峰值到底是 22.22 还是 50.75 TFLOPS",
+                        "nominal_formula": "448 EU x 16 lane x 2 FLOP x 1.55 GHz"},
+                metrics={"formula_tflops": round(NOMINAL_FP32_TFLOPS, 2),
+                         "oneDNN_gemm_tflops": 22.13,
+                         "oneDNN_vs_formula": round(22.13 / NOMINAL_FP32_TFLOPS, 3),
+                         "ze_peak_tflops": round(tflops_sp, 2),
+                         "ze_peak_vs_formula": round(rat, 3),
+                         "our_probe_tflops": ours_sp,
+                         "our_probe_vs_formula": round(ours_sp / NOMINAL_FP32_TFLOPS, 3),
+                         "verdict_tflops": round(NOMINAL_FP32_TFLOPS, 2)},
+                note=("**裁定：以 22.22 TFLOPS 为准，自研探针的 50.75 撤回。**"
+                      "两个互相独立的第三方实现同时落在公式值上"
+                      "（oneDNN 99.6%、ze_peak 98.4%）；探针的 2.28× 等价于每 EU 37 条 "
+                      "FP32 lane（架构 16 条），且它分辨不出 dtype 的位宽比，"
+                      "ISA 显示其 vec8 FMA 被 IGC 完全标量化。"),
+            )
+
+    # ---- 短跑重复性：跨 2 卡 × 2 次（`-a -i 3 -w 1`，每轮约 60 s）---------- #
+    agg: dict[tuple[str, str], list[tuple[int, float]]] = {}
+    for p in sorted(logs.glob("ze_peak_short_dev*_rep*.log")):
+        ma = _SHORT_RE.search(p.name)
+        if not ma:
+            continue
+        dd = int(ma.group("dev"))
+        _d, rr = parse_ze_peak(p.read_text(errors="replace"))
+        for sec, labels in rr.items():
+            for lab, (val, _u) in labels.items():
+                agg.setdefault((sec, lab), []).append((dd, val))
+    rep_note = ("短跑 `-a -i 3 -w 1` 跨 **2 张卡 × 2 次** 的重复性；"
+                "spread = (max-min)/max。用于判定长跑值的可信度。")
+    for (sec, lab), vals in agg.items():
+        v = [x for _, x in vals]
+        if len(v) < 2 or max(v) <= 0:
+            continue
+        sv = sorted(v)
+        med = sv[len(sv) // 2] if len(sv) % 2 else (sv[len(sv) // 2 - 1] + sv[len(sv) // 2]) / 2
+        store.add(
+            "ze_peak", f"repeatability.{sec}.{lab.replace(' ', '')}",
+            params={"devices": sorted({d for d, _ in vals}), "runs": len(v),
+                    "iters": 3, "warmup": 1},
+            metrics={"min": round(min(v), 3), "max": round(max(v), 3),
+                     "median": round(med, 3),
+                     "spread_pct": round((max(v) - min(v)) / max(v) * 100, 3)},
+            note=rep_note,
+        )
+
+    # 让 run_bench 的 JSON 里带一段人读结论
+    store.highlight(
+        "`ze_peak`（**第三方**：`oneapi-src/level-zero-tests/perf_tests/ze_peak`，"
+        "clpeak 的 Level Zero 移植）本轮已成功构建并运行。它只测**向量/SIMD**路径，"
+        "**没有 XMX/DPAS**，因此不能替代自研 `xmx_peak`；它的价值在于**仲裁**："
+        "它给出 FP32 向量峰值 21.87 TFLOPS = 公式值 22.22 的 **98.4%**，"
+        "与 oneDNN fp32 GEMM 的 22.13（99.6%）一起，**互相独立地确认了 22.22 口径**，"
+        "把自研探针的 50.75（2.28×）判为探针侧 artefact。"
+        "另一收获：ze_peak 的 fp64/fp32 = 16.07/21.87 = **0.734**，"
+        "第三次独立确认「FP64 ≠ FP32/2」的修正（前两次：torch GEMM 0.78、0.77）。"
+    )
+    store.highlight(
+        "**重复性与时长口径**：`-a -i 3 -w 1` 的短跑跨 **2 卡 × 2 次** 完全一致"
+        "（fp32 21871.6/21873.2/21872.1/21871.6；fp64 16074.1/16074.7/16074.0/16074.2），"
+        "但 `-i 50 -w 10` 的**长跑整轮**（单卡约 20 min）会因 **DVFS 漂移**（`gt_act_freq_mhz`"
+        "实测出现 1350/1250/800/350 MHz）在 fp64 / int32 段偏低（fp64 16074→14279，−11%）。"
+        "fp32 / fp16 段在漂移发生前已测完，故跨卡跨次一致。**引用绝对值请用短跑或分段结果。**"
+        + " " + ZE_PEAK_LONGRUN_NOTE
+    )
 
 
 # --------------------------------------------------------------------------- #
@@ -620,7 +992,8 @@ def suite_clock(store: ResultStore, env: dict, quick: bool) -> None:
 # --------------------------------------------------------------------------- #
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("suites", nargs="*", default=["alu", "xmx", "torch", "clock"])
+    ap.add_argument("suites", nargs="*",
+                    default=["alu", "xmx", "torch", "clock", "zepeak"])
     ap.add_argument("--quick", action="store_true")
     ap.add_argument("--tag", default=None)
     args = ap.parse_args()
@@ -633,7 +1006,8 @@ def main() -> int:
     build_all(env)
 
     dispatch = {"alu": suite_alu, "xmx": suite_xmx,
-                "torch": suite_torch, "clock": suite_clock}
+                "torch": suite_torch, "clock": suite_clock,
+                "zepeak": suite_zepeak}
     for name in args.suites:
         print(f"===== {name} =====", flush=True)
         t0 = time.time()
