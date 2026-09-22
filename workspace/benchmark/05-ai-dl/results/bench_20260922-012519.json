@@ -1,0 +1,307 @@
+{
+  "meta": {
+    "timestamp": "2026-09-22T01:24:31",
+    "hostname": "hwt",
+    "platform": "Linux-6.14.0-37-generic-x86_64-with-glibc2.41",
+    "device": {
+      "device_index": 0,
+      "name": "Intel(R) Data Center GPU Max 1100",
+      "driver_version": "1.6.33578+77",
+      "device_count": 2,
+      "total_memory_gib": 47.98,
+      "max_compute_units": 448,
+      "gpu_eu_count": 448,
+      "gpu_subslice_count": 56,
+      "last_level_cache_mb": 192.0,
+      "memory_clock_mhz": 3200,
+      "has_fp64": true,
+      "has_fp16": true,
+      "torch_version": "2.14.0+xpu",
+      "python_version": "3.13.3",
+      "oneapi_reference_clock_ghz": 1.55
+    },
+    "arguments": {
+      "suite": "llm",
+      "warmup": 5,
+      "iters": 20,
+      "size_mb": 1024,
+      "gemm_sizes": [
+        256,
+        512,
+        1024,
+        2048,
+        4096,
+        8192
+      ],
+      "bw_sizes": [
+        4,
+        16,
+        64,
+        128,
+        192,
+        256,
+        512,
+        1024,
+        2048
+      ],
+      "reduce_cols": 4096,
+      "xfer_mib": 256,
+      "real_shapes": true,
+      "batched": true,
+      "int8": true,
+      "manual_attn": true,
+      "dtype_bw": true,
+      "size_sweep": true,
+      "host_transfer": true,
+      "quant_verify": true,
+      "quant_compare": true,
+      "model_batches": "64,128,256",
+      "model_dtypes": "fp32,bf16",
+      "bert_model": "bert-base-uncased",
+      "bert_seq_lens": "128,512",
+      "bert_batches": "16,32",
+      "llm_model": "Qwen/Qwen2.5-0.5B-Instruct",
+      "llm_batches": "1,4,8",
+      "llm_input_lens": "128,512,2048",
+      "llm_new_tokens": 32,
+      "llm_compile": "off",
+      "hf_endpoint": "https://hf-mirror.com",
+      "pipe_batch": 64,
+      "pipe_workers": "0,1,2,4,8",
+      "pipe_cpu_scale": 3,
+      "pipe_batches": 20,
+      "pipe_e2e_batches": 20,
+      "ddp_model": "resnet50",
+      "ddp_backends": "xccl",
+      "ddp_dtypes": "bf16",
+      "ddp_batches": "64,128",
+      "ddp_iters": 20,
+      "outdir": "/root/workspace/benchmark/05-ai-dl/results"
+    },
+    "triton_version": "3.8.0"
+  },
+  "highlights": [
+    "LLM 模型 `Qwen/Qwen2.5-0.5B-Instruct`，权重来源 **pretrained:Qwen/Qwen2.5-0.5B-Instruct**，dtype=torch.bfloat16，参数量 494 M，每测点生成 32 token",
+    "LLM decode 峰值 370.1 tok/s （batch=8, input_len=2048）",
+    "LLM prefill 峰值 76648 tok/s （batch=8, input_len=2048），TTFT 213.8 ms",
+    "LLM batch=1 decode 最低 45.7 tok/s（input_len=128）→ 单序列 decode 为**权重带宽受限**，不是算力受限"
+  ],
+  "results": [
+    {
+      "suite": "llm",
+      "name": "inference",
+      "params": {
+        "batch": 1,
+        "input_len": 128,
+        "new_tokens": 32,
+        "dtype": "torch.bfloat16",
+        "model": "Qwen/Qwen2.5-0.5B-Instruct",
+        "weights": "pretrained:Qwen/Qwen2.5-0.5B-Instruct",
+        "compile": "off"
+      },
+      "stats": null,
+      "metrics": {
+        "ttft_ms": 23.06496,
+        "prefill_ms": 23.06496,
+        "prefill_tok_per_s": 5549.543550043009,
+        "decode_tok_per_s": 45.676788077101754,
+        "ms_per_decode_token": 21.89295793548387,
+        "peak_mem_gib": 0.968
+      },
+      "status": "ok",
+      "note": "每点 5 次重复取 TTFT 中位数；decode 取均值（权重 pretrained:Qwen/Qwen2.5-0.5B-Instruct）"
+    },
+    {
+      "suite": "llm",
+      "name": "inference",
+      "params": {
+        "batch": 4,
+        "input_len": 128,
+        "new_tokens": 32,
+        "dtype": "torch.bfloat16",
+        "model": "Qwen/Qwen2.5-0.5B-Instruct",
+        "weights": "pretrained:Qwen/Qwen2.5-0.5B-Instruct",
+        "compile": "off"
+      },
+      "stats": null,
+      "metrics": {
+        "ttft_ms": 22.9732,
+        "prefill_ms": 22.9732,
+        "prefill_tok_per_s": 22286.83857712465,
+        "decode_tok_per_s": 182.2335631851144,
+        "ms_per_decode_token": 21.94985341935484,
+        "peak_mem_gib": 1.081
+      },
+      "status": "ok",
+      "note": "每点 5 次重复取 TTFT 中位数；decode 取均值（权重 pretrained:Qwen/Qwen2.5-0.5B-Instruct）"
+    },
+    {
+      "suite": "llm",
+      "name": "inference",
+      "params": {
+        "batch": 8,
+        "input_len": 128,
+        "new_tokens": 32,
+        "dtype": "torch.bfloat16",
+        "model": "Qwen/Qwen2.5-0.5B-Instruct",
+        "weights": "pretrained:Qwen/Qwen2.5-0.5B-Instruct",
+        "compile": "off"
+      },
+      "stats": null,
+      "metrics": {
+        "ttft_ms": 23.55344,
+        "prefill_ms": 23.55344,
+        "prefill_tok_per_s": 43475.60271450795,
+        "decode_tok_per_s": 364.866286157425,
+        "ms_per_decode_token": 21.925840516129036,
+        "peak_mem_gib": 1.232
+      },
+      "status": "ok",
+      "note": "每点 5 次重复取 TTFT 中位数；decode 取均值（权重 pretrained:Qwen/Qwen2.5-0.5B-Instruct）"
+    },
+    {
+      "suite": "llm",
+      "name": "inference",
+      "params": {
+        "batch": 1,
+        "input_len": 512,
+        "new_tokens": 32,
+        "dtype": "torch.bfloat16",
+        "model": "Qwen/Qwen2.5-0.5B-Instruct",
+        "weights": "pretrained:Qwen/Qwen2.5-0.5B-Instruct",
+        "compile": "off"
+      },
+      "stats": null,
+      "metrics": {
+        "ttft_ms": 23.01136,
+        "prefill_ms": 23.01136,
+        "prefill_tok_per_s": 22249.880059240306,
+        "decode_tok_per_s": 46.751956391415916,
+        "ms_per_decode_token": 21.38947922580645,
+        "peak_mem_gib": 1.081
+      },
+      "status": "ok",
+      "note": "每点 5 次重复取 TTFT 中位数；decode 取均值（权重 pretrained:Qwen/Qwen2.5-0.5B-Instruct）"
+    },
+    {
+      "suite": "llm",
+      "name": "inference",
+      "params": {
+        "batch": 4,
+        "input_len": 512,
+        "new_tokens": 32,
+        "dtype": "torch.bfloat16",
+        "model": "Qwen/Qwen2.5-0.5B-Instruct",
+        "weights": "pretrained:Qwen/Qwen2.5-0.5B-Instruct",
+        "compile": "off"
+      },
+      "stats": null,
+      "metrics": {
+        "ttft_ms": 33.695119999999996,
+        "prefill_ms": 33.695119999999996,
+        "prefill_tok_per_s": 60780.31477555208,
+        "decode_tok_per_s": 183.27230838424936,
+        "ms_per_decode_token": 21.82544670967742,
+        "peak_mem_gib": 1.535
+      },
+      "status": "ok",
+      "note": "每点 5 次重复取 TTFT 中位数；decode 取均值（权重 pretrained:Qwen/Qwen2.5-0.5B-Instruct）"
+    },
+    {
+      "suite": "llm",
+      "name": "inference",
+      "params": {
+        "batch": 8,
+        "input_len": 512,
+        "new_tokens": 32,
+        "dtype": "torch.bfloat16",
+        "model": "Qwen/Qwen2.5-0.5B-Instruct",
+        "weights": "pretrained:Qwen/Qwen2.5-0.5B-Instruct",
+        "compile": "off"
+      },
+      "stats": null,
+      "metrics": {
+        "ttft_ms": 53.504639999999995,
+        "prefill_ms": 53.504639999999995,
+        "prefill_tok_per_s": 76554.10820444732,
+        "decode_tok_per_s": 369.2338095917463,
+        "ms_per_decode_token": 21.666488258064515,
+        "peak_mem_gib": 2.142
+      },
+      "status": "ok",
+      "note": "每点 5 次重复取 TTFT 中位数；decode 取均值（权重 pretrained:Qwen/Qwen2.5-0.5B-Instruct）"
+    },
+    {
+      "suite": "llm",
+      "name": "inference",
+      "params": {
+        "batch": 1,
+        "input_len": 2048,
+        "new_tokens": 32,
+        "dtype": "torch.bfloat16",
+        "model": "Qwen/Qwen2.5-0.5B-Instruct",
+        "weights": "pretrained:Qwen/Qwen2.5-0.5B-Instruct",
+        "compile": "off"
+      },
+      "stats": null,
+      "metrics": {
+        "ttft_ms": 36.69168,
+        "prefill_ms": 36.69168,
+        "prefill_tok_per_s": 55816.46847459697,
+        "decode_tok_per_s": 46.85779940876219,
+        "ms_per_decode_token": 21.341164387096775,
+        "peak_mem_gib": 1.535
+      },
+      "status": "ok",
+      "note": "每点 5 次重复取 TTFT 中位数；decode 取均值（权重 pretrained:Qwen/Qwen2.5-0.5B-Instruct）"
+    },
+    {
+      "suite": "llm",
+      "name": "inference",
+      "params": {
+        "batch": 4,
+        "input_len": 2048,
+        "new_tokens": 32,
+        "dtype": "torch.bfloat16",
+        "model": "Qwen/Qwen2.5-0.5B-Instruct",
+        "weights": "pretrained:Qwen/Qwen2.5-0.5B-Instruct",
+        "compile": "off"
+      },
+      "stats": null,
+      "metrics": {
+        "ttft_ms": 108.56392,
+        "prefill_ms": 108.56392,
+        "prefill_tok_per_s": 75457.85008500062,
+        "decode_tok_per_s": 185.52738457210287,
+        "ms_per_decode_token": 21.56015948387097,
+        "peak_mem_gib": 3.354
+      },
+      "status": "ok",
+      "note": "每点 5 次重复取 TTFT 中位数；decode 取均值（权重 pretrained:Qwen/Qwen2.5-0.5B-Instruct）"
+    },
+    {
+      "suite": "llm",
+      "name": "inference",
+      "params": {
+        "batch": 8,
+        "input_len": 2048,
+        "new_tokens": 32,
+        "dtype": "torch.bfloat16",
+        "model": "Qwen/Qwen2.5-0.5B-Instruct",
+        "weights": "pretrained:Qwen/Qwen2.5-0.5B-Instruct",
+        "compile": "off"
+      },
+      "stats": null,
+      "metrics": {
+        "ttft_ms": 213.75696,
+        "prefill_ms": 213.75696,
+        "prefill_tok_per_s": 76647.79663782644,
+        "decode_tok_per_s": 370.14339331176683,
+        "ms_per_decode_token": 21.613245419354836,
+        "peak_mem_gib": 5.78
+      },
+      "status": "ok",
+      "note": "每点 5 次重复取 TTFT 中位数；decode 取均值（权重 pretrained:Qwen/Qwen2.5-0.5B-Instruct）"
+    }
+  ]
+}

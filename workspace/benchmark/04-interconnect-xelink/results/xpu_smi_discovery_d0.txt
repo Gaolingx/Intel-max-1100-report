@@ -1,0 +1,51 @@
++-----------+--------------------------------------------------------------------------------------+
+| Device ID | Device Information                                                                   |
++-----------+--------------------------------------------------------------------------------------+
+| 0         | Device Type: GPU                                                                     |
+|           | Device Name: Intel(R) Data Center GPU Max 1100                                       |
+|           | PCI Device ID: 0xbda                                                                 |
+|           | Vendor Name: Intel(R) Corporation                                                    |
+|           | SOC UUID: 00000000-0000-0000-74d8-64836dad91a4                                       |
+|           | Serial Number: WTP231800269                                                          |
+|           | Core Clock Rate: 1550 MHz                                                            |
+|           | Stepping: B4                                                                         |
+|           | SKU Type: Production ES                                                              |
+|           |                                                                                      |
+|           | Driver Version: I915_25.2.57_PSB_250224.65                                           |
+|           | Driver Package Version: 1.25.2.57.250224.65+i75-1                                    |
+|           | Kernel Version: 6.14.0-37-generic                                                    |
+|           | GFX Firmware Name: GFX                                                               |
+|           | GFX Firmware Version: PVC2_1.23374                                                   |
+|           | GFX Firmware Status: normal                                                          |
+|           | GFX PSC Firmware Name: GFX_PSCBIN                                                    |
+|           | GFX PSC Firmware Version: 0x12cfd.0x20220803                                         |
+|           | AMC Firmware Name: AMC                                                               |
+|           | AMC Firmware Version: 6.7.0.0                                                        |
+|           |                                                                                      |
+|           | PCI BDF Address: 0000:40:00.0                                                        |
+|           | PCI Slot: PCIE_6                                                                     |
+|           | PCIe Generation: 5                                                                   |
+|           | PCIe Max Link Width: 16                                                              |
+|           |                                                                                      |
+|           | Memory Physical Size: 49136.00 MiB                                                   |
+|           | Max Mem Alloc Size: 46679.20 MiB                                                     |
+|           | ECC State: enabled                                                                   |
+|           | Number of Memory Channels: 32                                                        |
+|           | Memory Bus Width: 128                                                                |
+|           | Max Hardware Contexts: 65536                                                         |
+|           | Max Command Queue Priority: 0                                                        |
+|           |                                                                                      |
+|           | Number of EUs: 448                                                                   |
+|           | Number of Tiles: 1                                                                   |
+|           | Number of Slices: 1                                                                  |
+|           | Number of Sub Slices per Slice: 56                                                   |
+|           | Number of Threads per EU: 8                                                          |
+|           | Physical EU SIMD Width: 16                                                           |
+|           | Number of Media Engines: 0                                                           |
+|           | Number of Media Enhancement Engines: 0                                               |
+|           |                                                                                      |
+|           | Number of Xe Link ports: 6                                                           |
+|           | Max Tx/Rx Speed per Xe Link port: 50663.95 MiB/s                                     |
+|           | Number of Lanes per Xe Link port: 4                                                  |
+|           | Xe Link Calibration Date: Not Calibrated                                             |
++-----------+--------------------------------------------------------------------------------------+

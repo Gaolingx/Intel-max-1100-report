@@ -50,6 +50,14 @@ cmake --build build -j
 ```
 > `ze_peak` 常见输出项：FP32 / FP64 / INT8 / INT16 / INT32 的峰值 GFLOPS/GOPS，以及内存带宽。
 
+> ⚠️ **上面这段构建说明有两处错误**（2026-09-22 联网核实后修正，见 §3.6）。
+> ① **仓库错了**：`intel/compute-runtime` 里**没有** `ze_peak`（全仓库代码搜索为空）。
+> 正确出处是 **`oneapi-src/level-zero-tests/perf_tests/ze_peak`**。
+> ② **输出项错了**：`ze_peak` 是 **clpeak 的 Level Zero 移植**，只有 **向量（SIMD）** 测试，
+> 提供 `global_bw` / `hp_compute`(fp16) / `sp_compute`(fp32) / `dp_compute`(fp64) /
+> `int_compute`(平台整数) / `transfer_bw` / `kernel_lat`。
+> **没有 INT8/INT16 之分，更没有 XMX / DPAS / bf16 / FP8**。
+
 ### 构建 BabelStream
 ```bash
 git clone https://github.com/UoB-HPC/BabelStream.git
@@ -78,6 +86,55 @@ cmake --build build -j
 > 但 INT8 与 FP32 不受影响。**判断 XMX 峰值请用 4096³~8192³，不要用 16384³。**
 
 完整数据见 [`../precision-support.md`](../precision-support.md)。
+
+---
+
+## 3.6 `ze_peak` 核实与「为什么本轮未构建」（2026-09-22）
+
+本轮 **没有构建 `ze_peak`**，改用自研 SYCL 探针（`benchmark/02-compute-peak/sycl/`）。
+事后联网核实，原因与事实如下：
+
+**① 环境里本来就没有，且原构建配方是死路**
+```bash
+find /opt/intel/oneapi -iname "*ze_peak*"    # → 空：oneAPI 2026.1 不随附
+```
+`ze_peak` 不在 oneAPI 安装包内；而 §3 给的 `git clone intel/compute-runtime` 也找不到它
+（该仓库无此代码）。**正确出处：`oneapi-src/level-zero-tests/perf_tests/ze_peak`**（公开仓库）。
+
+**② 它测不到本轮真正要回答的问题**
+`ze_peak` 是 **clpeak 的 Level Zero 移植 → 纯向量（SIMD）基准**，测试项只有：
+`global_bw` / `hp_compute`(fp16) / `sp_compute`(fp32) / `dp_compute`(fp64) /
+`int_compute`(平台整数) / `transfer_bw` / `kernel_lat`。
+**它完全没有 XMX / DPAS 测试**。本轮最关键的三个结论 ——
+XMX bf16 **355 TFLOPS**、INT8 **710 TOPS**、**占用率拐点 ≥8 sub-group/EU** ——
+`ze_peak` 一个都产不出来，必须靠 `joint_matrix` 自研探针。
+
+**③ 自研探针在方法学上更强**
+`ze_peak` 只给一个数；自研探针额外提供 **占用率扫描**（找出拐点）、**向量宽度扫描**
+（VEC=4 最优）、以及**饱和区线性度校验**（工作量 ×2 → 耗时 ×2.00），用它证明测量的是
+真算力而不是编译器把循环消掉了。`ze_peak` 无法做这些交叉验证。
+
+**④ 已知的真实缺口（必须承认）**
+`ze_peak` 唯一的、不可替代的价值是：**它是别人写的、未经我手改动的第三方实现**，
+可以作为 FP32 向量峰值 **22.13 vs 50.75 口径冲突**的独立仲裁者。
+本轮缺了这个第三方仲裁 —— 见 §5/§6 与 `Conclusion/02-compute-peak/README.md`。
+
+**⑤ 现在是否可构建？—— 可以，成本很低（但当时没做）**
+核实后的事实：
+- 只需 **25 个文件**（`perf_tests/ze_peak/**` 22 个 + `perf_tests/common/{include,src}` 3 个）；
+- **零外部依赖**：只需 `level_zero/ze_api.h`、`zer_api.h`（本机 `/usr/include/level_zero/` 已有）
+  与 `-lze_loader`（本机 `libze_loader.so.1.24.0` 已有）；
+  源码 `#include` 列表里**没有任何 boost**（BUILD.md 里的 boost 是给别的测试用的）；
+- 5 个 kernel 是**预编译 `.spv`**，且 `ze_peak.cpp:44` 是从**路径运行时加载**，无需 OpenCL 编译器；
+- 编译：`g++ -O3 -std=c++17 src/*.cpp ../../common/src/ze_app.cpp -lze_loader -lpthread`。
+
+**当时的实际阻碍**：`intel/compute-runtime` 的 `git ls-remote` 超时（rc=143）、
+`oneapi-src/level-zero-tests` 的 `git clone` 报 `GnuTLS recv error (-110)`，
+而 `api.github.com` / `raw.githubusercontent.com` 正常 —— 即 git-over-https 不稳，
+只能逐个文件抓取。加上上述 ②③（它本就答不了关键问题），遂决定自研。
+
+> **结论**：未构建 `ze_peak` 在当时是**可接受**的取舍，但**不是最优** ——
+> 它本可以提供第三方 FP32 仲裁。已记入 ⑤ 的「未做/待补充」清单，可随时补做（约 10 分钟）。
 
 ---
 
@@ -146,34 +203,73 @@ xpu-smi dump -d 0 -m 0,1,2,8,9 -i 500 -n 100 -j > compute_peak_telemetry.json
 
 ---
 
-## 5. 指标记录表
+## 4.6 逐条覆盖核验（2026-09-22 收尾）
 
-| dtype | 峰值实测 (TFLOPS) | 峰值理论 | 达成率 | 相对 FP32 加速比 |
-|---|---|---|---|---|
-| FP32 | | ~22.2 | | 1.00× |
-| FP64 | | ~11.1 | | |
-| FP16 | | | | |
-| BF16 | | | | |
-| INT8 | | | | |
+> 数据来源：`benchmark/02-compute-peak/results/bench_20260922-194139.{json,md}`（**72 条记录**，
+> `alu` 18 / `xmx` 27 / `torch` 23 / `clock` 4）。详细解读见
+> [`../Conclusion/02-compute-peak/README.md`](../Conclusion/02-compute-peak/README.md)。
 
-附加记录：
-- 达峰对应的 **M=N=K 尺寸**
-- 达峰时的 **功耗 / 频率 / EU Active**
-- 显存带宽是否为瓶颈（对照 ③ 的带宽结果）
+| TODO 条目 | 状态 | 证据 / 说明 |
+|---|---|---|
+| Step 1 `ze_peak` 基线 | ⚠️ **替代** | `ze_peak` 未构建。改用**自研 SYCL 探针**：`sycl/xmx_peak.cpp`（DPAS）、`sycl/alu_peak.cpp`（纯 FMA）。**比 `ze_peak` 多两项能力：占用率扫描（定位拐点）、向量宽度扫描**；且 `ze_peak` 本身**根本没有 XMX/DPAS 测试**。完整理由与「本可构建但未做」的说明见 **§3.6** |
+| Step 2 PyTorch GEMM sweep | ✅ | `torch` suite 23 条：fp32 / fp16 / bf16 / int8 × 4096³、4096×4096×16384、8192³ |
+| Step 3 Triton 自定义 kernel | ⬜ **未做** | 与 ⑤ 是同一缺口。「纯 ALU 上限」这个目的已由自研 SYCL ALU 探针达成 |
+| Step 4 oneDNN / oneMKL 交叉验证 | ⚠️ **部分** | oneDNN GEMM 交叉验证 ✅（fp32 22.13 / bf16 225.87 / int8 416.2）；**`benchdnn` 未构建**，改用手写 oneDNN C++ 调用 |
+| Step 5 遥测确认压满 | ⚠️ **替代** | `xpu-smi dump` 在本驱动上**挂死**；改用 `xpu-smi stats -d 0` → 饱和 ALU 负载下 **GPU Util 100% / 171 W / 1550 MHz**。⚠ 本驱动 `EU Array *` 全为 N/A，**拿不到 EU Active**，只能用 Utilization 代替 |
+| §5 指标记录表 | ✅ | 见下（已填） |
+| §6 判读标准 | ✅ | 逐条裁定见 §6 表右列 |
+| §7-3「用 `dump` 确认压满」 | ❌ **不可行** | `xpu-smi dump` 挂死。已由「占用率拐点 + 饱和区工作量 ×2 → 耗时 ×2.00」替代，可信度不低于「看 EU Active」 |
+| §7-4「大尺寸双卡 OOM」 | — 不适用 | 全部单卡跑（`ZE_AFFINITY_MASK=0`） |
+| （自加）占用率扫描 | ✅ 超出计划 | ALU 拐点 `global ≈ 114688`（16 work-item/lane）；**XMX 需 ≥8 sub-group/EU**，1 sg/EU 时只有 118 TFLOPS |
+| （自加）向量宽度扫描 | ✅ 超出计划 | `VEC=1/2/4/8/16 → 34.8/45.5/52.8/50.7/51.3`，**VEC=4 最佳**，之后拉平 → issue 受限 |
+| （自加）频率锁定取证 | ✅ 超出计划 | `min == max == 1550 MHz`，满载 `act/cur` 不变 → 无降频、也无 boost |
+| （自加）XMX 功能正确性 | ✅ 超出计划 | `check.bf16/fp16/int8` 三种 DPAS 结果与参考一致（`ok=1.0`） |
+
+> 统计：**计划内 5 个 Step：1 完全完成 / 3 替代或部分 / 1 未做**（未做项是可选步骤
+> Triton kernel）；**计划外新增 4 项**。所有替代项均已如实标注原因，无静默缺口。
 
 ---
 
-## 6. 判读标准
+## 5. 指标记录表
 
-| 现象 | 可能原因 |
-|---|---|
-| FP32 达成率 < 70% | kernel 效率低、编译器未向量化、内存瓶颈 |
-| FP64 不是 FP32 的 ~1/2 | 与预期架构不符，需确认（可能走 emulation 或不同路径） |
-| BF16 加速比不显著 | **XMX 未被使用**（常见坑：PyTorch 未走 XMX 路径） |
-| 大尺寸反而变慢 | 显存带宽受限或 TLB 问题 |
-| EU Active < 90% | kernel 未压满，该结果不能代表峰值 |
+> ✅ 已填写。全部来自 `benchmark/02-compute-peak/results/bench_20260922-194139.{json,md}`。
 
-> **XMX 是否真正启用** 是本测试最有价值的发现点。若 BF16 相比 FP32 没有数倍提升，说明测试路径没用到 XMX，需要通过 oneDNN/oneMKL 路径或调整 PyTorch 配置重试。
+| dtype | 峰值实测 (TFLOPS) | 峰值理论 | 达成率 | 相对 FP32 加速比 |
+|---|---|---|---|---|
+| FP32 | **22.13**（oneDNN/torch） / **50.75**（自研 ALU 探针）⚠ | ~22.2 | 99.6% / **228.4% ⚠** | 1.00× |
+| FP64 | **17.37** @2048³（见 [`../precision-support.md`](../precision-support.md)）；自研 ALU fp64 51.9 | ~~~11.1~~ **假设已证伪** | — | **0.78×**（不是 0.5×） |
+| FP16 | **237.57**（oneDNN/torch） / **355.0**（裸 DPAS） | 356（公式） | 66.8% / **99.8%** | 10.7× / **16.0×** |
+| BF16 | **225.87**（oneDNN/torch） / **355.0**（裸 DPAS） | 356（公式） | 63.5% / **99.8%** | 10.2× / **16.0×** |
+| INT8 | **416.2**（oneDNN/torch） / **710**（裸 DPAS） | 711（公式） | 58.5% / **99.8%** | 18.8× / **32.0×** |
+
+附加记录：
+- **达峰尺寸**：fp32 8192³、fp16 8192³、bf16 4096³、int8 8192³；裸 DPAS 达峰需
+  占用率 **≥8 sub-group/EU**（`global ≥ 57344`）。
+- **达峰功耗 / 频率**：`clock` suite 在饱和 ALU fp32 负载下采样 → **171 W / 1550 MHz / Util 100%**。
+  **`EU Active` 在本驱动上不可读**（N/A）。
+- **是否带宽受限**：否。fp32 22.13 TFLOPS 恰好 = 纯算力公式值 → GEMM 是算力受限。
+  与 ③ 的 900 GB/s 对照可算出算力/带宽比（见 `Conclusion/02-…` §3.5）。
+- ⚠ **口径冲突（本目录最重要的待解问题）**：公式 22.22 = oneDNN 22.13（100%）
+  但自研纯 FMA 探针 50.75（228.4%）。两者不能同时为真 —— 主频已锁定、满载不降频，
+  嫌疑集中在 **FLOP 计数口径** 或 **客户端混合指令** 上。
+  **处理策略：22.22 继续保留并标注为「标称值（公式）」，不做重标。**
+
+---
+
+## 6. 判读标准（含实测裁定）
+
+| 现象 | 可能原因 | 实测裁定（2026-09-22） |
+|---|---|---|
+| FP32 达成率 < 70% | kernel 效率低、编译器未向量化、内存瓶颈 | ❌ **不成立**：oneDNN 达成率 **99.6%**。⚠ 但出现**反向异常** —— 自研 ALU 探针 **228.4%** → 口径冲突，非 kernel 效率问题 |
+| FP64 不是 FP32 的 ~1/2 | 与预期架构不符，需确认（可能走 emulation 或不同路径） | ✅ **确实不是**：**0.78×**（17.37 vs 22.13）。「= FP32/2」的**原假设已被证伪**，需修正文档 |
+| BF16 加速比不显著 | **XMX 未被使用**（常见坑：PyTorch 未走 XMX 路径） | ❌ **不成立**：torch 侧 **10.2×**、裸 DPAS **16.0×** → **XMX 确认已启用** |
+| 大尺寸反而变慢 | 显存带宽受限或 TLB 问题 | ⚠️ **部分成立**：**16384³ 掉崖**（fp16 233.9→97.3、bf16 232.8→117.0，可复现）；原因未定位，已降优先级 |
+| EU Active < 90% | kernel 未压满，该结果不能代表峰值 | ⚠️ **无法判读**：`EU Array` 指标 N/A。替代判据全部通过 —— 满载 Util 100%、「饱和区工作量 ×2 → 耗时 ×2.00」 |
+
+> **XMX 是否真正启用** 是本测试最有价值的发现点，结论是 ✅ **已启用**（见 §4.6 的
+> `check.*` 功能正确性三项 + torch/裸 DPAS 的 10~16× 倍率）。
+> 本目录真正有价值的发现反而是 **XMX 的占用率拐点**（≥8 sub-group/EU）和 **覆盖率只有 58~67%**
+> —— 即「硬件能做到 355 TFLOPS，但 oneDNN 路径只能拿到 226~238」。
 
 ---
 
@@ -181,6 +277,12 @@ xpu-smi dump -d 0 -m 0,1,2,8,9 -i 500 -n 100 -j > compute_peak_telemetry.json
 
 1. **必须先 `source setvars.sh`** 并记录 `icpx --version`。
 2. 频率锁定在 1550 MHz → 结果重复性好，但也**不代表动态调频下的真实峰值**。
-3. 测试期间用 `xpu-smi dump` 确认压满，否则数据无意义。
+3. ~~测试期间用 `xpu-smi dump` 确认压满，否则数据无意义。~~
+   ❌ **本机不可行**：`xpu-smi dump` 在任何 metric 下都**挂死**（rc=143）。
+   改用 `xpu-smi stats -d 0`（可得 Utilization / Power / Frequency，但 **`EU Array *` 为 N/A**），
+   并叠加「占用率扫描 + 饱和区线性度校验」来证明压满 —— 见 §4.6。
 4. 大尺寸 GEMM 会占满 48 GiB 显存，注意同时开双卡会 OOM。
 5. 记录**显存带宽**作为交叉参照 —— 算力受限 vs 带宽受限的界线要靠 ③ 的结果划定。
+6. **不要相信单点测量**：本目录的关键结论（拐点、覆盖率）都来自「扫点 + 饱和区 ×2 线性校验」。
+   低于拐点时「工作量翻倍、耗时不变」是**延迟受限的正常表现**，不是编译器把循环消掉了 ——
+   必须扫过拐点再判峰值。

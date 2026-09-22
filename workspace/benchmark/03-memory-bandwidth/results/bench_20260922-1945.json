@@ -1,0 +1,1956 @@
+{
+  "meta": {
+    "tag": "20260922-1945",
+    "title": "03 · 显存带宽（HBM）基准报告",
+    "timestamp": "2026-09-22T19:06:28",
+    "host": "hwt",
+    "kernel": "6.14.0-37-generic",
+    "python": "3.13.3",
+    "gpu_count": 1,
+    "ze_affinity_mask": "(unset)",
+    "nominal_fp32_alu_tflops": 22.2208
+  },
+  "highlights": [
+    "BabelStream Copy 峰值 **900 GB/s** (数组 256.0 MiB)，= 73% of 1229 GB/s 规格值",
+    "单向带宽：read **696 GB/s** vs write **851 GB/s** (读 0.82× 于写)",
+    "双卡并发 copy 合计 **1679 GB/s** (GPU0 839 + GPU1 840)",
+    "主机 **DRAM** copy 带宽 **39.6 GB/s** (1 GiB/数组, 72 线程)",
+    "主机内存的 L3 陷阱：16~128 MiB/数组时 copy 报到 **675 GB/s**（命中 432 MiB L3），放大到 1 GiB/数组才落到真实 DRAM 的 40 GB/s",
+    "xpu-smi 显存读写计数器**不可用**：空载 0.000+0.000 GB/s，满载 0.000 GB/s（毫无变化）；`xpu-smi dump` 也完全坏的。带宽绝对值只能以 BabelStream/自研探针为准。",
+    "HBM 规格 1229 GB/s（Max 1100，48 GiB HBM2e）。BabelStream 是行业标准口径，自研探针用于补充单向读/写与访问模式。"
+  ],
+  "results": [
+    {
+      "suite": "babelstream",
+      "name": "BabelStream.Copy",
+      "params": {
+        "array_MiB": 4.0,
+        "elements": 524288,
+        "n": 20,
+        "note_L2": "L2内(非HBM)"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 508.0,
+        "best_s": 2e-05,
+        "pct_of_1229": 41.3
+      },
+      "status": "ok",
+      "note": "数组 ≤192MiB 时命中 192MB L2，数值不代表 HBM"
+    },
+    {
+      "suite": "babelstream",
+      "name": "BabelStream.Mul",
+      "params": {
+        "array_MiB": 4.0,
+        "elements": 524288,
+        "n": 20,
+        "note_L2": "L2内(非HBM)"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 517.08,
+        "best_s": 2e-05,
+        "pct_of_1229": 42.1
+      },
+      "status": "ok",
+      "note": "数组 ≤192MiB 时命中 192MB L2，数值不代表 HBM"
+    },
+    {
+      "suite": "babelstream",
+      "name": "BabelStream.Add",
+      "params": {
+        "array_MiB": 4.0,
+        "elements": 524288,
+        "n": 20,
+        "note_L2": "L2内(非HBM)"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 801.66,
+        "best_s": 2e-05,
+        "pct_of_1229": 65.2
+      },
+      "status": "ok",
+      "note": "数组 ≤192MiB 时命中 192MB L2，数值不代表 HBM"
+    },
+    {
+      "suite": "babelstream",
+      "name": "BabelStream.Triad",
+      "params": {
+        "array_MiB": 4.0,
+        "elements": 524288,
+        "n": 20,
+        "note_L2": "L2内(非HBM)"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 706.35,
+        "best_s": 2e-05,
+        "pct_of_1229": 57.5
+      },
+      "status": "ok",
+      "note": "数组 ≤192MiB 时命中 192MB L2，数值不代表 HBM"
+    },
+    {
+      "suite": "babelstream",
+      "name": "BabelStream.Dot",
+      "params": {
+        "array_MiB": 4.0,
+        "elements": 524288,
+        "n": 20,
+        "note_L2": "L2内(非HBM)"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 110.57,
+        "best_s": 8e-05,
+        "pct_of_1229": 9.0
+      },
+      "status": "ok",
+      "note": "数组 ≤192MiB 时命中 192MB L2，数值不代表 HBM"
+    },
+    {
+      "suite": "babelstream",
+      "name": "BabelStream.Copy",
+      "params": {
+        "array_MiB": 16.0,
+        "elements": 2097152,
+        "n": 20,
+        "note_L2": "L2内(非HBM)"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 1181.04,
+        "best_s": 3e-05,
+        "pct_of_1229": 96.1
+      },
+      "status": "ok",
+      "note": "数组 ≤192MiB 时命中 192MB L2，数值不代表 HBM"
+    },
+    {
+      "suite": "babelstream",
+      "name": "BabelStream.Mul",
+      "params": {
+        "array_MiB": 16.0,
+        "elements": 2097152,
+        "n": 20,
+        "note_L2": "L2内(非HBM)"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 1266.63,
+        "best_s": 3e-05,
+        "pct_of_1229": 103.1
+      },
+      "status": "ok",
+      "note": "数组 ≤192MiB 时命中 192MB L2，数值不代表 HBM"
+    },
+    {
+      "suite": "babelstream",
+      "name": "BabelStream.Add",
+      "params": {
+        "array_MiB": 16.0,
+        "elements": 2097152,
+        "n": 20,
+        "note_L2": "L2内(非HBM)"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 1717.16,
+        "best_s": 3e-05,
+        "pct_of_1229": 139.7
+      },
+      "status": "ok",
+      "note": "数组 ≤192MiB 时命中 192MB L2，数值不代表 HBM"
+    },
+    {
+      "suite": "babelstream",
+      "name": "BabelStream.Triad",
+      "params": {
+        "array_MiB": 16.0,
+        "elements": 2097152,
+        "n": 20,
+        "note_L2": "L2内(非HBM)"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 1580.32,
+        "best_s": 3e-05,
+        "pct_of_1229": 128.6
+      },
+      "status": "ok",
+      "note": "数组 ≤192MiB 时命中 192MB L2，数值不代表 HBM"
+    },
+    {
+      "suite": "babelstream",
+      "name": "BabelStream.Dot",
+      "params": {
+        "array_MiB": 16.0,
+        "elements": 2097152,
+        "n": 20,
+        "note_L2": "L2内(非HBM)"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 402.75,
+        "best_s": 8e-05,
+        "pct_of_1229": 32.8
+      },
+      "status": "ok",
+      "note": "数组 ≤192MiB 时命中 192MB L2，数值不代表 HBM"
+    },
+    {
+      "suite": "babelstream",
+      "name": "BabelStream.Copy",
+      "params": {
+        "array_MiB": 64.0,
+        "elements": 8388608,
+        "n": 20,
+        "note_L2": "L2内(非HBM)"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 1326.68,
+        "best_s": 0.0001,
+        "pct_of_1229": 107.9
+      },
+      "status": "ok",
+      "note": "数组 ≤192MiB 时命中 192MB L2，数值不代表 HBM"
+    },
+    {
+      "suite": "babelstream",
+      "name": "BabelStream.Mul",
+      "params": {
+        "array_MiB": 64.0,
+        "elements": 8388608,
+        "n": 20,
+        "note_L2": "L2内(非HBM)"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 979.72,
+        "best_s": 0.00014,
+        "pct_of_1229": 79.7
+      },
+      "status": "ok",
+      "note": "数组 ≤192MiB 时命中 192MB L2，数值不代表 HBM"
+    },
+    {
+      "suite": "babelstream",
+      "name": "BabelStream.Add",
+      "params": {
+        "array_MiB": 64.0,
+        "elements": 8388608,
+        "n": 20,
+        "note_L2": "L2内(非HBM)"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 735.91,
+        "best_s": 0.00027,
+        "pct_of_1229": 59.9
+      },
+      "status": "ok",
+      "note": "数组 ≤192MiB 时命中 192MB L2，数值不代表 HBM"
+    },
+    {
+      "suite": "babelstream",
+      "name": "BabelStream.Triad",
+      "params": {
+        "array_MiB": 64.0,
+        "elements": 8388608,
+        "n": 20,
+        "note_L2": "L2内(非HBM)"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 800.62,
+        "best_s": 0.00025,
+        "pct_of_1229": 65.1
+      },
+      "status": "ok",
+      "note": "数组 ≤192MiB 时命中 192MB L2，数值不代表 HBM"
+    },
+    {
+      "suite": "babelstream",
+      "name": "BabelStream.Dot",
+      "params": {
+        "array_MiB": 64.0,
+        "elements": 8388608,
+        "n": 20,
+        "note_L2": "L2内(非HBM)"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 647.68,
+        "best_s": 0.00021,
+        "pct_of_1229": 52.7
+      },
+      "status": "ok",
+      "note": "数组 ≤192MiB 时命中 192MB L2，数值不代表 HBM"
+    },
+    {
+      "suite": "babelstream",
+      "name": "BabelStream.Copy",
+      "params": {
+        "array_MiB": 128.0,
+        "elements": 16777216,
+        "n": 20,
+        "note_L2": "L2内(非HBM)"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 1004.15,
+        "best_s": 0.00027,
+        "pct_of_1229": 81.7
+      },
+      "status": "ok",
+      "note": "数组 ≤192MiB 时命中 192MB L2，数值不代表 HBM"
+    },
+    {
+      "suite": "babelstream",
+      "name": "BabelStream.Mul",
+      "params": {
+        "array_MiB": 128.0,
+        "elements": 16777216,
+        "n": 20,
+        "note_L2": "L2内(非HBM)"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 825.46,
+        "best_s": 0.00033,
+        "pct_of_1229": 67.2
+      },
+      "status": "ok",
+      "note": "数组 ≤192MiB 时命中 192MB L2，数值不代表 HBM"
+    },
+    {
+      "suite": "babelstream",
+      "name": "BabelStream.Add",
+      "params": {
+        "array_MiB": 128.0,
+        "elements": 16777216,
+        "n": 20,
+        "note_L2": "L2内(非HBM)"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 761.22,
+        "best_s": 0.00053,
+        "pct_of_1229": 61.9
+      },
+      "status": "ok",
+      "note": "数组 ≤192MiB 时命中 192MB L2，数值不代表 HBM"
+    },
+    {
+      "suite": "babelstream",
+      "name": "BabelStream.Triad",
+      "params": {
+        "array_MiB": 128.0,
+        "elements": 16777216,
+        "n": 20,
+        "note_L2": "L2内(非HBM)"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 801.89,
+        "best_s": 0.0005,
+        "pct_of_1229": 65.2
+      },
+      "status": "ok",
+      "note": "数组 ≤192MiB 时命中 192MB L2，数值不代表 HBM"
+    },
+    {
+      "suite": "babelstream",
+      "name": "BabelStream.Dot",
+      "params": {
+        "array_MiB": 128.0,
+        "elements": 16777216,
+        "n": 20,
+        "note_L2": "L2内(非HBM)"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 624.26,
+        "best_s": 0.00043,
+        "pct_of_1229": 50.8
+      },
+      "status": "ok",
+      "note": "数组 ≤192MiB 时命中 192MB L2，数值不代表 HBM"
+    },
+    {
+      "suite": "babelstream",
+      "name": "BabelStream.Copy",
+      "params": {
+        "array_MiB": 192.0,
+        "elements": 25165824,
+        "n": 20,
+        "note_L2": "L2内(非HBM)"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 930.62,
+        "best_s": 0.00043,
+        "pct_of_1229": 75.7
+      },
+      "status": "ok",
+      "note": "数组 ≤192MiB 时命中 192MB L2，数值不代表 HBM"
+    },
+    {
+      "suite": "babelstream",
+      "name": "BabelStream.Mul",
+      "params": {
+        "array_MiB": 192.0,
+        "elements": 25165824,
+        "n": 20,
+        "note_L2": "L2内(非HBM)"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 823.2,
+        "best_s": 0.00049,
+        "pct_of_1229": 67.0
+      },
+      "status": "ok",
+      "note": "数组 ≤192MiB 时命中 192MB L2，数值不代表 HBM"
+    },
+    {
+      "suite": "babelstream",
+      "name": "BabelStream.Add",
+      "params": {
+        "array_MiB": 192.0,
+        "elements": 25165824,
+        "n": 20,
+        "note_L2": "L2内(非HBM)"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 776.3,
+        "best_s": 0.00078,
+        "pct_of_1229": 63.2
+      },
+      "status": "ok",
+      "note": "数组 ≤192MiB 时命中 192MB L2，数值不代表 HBM"
+    },
+    {
+      "suite": "babelstream",
+      "name": "BabelStream.Triad",
+      "params": {
+        "array_MiB": 192.0,
+        "elements": 25165824,
+        "n": 20,
+        "note_L2": "L2内(非HBM)"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 796.04,
+        "best_s": 0.00076,
+        "pct_of_1229": 64.8
+      },
+      "status": "ok",
+      "note": "数组 ≤192MiB 时命中 192MB L2，数值不代表 HBM"
+    },
+    {
+      "suite": "babelstream",
+      "name": "BabelStream.Dot",
+      "params": {
+        "array_MiB": 192.0,
+        "elements": 25165824,
+        "n": 20,
+        "note_L2": "L2内(非HBM)"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 634.19,
+        "best_s": 0.00063,
+        "pct_of_1229": 51.6
+      },
+      "status": "ok",
+      "note": "数组 ≤192MiB 时命中 192MB L2，数值不代表 HBM"
+    },
+    {
+      "suite": "babelstream",
+      "name": "BabelStream.Copy",
+      "params": {
+        "array_MiB": 256.0,
+        "elements": 33554432,
+        "n": 20,
+        "note_L2": "HBM"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 899.61,
+        "best_s": 0.0006,
+        "pct_of_1229": 73.2
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "babelstream",
+      "name": "BabelStream.Mul",
+      "params": {
+        "array_MiB": 256.0,
+        "elements": 33554432,
+        "n": 20,
+        "note_L2": "HBM"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 831.83,
+        "best_s": 0.00065,
+        "pct_of_1229": 67.7
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "babelstream",
+      "name": "BabelStream.Add",
+      "params": {
+        "array_MiB": 256.0,
+        "elements": 33554432,
+        "n": 20,
+        "note_L2": "HBM"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 783.46,
+        "best_s": 0.00103,
+        "pct_of_1229": 63.7
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "babelstream",
+      "name": "BabelStream.Triad",
+      "params": {
+        "array_MiB": 256.0,
+        "elements": 33554432,
+        "n": 20,
+        "note_L2": "HBM"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 802.63,
+        "best_s": 0.001,
+        "pct_of_1229": 65.3
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "babelstream",
+      "name": "BabelStream.Dot",
+      "params": {
+        "array_MiB": 256.0,
+        "elements": 33554432,
+        "n": 20,
+        "note_L2": "HBM"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 653.24,
+        "best_s": 0.00082,
+        "pct_of_1229": 53.2
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "babelstream",
+      "name": "BabelStream.Copy",
+      "params": {
+        "array_MiB": 512.0,
+        "elements": 67108864,
+        "n": 20,
+        "note_L2": "HBM"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 867.38,
+        "best_s": 0.00124,
+        "pct_of_1229": 70.6
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "babelstream",
+      "name": "BabelStream.Mul",
+      "params": {
+        "array_MiB": 512.0,
+        "elements": 67108864,
+        "n": 20,
+        "note_L2": "HBM"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 836.01,
+        "best_s": 0.00128,
+        "pct_of_1229": 68.0
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "babelstream",
+      "name": "BabelStream.Add",
+      "params": {
+        "array_MiB": 512.0,
+        "elements": 67108864,
+        "n": 20,
+        "note_L2": "HBM"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 794.98,
+        "best_s": 0.00203,
+        "pct_of_1229": 64.7
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "babelstream",
+      "name": "BabelStream.Triad",
+      "params": {
+        "array_MiB": 512.0,
+        "elements": 67108864,
+        "n": 20,
+        "note_L2": "HBM"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 802.69,
+        "best_s": 0.00201,
+        "pct_of_1229": 65.3
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "babelstream",
+      "name": "BabelStream.Dot",
+      "params": {
+        "array_MiB": 512.0,
+        "elements": 67108864,
+        "n": 20,
+        "note_L2": "HBM"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 681.76,
+        "best_s": 0.00157,
+        "pct_of_1229": 55.5
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "babelstream",
+      "name": "BabelStream.Copy",
+      "params": {
+        "array_MiB": 1024.0,
+        "elements": 134217728,
+        "n": 20,
+        "note_L2": "HBM"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 852.0,
+        "best_s": 0.00252,
+        "pct_of_1229": 69.3
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "babelstream",
+      "name": "BabelStream.Mul",
+      "params": {
+        "array_MiB": 1024.0,
+        "elements": 134217728,
+        "n": 20,
+        "note_L2": "HBM"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 834.69,
+        "best_s": 0.00257,
+        "pct_of_1229": 67.9
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "babelstream",
+      "name": "BabelStream.Add",
+      "params": {
+        "array_MiB": 1024.0,
+        "elements": 134217728,
+        "n": 20,
+        "note_L2": "HBM"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 804.44,
+        "best_s": 0.004,
+        "pct_of_1229": 65.5
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "babelstream",
+      "name": "BabelStream.Triad",
+      "params": {
+        "array_MiB": 1024.0,
+        "elements": 134217728,
+        "n": 20,
+        "note_L2": "HBM"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 806.81,
+        "best_s": 0.00399,
+        "pct_of_1229": 65.6
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "babelstream",
+      "name": "BabelStream.Dot",
+      "params": {
+        "array_MiB": 1024.0,
+        "elements": 134217728,
+        "n": 20,
+        "note_L2": "HBM"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 701.41,
+        "best_s": 0.00306,
+        "pct_of_1229": 57.1
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "babelstream",
+      "name": "BabelStream.Copy",
+      "params": {
+        "array_MiB": 2048.0,
+        "elements": 268435456,
+        "n": 20,
+        "note_L2": "HBM"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 850.23,
+        "best_s": 0.00505,
+        "pct_of_1229": 69.2
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "babelstream",
+      "name": "BabelStream.Mul",
+      "params": {
+        "array_MiB": 2048.0,
+        "elements": 268435456,
+        "n": 20,
+        "note_L2": "HBM"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 841.57,
+        "best_s": 0.0051,
+        "pct_of_1229": 68.5
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "babelstream",
+      "name": "BabelStream.Add",
+      "params": {
+        "array_MiB": 2048.0,
+        "elements": 268435456,
+        "n": 20,
+        "note_L2": "HBM"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 807.16,
+        "best_s": 0.00798,
+        "pct_of_1229": 65.7
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "babelstream",
+      "name": "BabelStream.Triad",
+      "params": {
+        "array_MiB": 2048.0,
+        "elements": 268435456,
+        "n": 20,
+        "note_L2": "HBM"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 811.76,
+        "best_s": 0.00794,
+        "pct_of_1229": 66.1
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "babelstream",
+      "name": "BabelStream.Dot",
+      "params": {
+        "array_MiB": 2048.0,
+        "elements": 268435456,
+        "n": 20,
+        "note_L2": "HBM"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 710.49,
+        "best_s": 0.00605,
+        "pct_of_1229": 57.8
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "babelstream",
+      "name": "BabelStream.Copy",
+      "params": {
+        "array_MiB": 4096.0,
+        "elements": 536870912,
+        "n": 20,
+        "note_L2": "HBM"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 845.53,
+        "best_s": 0.01016,
+        "pct_of_1229": 68.8
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "babelstream",
+      "name": "BabelStream.Mul",
+      "params": {
+        "array_MiB": 4096.0,
+        "elements": 536870912,
+        "n": 20,
+        "note_L2": "HBM"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 842.87,
+        "best_s": 0.01019,
+        "pct_of_1229": 68.6
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "babelstream",
+      "name": "BabelStream.Add",
+      "params": {
+        "array_MiB": 4096.0,
+        "elements": 536870912,
+        "n": 20,
+        "note_L2": "HBM"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 810.65,
+        "best_s": 0.01589,
+        "pct_of_1229": 66.0
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "babelstream",
+      "name": "BabelStream.Triad",
+      "params": {
+        "array_MiB": 4096.0,
+        "elements": 536870912,
+        "n": 20,
+        "note_L2": "HBM"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 811.12,
+        "best_s": 0.01589,
+        "pct_of_1229": 66.0
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "babelstream",
+      "name": "BabelStream.Dot",
+      "params": {
+        "array_MiB": 4096.0,
+        "elements": 536870912,
+        "n": 20,
+        "note_L2": "HBM"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 720.3,
+        "best_s": 0.01193,
+        "pct_of_1229": 58.6
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "probe",
+      "name": "bw_probe.copy",
+      "params": {
+        "vec": 1,
+        "array_MiB": 2048.0,
+        "stride": 1
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 673.4,
+        "ms": 6.37808,
+        "pct_of_1229": 54.8
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "probe",
+      "name": "bw_probe.copy",
+      "params": {
+        "vec": 2,
+        "array_MiB": 2048.0,
+        "stride": 1
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 706.09,
+        "ms": 6.08272,
+        "pct_of_1229": 57.5
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "probe",
+      "name": "bw_probe.copy",
+      "params": {
+        "vec": 4,
+        "array_MiB": 2048.0,
+        "stride": 1
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 713.87,
+        "ms": 6.01648,
+        "pct_of_1229": 58.1
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "probe",
+      "name": "bw_probe.copy",
+      "params": {
+        "vec": 8,
+        "array_MiB": 2048.0,
+        "stride": 1
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 450.65,
+        "ms": 9.53056,
+        "pct_of_1229": 36.7
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "probe",
+      "name": "bw_probe.copy",
+      "params": {
+        "vec": 16,
+        "array_MiB": 2048.0,
+        "stride": 1
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 358.39,
+        "ms": 11.984,
+        "pct_of_1229": 29.2
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "probe",
+      "name": "bw_probe.read",
+      "params": {
+        "vec": 1,
+        "array_MiB": 2048.0,
+        "stride": 1
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 696.01,
+        "ms": 3.08544,
+        "pct_of_1229": 56.6
+      },
+      "status": "ok",
+      "note": "单向：1 读或 1 写"
+    },
+    {
+      "suite": "probe",
+      "name": "bw_probe.read",
+      "params": {
+        "vec": 2,
+        "array_MiB": 2048.0,
+        "stride": 1
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 686.78,
+        "ms": 3.12688,
+        "pct_of_1229": 55.9
+      },
+      "status": "ok",
+      "note": "单向：1 读或 1 写"
+    },
+    {
+      "suite": "probe",
+      "name": "bw_probe.read",
+      "params": {
+        "vec": 4,
+        "array_MiB": 2048.0,
+        "stride": 1
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 688.15,
+        "ms": 3.12064,
+        "pct_of_1229": 56.0
+      },
+      "status": "ok",
+      "note": "单向：1 读或 1 写"
+    },
+    {
+      "suite": "probe",
+      "name": "bw_probe.read",
+      "params": {
+        "vec": 8,
+        "array_MiB": 2048.0,
+        "stride": 1
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 643.85,
+        "ms": 3.33536,
+        "pct_of_1229": 52.4
+      },
+      "status": "ok",
+      "note": "单向：1 读或 1 写"
+    },
+    {
+      "suite": "probe",
+      "name": "bw_probe.read",
+      "params": {
+        "vec": 16,
+        "array_MiB": 2048.0,
+        "stride": 1
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 652.43,
+        "ms": 3.29152,
+        "pct_of_1229": 53.1
+      },
+      "status": "ok",
+      "note": "单向：1 读或 1 写"
+    },
+    {
+      "suite": "probe",
+      "name": "bw_probe.write",
+      "params": {
+        "vec": 1,
+        "array_MiB": 2048.0,
+        "stride": 1
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 850.72,
+        "ms": 2.52432,
+        "pct_of_1229": 69.2
+      },
+      "status": "ok",
+      "note": "单向：1 读或 1 写"
+    },
+    {
+      "suite": "probe",
+      "name": "bw_probe.write",
+      "params": {
+        "vec": 2,
+        "array_MiB": 2048.0,
+        "stride": 1
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 862.42,
+        "ms": 2.49008,
+        "pct_of_1229": 70.2
+      },
+      "status": "ok",
+      "note": "单向：1 读或 1 写"
+    },
+    {
+      "suite": "probe",
+      "name": "bw_probe.write",
+      "params": {
+        "vec": 4,
+        "array_MiB": 2048.0,
+        "stride": 1
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 829.02,
+        "ms": 2.5904,
+        "pct_of_1229": 67.5
+      },
+      "status": "ok",
+      "note": "单向：1 读或 1 写"
+    },
+    {
+      "suite": "probe",
+      "name": "bw_probe.write",
+      "params": {
+        "vec": 8,
+        "array_MiB": 2048.0,
+        "stride": 1
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 313.49,
+        "ms": 6.85024,
+        "pct_of_1229": 25.5
+      },
+      "status": "ok",
+      "note": "单向：1 读或 1 写"
+    },
+    {
+      "suite": "probe",
+      "name": "bw_probe.write",
+      "params": {
+        "vec": 16,
+        "array_MiB": 2048.0,
+        "stride": 1
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 291.17,
+        "ms": 7.37536,
+        "pct_of_1229": 23.7
+      },
+      "status": "ok",
+      "note": "单向：1 读或 1 写"
+    },
+    {
+      "suite": "probe",
+      "name": "bw_probe.triad",
+      "params": {
+        "vec": 1,
+        "array_MiB": 2048.0,
+        "stride": 1
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 677.63,
+        "ms": 9.50736,
+        "pct_of_1229": 55.1
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "probe",
+      "name": "bw_probe.triad",
+      "params": {
+        "vec": 2,
+        "array_MiB": 2048.0,
+        "stride": 1
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 722.74,
+        "ms": 8.91392,
+        "pct_of_1229": 58.8
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "probe",
+      "name": "bw_probe.triad",
+      "params": {
+        "vec": 4,
+        "array_MiB": 2048.0,
+        "stride": 1
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 713.44,
+        "ms": 9.03008,
+        "pct_of_1229": 58.1
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "probe",
+      "name": "bw_probe.triad",
+      "params": {
+        "vec": 8,
+        "array_MiB": 2048.0,
+        "stride": 1
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 522.66,
+        "ms": 12.32624,
+        "pct_of_1229": 42.5
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "probe",
+      "name": "bw_probe.triad",
+      "params": {
+        "vec": 16,
+        "array_MiB": 2048.0,
+        "stride": 1
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 432.05,
+        "ms": 14.91152,
+        "pct_of_1229": 35.2
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "probe",
+      "name": "vec_sweep.copy",
+      "params": {
+        "vec": 1,
+        "stride": 1
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 676.76,
+        "ms": 6.3464
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "probe",
+      "name": "vec_sweep.copy",
+      "params": {
+        "vec": 2,
+        "stride": 1
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 707.23,
+        "ms": 6.07296
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "probe",
+      "name": "vec_sweep.copy",
+      "params": {
+        "vec": 4,
+        "stride": 1
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 713.13,
+        "ms": 6.02272
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "probe",
+      "name": "vec_sweep.copy",
+      "params": {
+        "vec": 8,
+        "stride": 1
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 449.79,
+        "ms": 9.5488
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "probe",
+      "name": "vec_sweep.copy",
+      "params": {
+        "vec": 16,
+        "stride": 1
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 358.61,
+        "ms": 11.9768
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "probe",
+      "name": "stride_sweep.copy",
+      "params": {
+        "vec": 4,
+        "stride": 1
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 713.77,
+        "ms": 6.01728
+      },
+      "status": "ok",
+      "note": "stride>1 时按逻辑访问字节计数，下降源于缓存行利用率而非 HBM"
+    },
+    {
+      "suite": "probe",
+      "name": "stride_sweep.copy",
+      "params": {
+        "vec": 4,
+        "stride": 2
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 237.23,
+        "ms": 9.05232
+      },
+      "status": "ok",
+      "note": "stride>1 时按逻辑访问字节计数，下降源于缓存行利用率而非 HBM"
+    },
+    {
+      "suite": "probe",
+      "name": "stride_sweep.copy",
+      "params": {
+        "vec": 4,
+        "stride": 4
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 118.45,
+        "ms": 9.06496
+      },
+      "status": "ok",
+      "note": "stride>1 时按逻辑访问字节计数，下降源于缓存行利用率而非 HBM"
+    },
+    {
+      "suite": "probe",
+      "name": "stride_sweep.copy",
+      "params": {
+        "vec": 4,
+        "stride": 8
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 115.92,
+        "ms": 4.63152
+      },
+      "status": "ok",
+      "note": "stride>1 时按逻辑访问字节计数，下降源于缓存行利用率而非 HBM"
+    },
+    {
+      "suite": "probe",
+      "name": "stride_sweep.copy",
+      "params": {
+        "vec": 4,
+        "stride": 16
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 68.28,
+        "ms": 3.93168
+      },
+      "status": "ok",
+      "note": "stride>1 时按逻辑访问字节计数，下降源于缓存行利用率而非 HBM"
+    },
+    {
+      "suite": "dual_gpu",
+      "name": "solo.GPU0",
+      "params": {
+        "GPU": 0
+      },
+      "stats": null,
+      "metrics": {
+        "copy_gbps": 838.99
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "dual_gpu",
+      "name": "solo.GPU1",
+      "params": {
+        "GPU": 1
+      },
+      "stats": null,
+      "metrics": {
+        "copy_gbps": 839.77
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "dual_gpu",
+      "name": "concurrent.both",
+      "params": {
+        "GPU": "0+1",
+        "elems": 268435456
+      },
+      "stats": null,
+      "metrics": {
+        "GPU0_gbps": 839.21,
+        "GPU1_gbps": 839.73,
+        "aggregate_gbps": 1678.94,
+        "scaling_vs_solo_mean": 2.0
+      },
+      "status": "ok",
+      "note": "两卡各自独立 HBM，理论应接近 2×；若明显 <2× 说明受主机/PCIe 限制"
+    },
+    {
+      "suite": "torch",
+      "name": "device_info",
+      "params": {
+        "device": "xpu:0"
+      },
+      "stats": null,
+      "metrics": {
+        "xpu_device_count": 1,
+        "device_name": "Intel(R) Data Center GPU Max 1100"
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "torch",
+      "name": "D2D.copy.bfloat16",
+      "params": {
+        "dtype": "bfloat16",
+        "MiB": 64.0
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 1090.87,
+        "gbps_median": 1056.93,
+        "moved_GiB": 0.125
+      },
+      "status": "ok",
+      "note": "D2D 显存内拷贝 (读+写)"
+    },
+    {
+      "suite": "torch",
+      "name": "D2D.copy.float32",
+      "params": {
+        "dtype": "float32",
+        "MiB": 64.0
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 1126.96,
+        "gbps_median": 1051.44,
+        "moved_GiB": 0.125
+      },
+      "status": "ok",
+      "note": "D2D 显存内拷贝 (读+写)"
+    },
+    {
+      "suite": "torch",
+      "name": "D2D.copy.bfloat16",
+      "params": {
+        "dtype": "bfloat16",
+        "MiB": 256.0
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 789.34,
+        "gbps_median": 783.45,
+        "moved_GiB": 0.5
+      },
+      "status": "ok",
+      "note": "D2D 显存内拷贝 (读+写)"
+    },
+    {
+      "suite": "torch",
+      "name": "D2D.copy.float32",
+      "params": {
+        "dtype": "float32",
+        "MiB": 256.0
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 796.68,
+        "gbps_median": 781.6,
+        "moved_GiB": 0.5
+      },
+      "status": "ok",
+      "note": "D2D 显存内拷贝 (读+写)"
+    },
+    {
+      "suite": "torch",
+      "name": "D2D.copy.bfloat16",
+      "params": {
+        "dtype": "bfloat16",
+        "MiB": 512.0
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 790.05,
+        "gbps_median": 787.78,
+        "moved_GiB": 1.0
+      },
+      "status": "ok",
+      "note": "D2D 显存内拷贝 (读+写)"
+    },
+    {
+      "suite": "torch",
+      "name": "D2D.copy.float32",
+      "params": {
+        "dtype": "float32",
+        "MiB": 512.0
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 791.3,
+        "gbps_median": 787.89,
+        "moved_GiB": 1.0
+      },
+      "status": "ok",
+      "note": "D2D 显存内拷贝 (读+写)"
+    },
+    {
+      "suite": "torch",
+      "name": "D2D.copy.bfloat16",
+      "params": {
+        "dtype": "bfloat16",
+        "MiB": 1024.0
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 794.71,
+        "gbps_median": 792.3,
+        "moved_GiB": 2.0
+      },
+      "status": "ok",
+      "note": "D2D 显存内拷贝 (读+写)"
+    },
+    {
+      "suite": "torch",
+      "name": "D2D.copy.float32",
+      "params": {
+        "dtype": "float32",
+        "MiB": 1024.0
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 794.78,
+        "gbps_median": 791.61,
+        "moved_GiB": 2.0
+      },
+      "status": "ok",
+      "note": "D2D 显存内拷贝 (读+写)"
+    },
+    {
+      "suite": "torch",
+      "name": "D2D.copy.bfloat16",
+      "params": {
+        "dtype": "bfloat16",
+        "MiB": 2048.0
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 796.71,
+        "gbps_median": 794.87,
+        "moved_GiB": 4.0
+      },
+      "status": "ok",
+      "note": "D2D 显存内拷贝 (读+写)"
+    },
+    {
+      "suite": "torch",
+      "name": "D2D.copy.float32",
+      "params": {
+        "dtype": "float32",
+        "MiB": 2048.0
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 798.16,
+        "gbps_median": 794.88,
+        "moved_GiB": 4.0
+      },
+      "status": "ok",
+      "note": "D2D 显存内拷贝 (读+写)"
+    },
+    {
+      "suite": "torch",
+      "name": "H2D.pageable.float32",
+      "params": {
+        "dtype": "float32",
+        "MiB": 256.0,
+        "pinned": false
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 25.81,
+        "gbps_median": 25.62,
+        "pct_of_pcie5_x16_63": 41.0
+      },
+      "status": "ok",
+      "note": "PCIe 5.0 x16 理论 ≈63 GB/s"
+    },
+    {
+      "suite": "torch",
+      "name": "D2H.pageable.float32",
+      "params": {
+        "dtype": "float32",
+        "MiB": 256.0,
+        "pinned": false
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 25.41,
+        "gbps_median": 24.98
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "torch",
+      "name": "H2D.pinned.float32",
+      "params": {
+        "dtype": "float32",
+        "MiB": 256.0,
+        "pinned": true
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 31.87,
+        "gbps_median": 31.87,
+        "pct_of_pcie5_x16_63": 50.6
+      },
+      "status": "ok",
+      "note": "PCIe 5.0 x16 理论 ≈63 GB/s"
+    },
+    {
+      "suite": "torch",
+      "name": "D2H.pinned.float32",
+      "params": {
+        "dtype": "float32",
+        "MiB": 256.0,
+        "pinned": true
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 31.89,
+        "gbps_median": 31.89
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "host",
+      "name": "host_stream.Copy",
+      "params": {
+        "array_MiB": 16.0,
+        "threads": 72,
+        "working_set_MB": 48.0,
+        "note_regime": "L3内(非DRAM)"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 674.64,
+        "seconds": 5e-05,
+        "io_factor": 2
+      },
+      "status": "ok",
+      "note": "主机内存 L3内(非DRAM)；L3=432 MiB（lscpu）。主机带宽决定 dataloader/预处理上限，也是多卡喂数据的天花板"
+    },
+    {
+      "suite": "host",
+      "name": "host_stream.Scale",
+      "params": {
+        "array_MiB": 16.0,
+        "threads": 72,
+        "working_set_MB": 48.0,
+        "note_regime": "L3内(非DRAM)"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 884.69,
+        "seconds": 3.8e-05,
+        "io_factor": 2
+      },
+      "status": "ok",
+      "note": "主机内存 L3内(非DRAM)；L3=432 MiB（lscpu）。主机带宽决定 dataloader/预处理上限，也是多卡喂数据的天花板"
+    },
+    {
+      "suite": "host",
+      "name": "host_stream.Add",
+      "params": {
+        "array_MiB": 16.0,
+        "threads": 72,
+        "working_set_MB": 48.0,
+        "note_regime": "L3内(非DRAM)"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 1281.98,
+        "seconds": 3.9e-05,
+        "io_factor": 3
+      },
+      "status": "ok",
+      "note": "主机内存 L3内(非DRAM)；L3=432 MiB（lscpu）。主机带宽决定 dataloader/预处理上限，也是多卡喂数据的天花板"
+    },
+    {
+      "suite": "host",
+      "name": "host_stream.Triad",
+      "params": {
+        "array_MiB": 16.0,
+        "threads": 72,
+        "working_set_MB": 48.0,
+        "note_regime": "L3内(非DRAM)"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 1368.27,
+        "seconds": 3.7e-05,
+        "io_factor": 3
+      },
+      "status": "ok",
+      "note": "主机内存 L3内(非DRAM)；L3=432 MiB（lscpu）。主机带宽决定 dataloader/预处理上限，也是多卡喂数据的天花板"
+    },
+    {
+      "suite": "host",
+      "name": "host_stream.Copy",
+      "params": {
+        "array_MiB": 128.0,
+        "threads": 72,
+        "working_set_MB": 384.0,
+        "note_regime": "L3内(非DRAM)"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 254.73,
+        "seconds": 0.001054,
+        "io_factor": 2
+      },
+      "status": "ok",
+      "note": "主机内存 L3内(非DRAM)；L3=432 MiB（lscpu）。主机带宽决定 dataloader/预处理上限，也是多卡喂数据的天花板"
+    },
+    {
+      "suite": "host",
+      "name": "host_stream.Scale",
+      "params": {
+        "array_MiB": 128.0,
+        "threads": 72,
+        "working_set_MB": 384.0,
+        "note_regime": "L3内(非DRAM)"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 264.19,
+        "seconds": 0.001016,
+        "io_factor": 2
+      },
+      "status": "ok",
+      "note": "主机内存 L3内(非DRAM)；L3=432 MiB（lscpu）。主机带宽决定 dataloader/预处理上限，也是多卡喂数据的天花板"
+    },
+    {
+      "suite": "host",
+      "name": "host_stream.Add",
+      "params": {
+        "array_MiB": 128.0,
+        "threads": 72,
+        "working_set_MB": 384.0,
+        "note_regime": "L3内(非DRAM)"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 301.5,
+        "seconds": 0.001336,
+        "io_factor": 3
+      },
+      "status": "ok",
+      "note": "主机内存 L3内(非DRAM)；L3=432 MiB（lscpu）。主机带宽决定 dataloader/预处理上限，也是多卡喂数据的天花板"
+    },
+    {
+      "suite": "host",
+      "name": "host_stream.Triad",
+      "params": {
+        "array_MiB": 128.0,
+        "threads": 72,
+        "working_set_MB": 384.0,
+        "note_regime": "L3内(非DRAM)"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 352.46,
+        "seconds": 0.001142,
+        "io_factor": 3
+      },
+      "status": "ok",
+      "note": "主机内存 L3内(非DRAM)；L3=432 MiB（lscpu）。主机带宽决定 dataloader/预处理上限，也是多卡喂数据的天花板"
+    },
+    {
+      "suite": "host",
+      "name": "host_stream.Copy",
+      "params": {
+        "array_MiB": 1024.0,
+        "threads": 72,
+        "working_set_MB": 3072.0,
+        "note_regime": "DRAM"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 39.63,
+        "seconds": 0.054189,
+        "io_factor": 2
+      },
+      "status": "ok",
+      "note": "主机内存 DRAM；L3=432 MiB（lscpu）。主机带宽决定 dataloader/预处理上限，也是多卡喂数据的天花板"
+    },
+    {
+      "suite": "host",
+      "name": "host_stream.Scale",
+      "params": {
+        "array_MiB": 1024.0,
+        "threads": 72,
+        "working_set_MB": 3072.0,
+        "note_regime": "DRAM"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 39.97,
+        "seconds": 0.053731,
+        "io_factor": 2
+      },
+      "status": "ok",
+      "note": "主机内存 DRAM；L3=432 MiB（lscpu）。主机带宽决定 dataloader/预处理上限，也是多卡喂数据的天花板"
+    },
+    {
+      "suite": "host",
+      "name": "host_stream.Add",
+      "params": {
+        "array_MiB": 1024.0,
+        "threads": 72,
+        "working_set_MB": 3072.0,
+        "note_regime": "DRAM"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 42.2,
+        "seconds": 0.076336,
+        "io_factor": 3
+      },
+      "status": "ok",
+      "note": "主机内存 DRAM；L3=432 MiB（lscpu）。主机带宽决定 dataloader/预处理上限，也是多卡喂数据的天花板"
+    },
+    {
+      "suite": "host",
+      "name": "host_stream.Triad",
+      "params": {
+        "array_MiB": 1024.0,
+        "threads": 72,
+        "working_set_MB": 3072.0,
+        "note_regime": "DRAM"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 41.42,
+        "seconds": 0.077779,
+        "io_factor": 3
+      },
+      "status": "ok",
+      "note": "主机内存 DRAM；L3=432 MiB（lscpu）。主机带宽决定 dataloader/预处理上限，也是多卡喂数据的天花板"
+    },
+    {
+      "suite": "host",
+      "name": "cpu_topology",
+      "params": {},
+      "stats": null,
+      "metrics": {
+        "l3_MiB": 432.0,
+        "l2_MiB": 144.0,
+        "cpus": "144",
+        "numa_nodes": "1"
+      },
+      "status": "ok",
+      "note": "CPU: Genuine Intel(R) 0000；L3=432.0 MiB 是主机内存测速的关键参数"
+    },
+    {
+      "suite": "counters",
+      "name": "idle_baseline",
+      "params": {},
+      "stats": null,
+      "metrics": {},
+      "status": "ok",
+      "note": "空载计数器。本驱动 N/A 的指标："
+    },
+    {
+      "suite": "counters",
+      "name": "mem_rw_under_load",
+      "params": {
+        "samples": 5,
+        "load": "BabelStream Copy 4GiB"
+      },
+      "stats": null,
+      "metrics": {
+        "read_kbs": null,
+        "write_kbs": null,
+        "read_write_total_gbps": 0.0,
+        "mem_bw_pct": null,
+        "mem_util_pct": null,
+        "power_w": null,
+        "counter_usable": false
+      },
+      "status": "error",
+      "note": "驱动报的显存读写计数器在满载（~900 GB/s）下依然停在 ~576 kB/s，与空载完全相同 → **该计数器在本驱动上不可用**，不能用它交叉验证带宽。对照：同一时刻 GPU Power 已升到 260+ W，说明负载确实在跑。"
+    }
+  ]
+}

@@ -1,0 +1,2414 @@
+{
+  "meta": {
+    "timestamp": "2026-09-21T22:30:06",
+    "hostname": "hwt",
+    "platform": "Linux-6.14.0-37-generic-x86_64-with-glibc2.41",
+    "device": {
+      "device_index": 0,
+      "name": "Intel(R) Data Center GPU Max 1100",
+      "driver_version": "1.6.33578+77",
+      "device_count": 2,
+      "total_memory_gib": 50315264.0,
+      "max_compute_units": 448,
+      "gpu_eu_count": 448,
+      "gpu_subslice_count": 56,
+      "last_level_cache_mb": 196608.0,
+      "memory_clock_mhz": 3200,
+      "has_fp64": true,
+      "has_fp16": true,
+      "torch_version": "2.14.0+xpu",
+      "python_version": "3.13.3",
+      "oneapi_reference_clock_ghz": 1.55
+    },
+    "arguments": {
+      "suite": "gemm",
+      "warmup": 5,
+      "iters": 20,
+      "size_mb": 1024,
+      "gemm_sizes": [
+        256,
+        512,
+        1024,
+        2048,
+        4096,
+        8192
+      ],
+      "bw_sizes": [
+        4,
+        16,
+        64,
+        128,
+        192,
+        256,
+        512,
+        1024,
+        2048
+      ],
+      "reduce_cols": 4096,
+      "xfer_mib": 256,
+      "large": true,
+      "real_shapes": true,
+      "batched": true,
+      "int8": true,
+      "manual_attn": true,
+      "dtype_bw": true,
+      "size_sweep": true,
+      "host_transfer": true,
+      "outdir": "/root/workspace/benchmark/05-ai-dl/results"
+    },
+    "triton_version": "3.8.0"
+  },
+  "highlights": [
+    "GEMM 峰值 fp32: 22.16 TFLOPS @ 16384x16384x16384",
+    "GEMM 峰值 fp64: 14.47 TFLOPS @ 2048x2048x2048",
+    "GEMM 峰值 fp16: 232.51 TFLOPS @ 4096x11008x4096",
+    "GEMM 峰值 bf16: 241.43 TFLOPS @ 8192x8192x8192",
+    "⚠ fp64 实测 14.47 TFLOPS 高于理论假设 11.11（130%），理论公式需根据实测修正",
+    "XMX 加速比 fp16/fp32 = 10.49×（XMX 已启用）",
+    "XMX 加速比 bf16/fp32 = 10.89×（XMX 已启用）"
+  ],
+  "results": [
+    {
+      "suite": "gemm",
+      "name": "matmul_square",
+      "params": {
+        "dtype": "fp32",
+        "m": 256,
+        "n": 256,
+        "k": 256,
+        "batch": 1,
+        "shape": "256x256x256"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.069848,
+        "median_ms": 0.06408,
+        "min_ms": 0.06064,
+        "max_ms": 0.13999999999999999,
+        "std_ms": 0.017983599639671694
+      },
+      "metrics": {
+        "tflops": 0.5236334581772785,
+        "theo_tflops": 22.2208,
+        "ratio_pct": 2.356501377885938
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_square",
+      "params": {
+        "dtype": "fp32",
+        "m": 512,
+        "n": 512,
+        "k": 512,
+        "batch": 1,
+        "shape": "512x512x512"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.07228799999999999,
+        "median_ms": 0.06872,
+        "min_ms": 0.0648,
+        "max_ms": 0.11095999999999999,
+        "std_ms": 0.009884627256502895
+      },
+      "metrics": {
+        "tflops": 3.9062202561117574,
+        "theo_tflops": 22.2208,
+        "ratio_pct": 17.57911621594073
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_square",
+      "params": {
+        "dtype": "fp32",
+        "m": 1024,
+        "n": 1024,
+        "k": 1024,
+        "batch": 1,
+        "shape": "1024x1024x1024"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.140448,
+        "median_ms": 0.1396,
+        "min_ms": 0.13792,
+        "max_ms": 0.14536,
+        "std_ms": 0.002182167729575341
+      },
+      "metrics": {
+        "tflops": 15.383120687679082,
+        "theo_tflops": 22.2208,
+        "ratio_pct": 69.22847371687375
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_square",
+      "params": {
+        "dtype": "fp32",
+        "m": 2048,
+        "n": 2048,
+        "k": 2048,
+        "batch": 1,
+        "shape": "2048x2048x2048"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.825264,
+        "median_ms": 0.82192,
+        "min_ms": 0.8203199999999999,
+        "max_ms": 0.8423999999999999,
+        "std_ms": 0.006679861076399717
+      },
+      "metrics": {
+        "tflops": 20.902118434884176,
+        "theo_tflops": 22.2208,
+        "ratio_pct": 94.06555315238055
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_square",
+      "params": {
+        "dtype": "fp32",
+        "m": 4096,
+        "n": 4096,
+        "k": 4096,
+        "batch": 1,
+        "shape": "4096x4096x4096"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 6.277496,
+        "median_ms": 6.2732399999999995,
+        "min_ms": 6.2608,
+        "max_ms": 6.309279999999999,
+        "std_ms": 0.014179536804846548
+      },
+      "metrics": {
+        "tflops": 21.90876699632088,
+        "theo_tflops": 22.2208,
+        "ratio_pct": 98.59576161218715
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_square",
+      "params": {
+        "dtype": "fp32",
+        "m": 8192,
+        "n": 8192,
+        "k": 8192,
+        "batch": 1,
+        "shape": "8192x8192x8192"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 49.703632,
+        "median_ms": 49.69632,
+        "min_ms": 49.68264,
+        "max_ms": 49.775999999999996,
+        "std_ms": 0.02249409380259569
+      },
+      "metrics": {
+        "tflops": 22.12460857818044,
+        "theo_tflops": 22.2208,
+        "ratio_pct": 99.56711089690937
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_square",
+      "params": {
+        "dtype": "fp32",
+        "m": 16384,
+        "n": 16384,
+        "k": 16384,
+        "batch": 1,
+        "shape": "16384x16384x16384"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 396.878732,
+        "median_ms": 396.87487999999996,
+        "min_ms": 396.83032,
+        "max_ms": 396.94816,
+        "std_ms": 0.036052941294712496
+      },
+      "metrics": {
+        "tflops": 22.163390694336716,
+        "theo_tflops": 22.2208,
+        "ratio_pct": 99.74164158957696
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_square",
+      "params": {
+        "dtype": "bf16",
+        "m": 256,
+        "n": 256,
+        "k": 256,
+        "batch": 1,
+        "shape": "256x256x256"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.064816,
+        "median_ms": 0.0628,
+        "min_ms": 0.06104,
+        "max_ms": 0.07976,
+        "std_ms": 0.005086741982841276
+      },
+      "metrics": {
+        "tflops": 0.5343062420382166
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_square",
+      "params": {
+        "dtype": "bf16",
+        "m": 512,
+        "n": 512,
+        "k": 512,
+        "batch": 1,
+        "shape": "512x512x512"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.064928,
+        "median_ms": 0.0638,
+        "min_ms": 0.0612,
+        "max_ms": 0.07528,
+        "std_ms": 0.003952469607726289
+      },
+      "metrics": {
+        "tflops": 4.207452288401254
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_square",
+      "params": {
+        "dtype": "bf16",
+        "m": 1024,
+        "n": 1024,
+        "k": 1024,
+        "batch": 1,
+        "shape": "1024x1024x1024"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.065008,
+        "median_ms": 0.06391999999999999,
+        "min_ms": 0.06152,
+        "max_ms": 0.07664,
+        "std_ms": 0.0036663573202839906
+      },
+      "metrics": {
+        "tflops": 33.59642753441803
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_square",
+      "params": {
+        "dtype": "bf16",
+        "m": 2048,
+        "n": 2048,
+        "k": 2048,
+        "batch": 1,
+        "shape": "2048x2048x2048"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.113608,
+        "median_ms": 0.11348,
+        "min_ms": 0.10927999999999999,
+        "max_ms": 0.11775999999999999,
+        "std_ms": 0.002369526534985417
+      },
+      "metrics": {
+        "tflops": 151.39116305956998
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_square",
+      "params": {
+        "dtype": "bf16",
+        "m": 4096,
+        "n": 4096,
+        "k": 4096,
+        "batch": 1,
+        "shape": "4096x4096x4096"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.601564,
+        "median_ms": 0.59136,
+        "min_ms": 0.5843999999999999,
+        "max_ms": 0.6376,
+        "std_ms": 0.015626387426401538
+      },
+      "metrics": {
+        "tflops": 232.41165021645023
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_square",
+      "params": {
+        "dtype": "bf16",
+        "m": 8192,
+        "n": 8192,
+        "k": 8192,
+        "batch": 1,
+        "shape": "8192x8192x8192"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 4.697547999999999,
+        "median_ms": 4.55424,
+        "min_ms": 4.3010399999999995,
+        "max_ms": 5.3258399999999995,
+        "std_ms": 0.3412158638985004
+      },
+      "metrics": {
+        "tflops": 241.42593007307474
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_square",
+      "params": {
+        "dtype": "bf16",
+        "m": 16384,
+        "n": 16384,
+        "k": 16384,
+        "batch": 1,
+        "shape": "16384x16384x16384"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 73.392676,
+        "median_ms": 73.74628,
+        "min_ms": 68.24296,
+        "max_ms": 78.22984,
+        "std_ms": 3.333733771971602
+      },
+      "metrics": {
+        "tflops": 119.2750742438534
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_square",
+      "params": {
+        "dtype": "fp16",
+        "m": 256,
+        "n": 256,
+        "k": 256,
+        "batch": 1,
+        "shape": "256x256x256"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.065772,
+        "median_ms": 0.06428,
+        "min_ms": 0.061439999999999995,
+        "max_ms": 0.07544,
+        "std_ms": 0.004095052624814484
+      },
+      "metrics": {
+        "tflops": 0.5220042314872433
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_square",
+      "params": {
+        "dtype": "fp16",
+        "m": 512,
+        "n": 512,
+        "k": 512,
+        "batch": 1,
+        "shape": "512x512x512"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.065612,
+        "median_ms": 0.06404,
+        "min_ms": 0.06104,
+        "max_ms": 0.07592,
+        "std_ms": 0.0041046529694969336
+      },
+      "metrics": {
+        "tflops": 4.191684197376639
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_square",
+      "params": {
+        "dtype": "fp16",
+        "m": 1024,
+        "n": 1024,
+        "k": 1024,
+        "batch": 1,
+        "shape": "1024x1024x1024"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.064668,
+        "median_ms": 0.06348,
+        "min_ms": 0.06152,
+        "max_ms": 0.076,
+        "std_ms": 0.0032904492094545388
+      },
+      "metrics": {
+        "tflops": 33.82929502205419
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_square",
+      "params": {
+        "dtype": "fp16",
+        "m": 2048,
+        "n": 2048,
+        "k": 2048,
+        "batch": 1,
+        "shape": "2048x2048x2048"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.113976,
+        "median_ms": 0.11432,
+        "min_ms": 0.10615999999999999,
+        "max_ms": 0.122,
+        "std_ms": 0.0028932030692642376
+      },
+      "metrics": {
+        "tflops": 150.27877172848144
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_square",
+      "params": {
+        "dtype": "fp16",
+        "m": 4096,
+        "n": 4096,
+        "k": 4096,
+        "batch": 1,
+        "shape": "4096x4096x4096"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.6609839999999999,
+        "median_ms": 0.65216,
+        "min_ms": 0.6412,
+        "max_ms": 0.71104,
+        "std_ms": 0.017720263654923435
+      },
+      "metrics": {
+        "tflops": 210.74422453385674
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_square",
+      "params": {
+        "dtype": "fp16",
+        "m": 8192,
+        "n": 8192,
+        "k": 8192,
+        "batch": 1,
+        "shape": "8192x8192x8192"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 4.945224,
+        "median_ms": 4.95176,
+        "min_ms": 4.87048,
+        "max_ms": 5.07344,
+        "std_ms": 0.048353585017038764
+      },
+      "metrics": {
+        "tflops": 222.04461197150104
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_square",
+      "params": {
+        "dtype": "fp16",
+        "m": 16384,
+        "n": 16384,
+        "k": 16384,
+        "batch": 1,
+        "shape": "16384x16384x16384"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 89.050636,
+        "median_ms": 89.23355999999998,
+        "min_ms": 86.4952,
+        "max_ms": 90.4584,
+        "std_ms": 0.8811236101160844
+      },
+      "metrics": {
+        "tflops": 98.57382157798031
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_square",
+      "params": {
+        "dtype": "fp64",
+        "m": 256,
+        "n": 256,
+        "k": 256,
+        "batch": 1,
+        "shape": "256x256x256"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.065388,
+        "median_ms": 0.06395999999999999,
+        "min_ms": 0.06168,
+        "max_ms": 0.07808,
+        "std_ms": 0.003755595292360454
+      },
+      "metrics": {
+        "tflops": 0.5246158849280801,
+        "theo_tflops": 11.1104,
+        "ratio_pct": 4.721845162443118
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_square",
+      "params": {
+        "dtype": "fp64",
+        "m": 512,
+        "n": 512,
+        "k": 512,
+        "batch": 1,
+        "shape": "512x512x512"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.069484,
+        "median_ms": 0.06788,
+        "min_ms": 0.06368,
+        "max_ms": 0.0828,
+        "std_ms": 0.004806826811941533
+      },
+      "metrics": {
+        "tflops": 3.954558868591633,
+        "theo_tflops": 11.1104,
+        "ratio_pct": 35.59330778902319
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_square",
+      "params": {
+        "dtype": "fp64",
+        "m": 1024,
+        "n": 1024,
+        "k": 1024,
+        "batch": 1,
+        "shape": "1024x1024x1024"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.193112,
+        "median_ms": 0.1906,
+        "min_ms": 0.18872,
+        "max_ms": 0.23256,
+        "std_ms": 0.00918304176185647
+      },
+      "metrics": {
+        "tflops": 11.266965624344175,
+        "theo_tflops": 11.1104,
+        "ratio_pct": 101.4091808066692
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_square",
+      "params": {
+        "dtype": "fp64",
+        "m": 2048,
+        "n": 2048,
+        "k": 2048,
+        "batch": 1,
+        "shape": "2048x2048x2048"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 1.19574,
+        "median_ms": 1.1869999999999998,
+        "min_ms": 1.18,
+        "max_ms": 1.2345599999999999,
+        "std_ms": 0.016700138921577852
+      },
+      "metrics": {
+        "tflops": 14.473352303285596,
+        "theo_tflops": 11.1104,
+        "ratio_pct": 130.26850791407688
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_square",
+      "params": {
+        "dtype": "fp64",
+        "m": 4096,
+        "n": 4096,
+        "k": 4096,
+        "batch": 1,
+        "shape": "4096x4096x4096"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 9.856396,
+        "median_ms": 9.92952,
+        "min_ms": 9.188559999999999,
+        "max_ms": 10.384879999999999,
+        "std_ms": 0.3604928488389196
+      },
+      "metrics": {
+        "tflops": 13.841449885996502,
+        "theo_tflops": 11.1104,
+        "ratio_pct": 124.5810221593867
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_square",
+      "params": {
+        "dtype": "fp64",
+        "m": 8192,
+        "n": 8192,
+        "k": 8192,
+        "batch": 1,
+        "shape": "8192x8192x8192"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 89.93082799999999,
+        "median_ms": 89.92924,
+        "min_ms": 89.71336,
+        "max_ms": 90.12368,
+        "std_ms": 0.09486492721759658
+      },
+      "metrics": {
+        "tflops": 12.226408538268533,
+        "theo_tflops": 11.1104,
+        "ratio_pct": 110.04471970647802
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_square",
+      "params": {
+        "dtype": "fp64",
+        "m": 16384,
+        "n": 16384,
+        "k": 16384,
+        "batch": 1,
+        "shape": "16384x16384x16384"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 730.6532599999999,
+        "median_ms": 731.15336,
+        "min_ms": 720.10632,
+        "max_ms": 742.1487199999999,
+        "std_ms": 4.970596731266769
+      },
+      "metrics": {
+        "tflops": 12.03043506796987,
+        "theo_tflops": 11.1104,
+        "ratio_pct": 108.28084558584632
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_rect",
+      "params": {
+        "dtype": "fp32",
+        "m": 1,
+        "n": 4096,
+        "k": 4096,
+        "batch": 1,
+        "shape": "1x4096x4096",
+        "label": "llm_decode_gemv"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.070704,
+        "median_ms": 0.06916,
+        "min_ms": 0.06432,
+        "max_ms": 0.08528,
+        "std_ms": 0.0049794200465516055
+      },
+      "metrics": {
+        "tflops": 0.4851710815500289,
+        "theo_tflops": 22.2208,
+        "ratio_pct": 2.1834096051898624
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_rect",
+      "params": {
+        "dtype": "fp32",
+        "m": 16,
+        "n": 4096,
+        "k": 4096,
+        "batch": 1,
+        "shape": "16x4096x4096",
+        "label": "llm_decode_m16"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.08198799999999999,
+        "median_ms": 0.07808,
+        "min_ms": 0.0752,
+        "max_ms": 0.11335999999999999,
+        "std_ms": 0.009791695256695848
+      },
+      "metrics": {
+        "tflops": 6.875908196721311,
+        "theo_tflops": 22.2208,
+        "ratio_pct": 30.94356727355141
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_rect",
+      "params": {
+        "dtype": "fp32",
+        "m": 64,
+        "n": 4096,
+        "k": 4096,
+        "batch": 1,
+        "shape": "64x4096x4096",
+        "label": "llm_decode_m64"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.140872,
+        "median_ms": 0.14028000000000002,
+        "min_ms": 0.13856,
+        "max_ms": 0.14464,
+        "std_ms": 0.0018598752646347024
+      },
+      "metrics": {
+        "tflops": 15.308551810664385,
+        "theo_tflops": 22.2208,
+        "ratio_pct": 68.8928922930965
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_rect",
+      "params": {
+        "dtype": "fp32",
+        "m": 2048,
+        "n": 4096,
+        "k": 4096,
+        "batch": 1,
+        "shape": "2048x4096x4096",
+        "label": "llm_prefill_m2k"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 3.174112,
+        "median_ms": 3.1696,
+        "min_ms": 3.15984,
+        "max_ms": 3.1924799999999998,
+        "std_ms": 0.011315699536484706
+      },
+      "metrics": {
+        "tflops": 21.680804119131754,
+        "theo_tflops": 22.2208,
+        "ratio_pct": 97.56986300732535
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_rect",
+      "params": {
+        "dtype": "fp32",
+        "m": 4096,
+        "n": 11008,
+        "k": 4096,
+        "batch": 1,
+        "shape": "4096x11008x4096",
+        "label": "ffn_up"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 16.949548,
+        "median_ms": 16.802639999999997,
+        "min_ms": 16.791919999999998,
+        "max_ms": 17.9284,
+        "std_ms": 0.34967865501914797
+      },
+      "metrics": {
+        "tflops": 21.982687688125203,
+        "theo_tflops": 22.2208,
+        "ratio_pct": 98.92842601582842
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_rect",
+      "params": {
+        "dtype": "fp32",
+        "m": 4096,
+        "n": 4096,
+        "k": 11008,
+        "batch": 1,
+        "shape": "4096x4096x11008",
+        "label": "ffn_down"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 17.890636,
+        "median_ms": 17.88216,
+        "min_ms": 17.78256,
+        "max_ms": 17.98384,
+        "std_ms": 0.05441795865337131
+      },
+      "metrics": {
+        "tflops": 20.655624793425407,
+        "theo_tflops": 22.2208,
+        "ratio_pct": 92.95626077110369
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_rect",
+      "params": {
+        "dtype": "fp32",
+        "m": 4096,
+        "n": 4096,
+        "k": 16384,
+        "batch": 1,
+        "shape": "4096x4096x16384",
+        "label": "k_dominant"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 26.688288,
+        "median_ms": 26.68388,
+        "min_ms": 26.60224,
+        "max_ms": 26.766479999999998,
+        "std_ms": 0.04549883093003599
+      },
+      "metrics": {
+        "tflops": 20.602544078597266,
+        "theo_tflops": 22.2208,
+        "ratio_pct": 92.71738226615273
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_rect",
+      "params": {
+        "dtype": "fp32",
+        "m": 4096,
+        "n": 16384,
+        "k": 4096,
+        "batch": 1,
+        "shape": "4096x16384x4096",
+        "label": "n_dominant"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 26.46098,
+        "median_ms": 26.456319999999998,
+        "min_ms": 26.34648,
+        "max_ms": 26.57792,
+        "std_ms": 0.06531538685485978
+      },
+      "metrics": {
+        "tflops": 20.779753718128596,
+        "theo_tflops": 22.2208,
+        "ratio_pct": 93.51487668368644
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_rect",
+      "params": {
+        "dtype": "fp32",
+        "m": 8192,
+        "n": 8192,
+        "k": 128,
+        "batch": 1,
+        "shape": "8192x8192x128",
+        "label": "skinny_k"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.928708,
+        "median_ms": 0.92884,
+        "min_ms": 0.9231199999999999,
+        "max_ms": 0.93848,
+        "std_ms": 0.004107224853839871
+      },
+      "metrics": {
+        "tflops": 18.496047956591017,
+        "theo_tflops": 22.2208,
+        "ratio_pct": 83.23754300741204
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_rect",
+      "params": {
+        "dtype": "fp32",
+        "m": 128,
+        "n": 8192,
+        "k": 8192,
+        "batch": 1,
+        "shape": "128x8192x8192",
+        "label": "skinny_m"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.82994,
+        "median_ms": 0.82656,
+        "min_ms": 0.8246399999999999,
+        "max_ms": 0.8713599999999999,
+        "std_ms": 0.009971314858131792
+      },
+      "metrics": {
+        "tflops": 20.78478172667441,
+        "theo_tflops": 22.2208,
+        "ratio_pct": 93.53750417030174
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_rect",
+      "params": {
+        "dtype": "bf16",
+        "m": 1,
+        "n": 4096,
+        "k": 4096,
+        "batch": 1,
+        "shape": "1x4096x4096",
+        "label": "llm_decode_gemv"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.067648,
+        "median_ms": 0.06591999999999999,
+        "min_ms": 0.06384,
+        "max_ms": 0.07944,
+        "std_ms": 0.003929734851106368
+      },
+      "metrics": {
+        "tflops": 0.5090174757281554
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_rect",
+      "params": {
+        "dtype": "bf16",
+        "m": 16,
+        "n": 4096,
+        "k": 4096,
+        "batch": 1,
+        "shape": "16x4096x4096",
+        "label": "llm_decode_m16"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.06866799999999999,
+        "median_ms": 0.06676,
+        "min_ms": 0.064,
+        "max_ms": 0.0812,
+        "std_ms": 0.00489912808569035
+      },
+      "metrics": {
+        "tflops": 8.041805152786099
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_rect",
+      "params": {
+        "dtype": "bf16",
+        "m": 64,
+        "n": 4096,
+        "k": 4096,
+        "batch": 1,
+        "shape": "64x4096x4096",
+        "label": "llm_decode_m64"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.065032,
+        "median_ms": 0.06348,
+        "min_ms": 0.061119999999999994,
+        "max_ms": 0.07872,
+        "std_ms": 0.003926028018239299
+      },
+      "metrics": {
+        "tflops": 33.82929502205419
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_rect",
+      "params": {
+        "dtype": "bf16",
+        "m": 2048,
+        "n": 4096,
+        "k": 4096,
+        "batch": 1,
+        "shape": "2048x4096x4096",
+        "label": "llm_prefill_m2k"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.30566,
+        "median_ms": 0.3034,
+        "min_ms": 0.3008,
+        "max_ms": 0.3272,
+        "std_ms": 0.006087094545018991
+      },
+      "metrics": {
+        "tflops": 226.49794573500327
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_rect",
+      "params": {
+        "dtype": "bf16",
+        "m": 4096,
+        "n": 11008,
+        "k": 4096,
+        "batch": 1,
+        "shape": "4096x11008x4096",
+        "label": "ffn_up"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 1.5484839999999997,
+        "median_ms": 1.53768,
+        "min_ms": 1.5284799999999998,
+        "max_ms": 1.58784,
+        "std_ms": 0.020941143808302382
+      },
+      "metrics": {
+        "tflops": 240.21069888143174
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_rect",
+      "params": {
+        "dtype": "bf16",
+        "m": 4096,
+        "n": 4096,
+        "k": 11008,
+        "batch": 1,
+        "shape": "4096x4096x11008",
+        "label": "ffn_down"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 1.7728760000000001,
+        "median_ms": 1.7723200000000001,
+        "min_ms": 1.65848,
+        "max_ms": 1.8599999999999999,
+        "std_ms": 0.039103174091114384
+      },
+      "metrics": {
+        "tflops": 208.40885813848513
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_rect",
+      "params": {
+        "dtype": "bf16",
+        "m": 4096,
+        "n": 4096,
+        "k": 16384,
+        "batch": 1,
+        "shape": "4096x4096x16384",
+        "label": "k_dominant"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 2.965092,
+        "median_ms": 2.97884,
+        "min_ms": 2.842,
+        "max_ms": 3.07768,
+        "std_ms": 0.05786929977112216
+      },
+      "metrics": {
+        "tflops": 184.5536564192773
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_rect",
+      "params": {
+        "dtype": "bf16",
+        "m": 4096,
+        "n": 16384,
+        "k": 4096,
+        "batch": 1,
+        "shape": "4096x16384x4096",
+        "label": "n_dominant"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 2.541364,
+        "median_ms": 2.537,
+        "min_ms": 2.44624,
+        "max_ms": 2.7133599999999998,
+        "std_ms": 0.06757227585334091
+      },
+      "metrics": {
+        "tflops": 216.69523606148996
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_rect",
+      "params": {
+        "dtype": "bf16",
+        "m": 8192,
+        "n": 8192,
+        "k": 128,
+        "batch": 1,
+        "shape": "8192x8192x128",
+        "label": "skinny_k"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.20025999999999997,
+        "median_ms": 0.19927999999999998,
+        "min_ms": 0.18839999999999998,
+        "max_ms": 0.2216,
+        "std_ms": 0.007547391602401454
+      },
+      "metrics": {
+        "tflops": 86.20970084303494
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_rect",
+      "params": {
+        "dtype": "bf16",
+        "m": 128,
+        "n": 8192,
+        "k": 8192,
+        "batch": 1,
+        "shape": "128x8192x8192",
+        "label": "skinny_m"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.24217199999999997,
+        "median_ms": 0.24123999999999998,
+        "min_ms": 0.23048,
+        "max_ms": 0.27271999999999996,
+        "std_ms": 0.009369133150937705
+      },
+      "metrics": {
+        "tflops": 71.21484490134306
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_rect",
+      "params": {
+        "dtype": "fp16",
+        "m": 1,
+        "n": 4096,
+        "k": 4096,
+        "batch": 1,
+        "shape": "1x4096x4096",
+        "label": "llm_decode_gemv"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.067872,
+        "median_ms": 0.06675999999999999,
+        "min_ms": 0.06344,
+        "max_ms": 0.07751999999999999,
+        "std_ms": 0.003609179408120355
+      },
+      "metrics": {
+        "tflops": 0.5026128220491313
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_rect",
+      "params": {
+        "dtype": "fp16",
+        "m": 16,
+        "n": 4096,
+        "k": 4096,
+        "batch": 1,
+        "shape": "16x4096x4096",
+        "label": "llm_decode_m16"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.070336,
+        "median_ms": 0.06799999999999999,
+        "min_ms": 0.06472,
+        "max_ms": 0.08911999999999999,
+        "std_ms": 0.0059271632337906804
+      },
+      "metrics": {
+        "tflops": 7.8951604705882374
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_rect",
+      "params": {
+        "dtype": "fp16",
+        "m": 64,
+        "n": 4096,
+        "k": 4096,
+        "batch": 1,
+        "shape": "64x4096x4096",
+        "label": "llm_decode_m64"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.066264,
+        "median_ms": 0.064,
+        "min_ms": 0.0612,
+        "max_ms": 0.08784,
+        "std_ms": 0.006090207221433439
+      },
+      "metrics": {
+        "tflops": 33.554432
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_rect",
+      "params": {
+        "dtype": "fp16",
+        "m": 2048,
+        "n": 4096,
+        "k": 4096,
+        "batch": 1,
+        "shape": "2048x4096x4096",
+        "label": "llm_prefill_m2k"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.31864,
+        "median_ms": 0.3166,
+        "min_ms": 0.31407999999999997,
+        "max_ms": 0.34648,
+        "std_ms": 0.007001302735919942
+      },
+      "metrics": {
+        "tflops": 217.05456960202147
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_rect",
+      "params": {
+        "dtype": "fp16",
+        "m": 4096,
+        "n": 11008,
+        "k": 4096,
+        "batch": 1,
+        "shape": "4096x11008x4096",
+        "label": "ffn_up"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 1.59268,
+        "median_ms": 1.5886399999999998,
+        "min_ms": 1.56608,
+        "max_ms": 1.65008,
+        "std_ms": 0.021481072598918318
+      },
+      "metrics": {
+        "tflops": 232.50527964548294
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_rect",
+      "params": {
+        "dtype": "fp16",
+        "m": 4096,
+        "n": 4096,
+        "k": 11008,
+        "batch": 1,
+        "shape": "4096x4096x11008",
+        "label": "ffn_down"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 1.8364079999999998,
+        "median_ms": 1.8320400000000001,
+        "min_ms": 1.77288,
+        "max_ms": 1.90608,
+        "std_ms": 0.03453394295472208
+      },
+      "metrics": {
+        "tflops": 201.61524172834652
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_rect",
+      "params": {
+        "dtype": "fp16",
+        "m": 4096,
+        "n": 4096,
+        "k": 16384,
+        "batch": 1,
+        "shape": "4096x4096x16384",
+        "label": "k_dominant"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 3.2814039999999998,
+        "median_ms": 3.287,
+        "min_ms": 3.20328,
+        "max_ms": 3.3628,
+        "std_ms": 0.03526426383748854
+      },
+      "metrics": {
+        "tflops": 167.2515405804685
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_rect",
+      "params": {
+        "dtype": "fp16",
+        "m": 4096,
+        "n": 16384,
+        "k": 4096,
+        "batch": 1,
+        "shape": "4096x16384x4096",
+        "label": "n_dominant"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 2.834404,
+        "median_ms": 2.8311599999999997,
+        "min_ms": 2.7679199999999997,
+        "max_ms": 2.98624,
+        "std_ms": 0.04786925175934971
+      },
+      "metrics": {
+        "tflops": 194.18041152319194
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_rect",
+      "params": {
+        "dtype": "fp16",
+        "m": 8192,
+        "n": 8192,
+        "k": 128,
+        "batch": 1,
+        "shape": "8192x8192x128",
+        "label": "skinny_k"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.22244000000000003,
+        "median_ms": 0.21316000000000002,
+        "min_ms": 0.20528,
+        "max_ms": 0.27016,
+        "std_ms": 0.021076219774902708
+      },
+      "metrics": {
+        "tflops": 80.5961211484331
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_rect",
+      "params": {
+        "dtype": "fp16",
+        "m": 128,
+        "n": 8192,
+        "k": 8192,
+        "batch": 1,
+        "shape": "128x8192x8192",
+        "label": "skinny_m"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.246196,
+        "median_ms": 0.24608,
+        "min_ms": 0.22991999999999999,
+        "max_ms": 0.2668,
+        "std_ms": 0.010113609840210367
+      },
+      "metrics": {
+        "tflops": 69.81416280884265
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_rect",
+      "params": {
+        "dtype": "fp64",
+        "m": 1,
+        "n": 4096,
+        "k": 4096,
+        "batch": 1,
+        "shape": "1x4096x4096",
+        "label": "llm_decode_gemv"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.183616,
+        "median_ms": 0.18188,
+        "min_ms": 0.16376,
+        "max_ms": 0.20551999999999998,
+        "std_ms": 0.014757183471109925
+      },
+      "metrics": {
+        "tflops": 0.1844866505388168,
+        "theo_tflops": 11.1104,
+        "ratio_pct": 1.6604861259614128
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_rect",
+      "params": {
+        "dtype": "fp64",
+        "m": 16,
+        "n": 4096,
+        "k": 4096,
+        "batch": 1,
+        "shape": "16x4096x4096",
+        "label": "llm_decode_m16"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.18256,
+        "median_ms": 0.18136,
+        "min_ms": 0.17071999999999998,
+        "max_ms": 0.20143999999999998,
+        "std_ms": 0.007277845835135557
+      },
+      "metrics": {
+        "tflops": 2.96024984561094,
+        "theo_tflops": 11.1104,
+        "ratio_pct": 26.643953823543168
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_rect",
+      "params": {
+        "dtype": "fp64",
+        "m": 64,
+        "n": 4096,
+        "k": 4096,
+        "batch": 1,
+        "shape": "64x4096x4096",
+        "label": "llm_decode_m64"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.255776,
+        "median_ms": 0.24968,
+        "min_ms": 0.24112,
+        "max_ms": 0.28256,
+        "std_ms": 0.012969073367052867
+      },
+      "metrics": {
+        "tflops": 8.600943800064082,
+        "theo_tflops": 11.1104,
+        "ratio_pct": 77.41344866129106
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_rect",
+      "params": {
+        "dtype": "fp64",
+        "m": 2048,
+        "n": 4096,
+        "k": 4096,
+        "batch": 1,
+        "shape": "2048x4096x4096",
+        "label": "llm_prefill_m2k"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 4.872083999999999,
+        "median_ms": 4.8002400000000005,
+        "min_ms": 4.5992,
+        "max_ms": 5.46992,
+        "std_ms": 0.21128357357826
+      },
+      "metrics": {
+        "tflops": 14.31584186124027,
+        "theo_tflops": 11.1104,
+        "ratio_pct": 128.85082320384745
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_rect",
+      "params": {
+        "dtype": "fp64",
+        "m": 4096,
+        "n": 11008,
+        "k": 4096,
+        "batch": 1,
+        "shape": "4096x11008x4096",
+        "label": "ffn_up"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 30.007036,
+        "median_ms": 30.01176,
+        "min_ms": 29.767999999999997,
+        "max_ms": 30.12992,
+        "std_ms": 0.08848587494058034
+      },
+      "metrics": {
+        "tflops": 12.307415075157206,
+        "theo_tflops": 11.1104,
+        "ratio_pct": 110.77382520122772
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_rect",
+      "params": {
+        "dtype": "fp64",
+        "m": 4096,
+        "n": 4096,
+        "k": 11008,
+        "batch": 1,
+        "shape": "4096x4096x11008",
+        "label": "ffn_down"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 30.069716,
+        "median_ms": 30.066039999999997,
+        "min_ms": 29.88504,
+        "max_ms": 30.255039999999997,
+        "std_ms": 0.09263944205358735
+      },
+      "metrics": {
+        "tflops": 12.285195770909638,
+        "theo_tflops": 11.1104,
+        "ratio_pct": 110.57383866386122
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_rect",
+      "params": {
+        "dtype": "fp64",
+        "m": 4096,
+        "n": 4096,
+        "k": 16384,
+        "batch": 1,
+        "shape": "4096x4096x16384",
+        "label": "k_dominant"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 44.75482,
+        "median_ms": 44.7462,
+        "min_ms": 44.569919999999996,
+        "max_ms": 44.96152,
+        "std_ms": 0.10244479606109821
+      },
+      "metrics": {
+        "tflops": 12.286089408441386,
+        "theo_tflops": 11.1104,
+        "ratio_pct": 110.58188191641513
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_rect",
+      "params": {
+        "dtype": "fp64",
+        "m": 4096,
+        "n": 16384,
+        "k": 4096,
+        "batch": 1,
+        "shape": "4096x16384x4096",
+        "label": "n_dominant"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 44.681104,
+        "median_ms": 44.681,
+        "min_ms": 44.46752,
+        "max_ms": 44.877359999999996,
+        "std_ms": 0.09910539876313508
+      },
+      "metrics": {
+        "tflops": 12.304017678386787,
+        "theo_tflops": 11.1104,
+        "ratio_pct": 110.74324667326817
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_rect",
+      "params": {
+        "dtype": "fp64",
+        "m": 8192,
+        "n": 8192,
+        "k": 128,
+        "batch": 1,
+        "shape": "8192x8192x128",
+        "label": "skinny_k"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 1.7076319999999998,
+        "median_ms": 1.71108,
+        "min_ms": 1.6437599999999999,
+        "max_ms": 1.74224,
+        "std_ms": 0.02369401477166756
+      },
+      "metrics": {
+        "tflops": 10.040365841456858,
+        "theo_tflops": 11.1104,
+        "ratio_pct": 90.36907619398814
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_rect",
+      "params": {
+        "dtype": "fp64",
+        "m": 128,
+        "n": 8192,
+        "k": 8192,
+        "batch": 1,
+        "shape": "128x8192x8192",
+        "label": "skinny_m"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 1.552112,
+        "median_ms": 1.54,
+        "min_ms": 1.47352,
+        "max_ms": 1.638,
+        "std_ms": 0.03815507221851374
+      },
+      "metrics": {
+        "tflops": 11.15575921038961,
+        "theo_tflops": 11.1104,
+        "ratio_pct": 100.40825902208391
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_batched",
+      "params": {
+        "dtype": "fp32",
+        "m": 1024,
+        "n": 1024,
+        "k": 64,
+        "batch": 32,
+        "shape": "b32x1024x1024x64",
+        "label": "attn_qkv_b32"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.30316,
+        "median_ms": 0.30388,
+        "min_ms": 0.29575999999999997,
+        "max_ms": 0.312,
+        "std_ms": 0.004502195020209593
+      },
+      "metrics": {
+        "tflops": 14.133761010925367,
+        "theo_tflops": 22.2208,
+        "ratio_pct": 63.60599533286545
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_batched",
+      "params": {
+        "dtype": "fp32",
+        "m": 2048,
+        "n": 2048,
+        "k": 128,
+        "batch": 16,
+        "shape": "b16x2048x2048x128",
+        "label": "batch_head_b16"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.948456,
+        "median_ms": 0.9474400000000001,
+        "min_ms": 0.9408799999999999,
+        "max_ms": 0.97064,
+        "std_ms": 0.006190113407684865
+      },
+      "metrics": {
+        "tflops": 18.132936316811616,
+        "theo_tflops": 22.2208,
+        "ratio_pct": 81.60343604555918
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_batched",
+      "params": {
+        "dtype": "fp32",
+        "m": 512,
+        "n": 512,
+        "k": 64,
+        "batch": 64,
+        "shape": "b64x512x512x64",
+        "label": "batch_heads_b64"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.157184,
+        "median_ms": 0.1556,
+        "min_ms": 0.15375999999999998,
+        "max_ms": 0.1656,
+        "std_ms": 0.0035509187543507673
+      },
+      "metrics": {
+        "tflops": 13.80130879177378,
+        "theo_tflops": 22.2208,
+        "ratio_pct": 62.109864594316036
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_batched",
+      "params": {
+        "dtype": "bf16",
+        "m": 1024,
+        "n": 1024,
+        "k": 64,
+        "batch": 32,
+        "shape": "b32x1024x1024x64",
+        "label": "attn_qkv_b32"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.090692,
+        "median_ms": 0.08972,
+        "min_ms": 0.08664,
+        "max_ms": 0.09928,
+        "std_ms": 0.003294142680577149
+      },
+      "metrics": {
+        "tflops": 47.870790191707535
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_batched",
+      "params": {
+        "dtype": "bf16",
+        "m": 2048,
+        "n": 2048,
+        "k": 128,
+        "batch": 16,
+        "shape": "b16x2048x2048x128",
+        "label": "batch_head_b16"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.205252,
+        "median_ms": 0.20304,
+        "min_ms": 0.19496,
+        "max_ms": 0.22848,
+        "std_ms": 0.008619096008283
+      },
+      "metrics": {
+        "tflops": 84.61322490149723
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_batched",
+      "params": {
+        "dtype": "bf16",
+        "m": 512,
+        "n": 512,
+        "k": 64,
+        "batch": 64,
+        "shape": "b64x512x512x64",
+        "label": "batch_heads_b64"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.070492,
+        "median_ms": 0.06788,
+        "min_ms": 0.0652,
+        "max_ms": 0.08736,
+        "std_ms": 0.005709179976143684
+      },
+      "metrics": {
+        "tflops": 31.636470948733063
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_batched",
+      "params": {
+        "dtype": "fp16",
+        "m": 1024,
+        "n": 1024,
+        "k": 64,
+        "batch": 32,
+        "shape": "b32x1024x1024x64",
+        "label": "attn_qkv_b32"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.090952,
+        "median_ms": 0.09040000000000001,
+        "min_ms": 0.08696,
+        "max_ms": 0.09952,
+        "std_ms": 0.0035159886234173176
+      },
+      "metrics": {
+        "tflops": 47.51070017699114
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_batched",
+      "params": {
+        "dtype": "fp16",
+        "m": 2048,
+        "n": 2048,
+        "k": 128,
+        "batch": 16,
+        "shape": "b16x2048x2048x128",
+        "label": "batch_head_b16"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.20888,
+        "median_ms": 0.20551999999999998,
+        "min_ms": 0.20199999999999999,
+        "max_ms": 0.22776,
+        "std_ms": 0.008195608580209283
+      },
+      "metrics": {
+        "tflops": 83.59220116776956
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_batched",
+      "params": {
+        "dtype": "fp16",
+        "m": 512,
+        "n": 512,
+        "k": 64,
+        "batch": 64,
+        "shape": "b64x512x512x64",
+        "label": "batch_heads_b64"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.071856,
+        "median_ms": 0.06988,
+        "min_ms": 0.06608,
+        "max_ms": 0.08975999999999999,
+        "std_ms": 0.005312060240622276
+      },
+      "metrics": {
+        "tflops": 30.731019576416713
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_batched",
+      "params": {
+        "dtype": "fp64",
+        "m": 1024,
+        "n": 1024,
+        "k": 64,
+        "batch": 32,
+        "shape": "b32x1024x1024x64",
+        "label": "attn_qkv_b32"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.49631600000000003,
+        "median_ms": 0.49339999999999995,
+        "min_ms": 0.47991999999999996,
+        "max_ms": 0.5364,
+        "std_ms": 0.014150289891023434
+      },
+      "metrics": {
+        "tflops": 8.704838459667613,
+        "theo_tflops": 11.1104,
+        "ratio_pct": 78.34856044487698
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_batched",
+      "params": {
+        "dtype": "fp64",
+        "m": 2048,
+        "n": 2048,
+        "k": 128,
+        "batch": 16,
+        "shape": "b16x2048x2048x128",
+        "label": "batch_head_b16"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 1.4613359999999997,
+        "median_ms": 1.4553599999999998,
+        "min_ms": 1.42488,
+        "max_ms": 1.5095999999999998,
+        "std_ms": 0.023039765276582126
+      },
+      "metrics": {
+        "tflops": 11.80454951627089,
+        "theo_tflops": 11.1104,
+        "ratio_pct": 106.24774550215015
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_batched",
+      "params": {
+        "dtype": "fp64",
+        "m": 512,
+        "n": 512,
+        "k": 64,
+        "batch": 64,
+        "shape": "b64x512x512x64",
+        "label": "batch_heads_b64"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.26678799999999997,
+        "median_ms": 0.26571999999999996,
+        "min_ms": 0.25736,
+        "max_ms": 0.31248,
+        "std_ms": 0.011238029008682971
+      },
+      "metrics": {
+        "tflops": 8.081753906367606,
+        "theo_tflops": 11.1104,
+        "ratio_pct": 72.74044054550336
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_int8",
+      "params": {
+        "dtype": "int8",
+        "m": 512,
+        "n": 512,
+        "k": 512,
+        "batch": 1,
+        "shape": "512x512x512"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.094064,
+        "median_ms": 0.09164,
+        "min_ms": 0.08879999999999999,
+        "max_ms": 0.10704,
+        "std_ms": 0.005690896590169251
+      },
+      "metrics": {
+        "tops": 2.9292389349628984
+      },
+      "status": "ok",
+      "note": "int32 累加，INT8 理论为 BF16 的 2×"
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_int8",
+      "params": {
+        "dtype": "int8",
+        "m": 1024,
+        "n": 1024,
+        "k": 1024,
+        "batch": 1,
+        "shape": "1024x1024x1024"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.09304399999999999,
+        "median_ms": 0.09087999999999999,
+        "min_ms": 0.08712,
+        "max_ms": 0.10384,
+        "std_ms": 0.004621236198248257
+      },
+      "metrics": {
+        "tops": 23.62988169014085
+      },
+      "status": "ok",
+      "note": "int32 累加，INT8 理论为 BF16 的 2×"
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_int8",
+      "params": {
+        "dtype": "int8",
+        "m": 2048,
+        "n": 2048,
+        "k": 2048,
+        "batch": 1,
+        "shape": "2048x2048x2048"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.112368,
+        "median_ms": 0.11188,
+        "min_ms": 0.10568,
+        "max_ms": 0.1216,
+        "std_ms": 0.0035644825711454954
+      },
+      "metrics": {
+        "tops": 153.5562136574902
+      },
+      "status": "ok",
+      "note": "int32 累加，INT8 理论为 BF16 的 2×"
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_int8",
+      "params": {
+        "dtype": "int8",
+        "m": 4096,
+        "n": 4096,
+        "k": 4096,
+        "batch": 1,
+        "shape": "4096x4096x4096"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.39528399999999997,
+        "median_ms": 0.38692,
+        "min_ms": 0.37736,
+        "max_ms": 0.44551999999999997,
+        "std_ms": 0.01884922024912437
+      },
+      "metrics": {
+        "tops": 355.2128436679417
+      },
+      "status": "ok",
+      "note": "int32 累加，INT8 理论为 BF16 的 2×"
+    },
+    {
+      "suite": "gemm",
+      "name": "matmul_int8",
+      "params": {
+        "dtype": "int8",
+        "m": 8192,
+        "n": 8192,
+        "k": 8192,
+        "batch": 1,
+        "shape": "8192x8192x8192"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 2.683896,
+        "median_ms": 2.67976,
+        "min_ms": 2.59816,
+        "max_ms": 2.82232,
+        "std_ms": 0.05805126065814595
+      },
+      "metrics": {
+        "tops": 410.3022762396633
+      },
+      "status": "ok",
+      "note": "int32 累加，INT8 理论为 BF16 的 2×"
+    }
+  ]
+}

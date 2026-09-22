@@ -1,0 +1,2299 @@
+{
+  "meta": {
+    "tag": "20260922-195713",
+    "title": "04-interconnect-xelink 20260922-195713",
+    "timestamp": "2026-09-22T19:58:55",
+    "host": "hwt",
+    "kernel": "6.14.0-37-generic",
+    "python": "3.13.3",
+    "gpu_count": 1,
+    "ze_affinity_mask": "(unset)",
+    "nominal_fp32_alu_tflops": 22.2208
+  },
+  "highlights": [
+    "## 汇总判读\n\n- **GPU**: Intel(R) Data Center GPU Max 1100 (PVC)\n- **Xe Link 标称**: 318.0 GB/s/方向 (XL24, 6 ports x 4 lanes)\n- **PCIe Gen5 x16 原始**: 63.0 GB/s\n- **P2P 可用**: 2\n- **P2P 属性**: ['ACCESS', 'ATOMICS']\n- **P2P 实测峰值**: 95.5 GB/s (1->0)\n- **占 Xe Link 标称**: 30.0%\n- **相对 PCIe Gen5**: 1.52 ×\n\n> 判读纪律：\n> 1. 三条证据链（L0 原生 / GPU-aware MPI / xccl）必须都看；\n>    仅当**三者一致**时才能下结论。\n> 2. 低于 Xe Link 标称 **不一定**是配置问题 —— 本机 `Xe Link Calibration: Not Calibrated` 是已知前提。\n> 3. 卡间带宽**高于 PCIe Gen5 x16 (63 GB/s)** 就说明确实没走 PCIe。"
+  ],
+  "results": [
+    {
+      "suite": "build",
+      "name": "p2p_probe",
+      "params": {
+        "compiler": "g++",
+        "flags": "-O3 -std=c++17 -lze_loader"
+      },
+      "stats": null,
+      "metrics": {
+        "ok": true
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "topo",
+      "name": "card0.link",
+      "params": {
+        "card": "card0"
+      },
+      "stats": null,
+      "metrics": {
+        "vendor_id": "0x8086",
+        "device_id": "0x0bda",
+        "pcie_current_link_speed": "2.5 GT/s PCIe",
+        "pcie_max_link_speed": "2.5 GT/s PCIe",
+        "pcie_current_link_width": "1",
+        "pcie_max_link_width": "1",
+        "numa_node": "0"
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "topo",
+      "name": "card1.link",
+      "params": {
+        "card": "card1"
+      },
+      "stats": null,
+      "metrics": {
+        "vendor_id": "0x1a03",
+        "device_id": "0x2000",
+        "numa_node": "0"
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "topo",
+      "name": "card2.link",
+      "params": {
+        "card": "card2"
+      },
+      "stats": null,
+      "metrics": {
+        "vendor_id": "0x8086",
+        "device_id": "0x0bda",
+        "pcie_current_link_speed": "2.5 GT/s PCIe",
+        "pcie_max_link_speed": "2.5 GT/s PCIe",
+        "pcie_current_link_width": "1",
+        "pcie_max_link_width": "1",
+        "numa_node": "0"
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "topo",
+      "name": "xpu_smi_discovery",
+      "params": {
+        "source": "xpu-smi discovery -j"
+      },
+      "stats": null,
+      "metrics": {
+        "device_count": 0,
+        "raw_kept": "results/xpu_smi_discovery.json"
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "topo",
+      "name": "xelink_calibration",
+      "params": {},
+      "stats": null,
+      "metrics": {},
+      "status": "skipped",
+      "note": "xpu-smi topology 未输出标定信息"
+    },
+    {
+      "suite": "p2p",
+      "name": "can_access_peer",
+      "params": {
+        "source": "zeDeviceCanAccessPeer",
+        "method": "Level Zero 原生 API"
+      },
+      "stats": null,
+      "metrics": {
+        "ordered_pairs": 2,
+        "accessible_pairs": 2,
+        "pair_0_1": true,
+        "pair_1_0": true,
+        "p2p_flags": [
+          "ACCESS",
+          "ATOMICS"
+        ]
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "p2p",
+      "name": "peer.0_1",
+      "params": {
+        "src": 0,
+        "dst": 1,
+        "api": "zeDeviceCanAccessPeer + zeDeviceGetP2PProperties"
+      },
+      "stats": null,
+      "metrics": {
+        "can_access": true,
+        "p2p_flags": [
+          "ACCESS",
+          "ATOMICS"
+        ],
+        "can_access_rc": "SUCCESS"
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "p2p",
+      "name": "peer.1_0",
+      "params": {
+        "src": 1,
+        "dst": 0,
+        "api": "zeDeviceCanAccessPeer + zeDeviceGetP2PProperties"
+      },
+      "stats": null,
+      "metrics": {
+        "can_access": true,
+        "p2p_flags": [
+          "ACCESS",
+          "ATOMICS"
+        ],
+        "can_access_rc": "SUCCESS"
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "p2p",
+      "name": "device.0",
+      "params": {
+        "index": 0
+      },
+      "stats": null,
+      "metrics": {
+        "name": "Intel(R) Data Center GPU Max 1100",
+        "pci_bdf": "0000:40:00.0",
+        "vendor_id": 32902,
+        "device_id": 3034
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "p2p",
+      "name": "device.1",
+      "params": {
+        "index": 1
+      },
+      "stats": null,
+      "metrics": {
+        "name": "Intel(R) Data Center GPU Max 1100",
+        "pci_bdf": "0000:8c:00.0",
+        "vendor_id": 32902,
+        "device_id": 3034
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "p2p",
+      "name": "bw.0->1.4096",
+      "params": {
+        "src": 0,
+        "dst": 1,
+        "size_bytes": 4096,
+        "method": "zeCommandListAppendMemoryCopy 跨卡（同 context）"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 0.59,
+        "gibps": 0.55,
+        "seconds": 6.939e-06,
+        "pct_of_xelink_spec": 0.2,
+        "pct_of_pcie_gen5_x16": 0.9
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "p2p",
+      "name": "bw.0->1.65536",
+      "params": {
+        "src": 0,
+        "dst": 1,
+        "size_bytes": 65536,
+        "method": "zeCommandListAppendMemoryCopy 跨卡（同 context）"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 8.88,
+        "gibps": 8.27,
+        "seconds": 7.38e-06,
+        "pct_of_xelink_spec": 2.8,
+        "pct_of_pcie_gen5_x16": 14.1
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "p2p",
+      "name": "bw.0->1.1048576",
+      "params": {
+        "src": 0,
+        "dst": 1,
+        "size_bytes": 1048576,
+        "method": "zeCommandListAppendMemoryCopy 跨卡（同 context）"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 59.45,
+        "gibps": 55.37,
+        "seconds": 1.7638e-05,
+        "pct_of_xelink_spec": 18.7,
+        "pct_of_pcie_gen5_x16": 94.4
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "p2p",
+      "name": "bw.0->1.4194304",
+      "params": {
+        "src": 0,
+        "dst": 1,
+        "size_bytes": 4194304,
+        "method": "zeCommandListAppendMemoryCopy 跨卡（同 context）"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 74.92,
+        "gibps": 69.77,
+        "seconds": 5.5986e-05,
+        "pct_of_xelink_spec": 23.6,
+        "pct_of_pcie_gen5_x16": 118.9
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "p2p",
+      "name": "bw.0->1.16777216",
+      "params": {
+        "src": 0,
+        "dst": 1,
+        "size_bytes": 16777216,
+        "method": "zeCommandListAppendMemoryCopy 跨卡（同 context）"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 90.87,
+        "gibps": 84.63,
+        "seconds": 0.000184624,
+        "pct_of_xelink_spec": 28.6,
+        "pct_of_pcie_gen5_x16": 144.2
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "p2p",
+      "name": "bw.0->1.67108864",
+      "params": {
+        "src": 0,
+        "dst": 1,
+        "size_bytes": 67108864,
+        "method": "zeCommandListAppendMemoryCopy 跨卡（同 context）"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 94.6,
+        "gibps": 88.1,
+        "seconds": 0.000709428,
+        "pct_of_xelink_spec": 29.7,
+        "pct_of_pcie_gen5_x16": 150.2
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "p2p",
+      "name": "bw.0->1.268435456",
+      "params": {
+        "src": 0,
+        "dst": 1,
+        "size_bytes": 268435456,
+        "method": "zeCommandListAppendMemoryCopy 跨卡（同 context）"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 95.49,
+        "gibps": 88.93,
+        "seconds": 0.002811283,
+        "pct_of_xelink_spec": 30.0,
+        "pct_of_pcie_gen5_x16": 151.6
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "p2p",
+      "name": "peak.0->1",
+      "params": {
+        "src": 0,
+        "dst": 1,
+        "method": "max over sizes of zeMemCopy"
+      },
+      "stats": null,
+      "metrics": {
+        "peak_gbps": 95.49,
+        "peak_gibps": 88.93,
+        "at_size_bytes": 268435456,
+        "xelink_spec_gbps": 318.0,
+        "pct_of_spec": 30.0,
+        "pct_of_pcie_gen5_x16": 151.6,
+        "verdict": "走了 P2P 但远低于 Xe Link 标称"
+      },
+      "status": "ok",
+      "note": "走了 P2P 但远低于 Xe Link 标称；PCIe Gen5 x16 原始带宽仅 63.0 GB/s，故该值仍高于 PCIe"
+    },
+    {
+      "suite": "p2p",
+      "name": "bw.1->0.4096",
+      "params": {
+        "src": 1,
+        "dst": 0,
+        "size_bytes": 4096,
+        "method": "zeCommandListAppendMemoryCopy 跨卡（同 context）"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 0.56,
+        "gibps": 0.52,
+        "seconds": 7.309e-06,
+        "pct_of_xelink_spec": 0.2,
+        "pct_of_pcie_gen5_x16": 0.9
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "p2p",
+      "name": "bw.1->0.65536",
+      "params": {
+        "src": 1,
+        "dst": 0,
+        "size_bytes": 65536,
+        "method": "zeCommandListAppendMemoryCopy 跨卡（同 context）"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 8.39,
+        "gibps": 7.82,
+        "seconds": 7.808e-06,
+        "pct_of_xelink_spec": 2.6,
+        "pct_of_pcie_gen5_x16": 13.3
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "p2p",
+      "name": "bw.1->0.1048576",
+      "params": {
+        "src": 1,
+        "dst": 0,
+        "size_bytes": 1048576,
+        "method": "zeCommandListAppendMemoryCopy 跨卡（同 context）"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 57.63,
+        "gibps": 53.67,
+        "seconds": 1.8194e-05,
+        "pct_of_xelink_spec": 18.1,
+        "pct_of_pcie_gen5_x16": 91.5
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "p2p",
+      "name": "bw.1->0.4194304",
+      "params": {
+        "src": 1,
+        "dst": 0,
+        "size_bytes": 4194304,
+        "method": "zeCommandListAppendMemoryCopy 跨卡（同 context）"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 74.72,
+        "gibps": 69.59,
+        "seconds": 5.6135e-05,
+        "pct_of_xelink_spec": 23.5,
+        "pct_of_pcie_gen5_x16": 118.6
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "p2p",
+      "name": "bw.1->0.16777216",
+      "params": {
+        "src": 1,
+        "dst": 0,
+        "size_bytes": 16777216,
+        "method": "zeCommandListAppendMemoryCopy 跨卡（同 context）"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 91.91,
+        "gibps": 85.59,
+        "seconds": 0.000182548,
+        "pct_of_xelink_spec": 28.9,
+        "pct_of_pcie_gen5_x16": 145.9
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "p2p",
+      "name": "bw.1->0.67108864",
+      "params": {
+        "src": 1,
+        "dst": 0,
+        "size_bytes": 67108864,
+        "method": "zeCommandListAppendMemoryCopy 跨卡（同 context）"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 94.69,
+        "gibps": 88.19,
+        "seconds": 0.00070869,
+        "pct_of_xelink_spec": 29.8,
+        "pct_of_pcie_gen5_x16": 150.3
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "p2p",
+      "name": "bw.1->0.268435456",
+      "params": {
+        "src": 1,
+        "dst": 0,
+        "size_bytes": 268435456,
+        "method": "zeCommandListAppendMemoryCopy 跨卡（同 context）"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 95.5,
+        "gibps": 88.94,
+        "seconds": 0.002810949,
+        "pct_of_xelink_spec": 30.0,
+        "pct_of_pcie_gen5_x16": 151.6
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "p2p",
+      "name": "peak.1->0",
+      "params": {
+        "src": 1,
+        "dst": 0,
+        "method": "max over sizes of zeMemCopy"
+      },
+      "stats": null,
+      "metrics": {
+        "peak_gbps": 95.5,
+        "peak_gibps": 88.94,
+        "at_size_bytes": 268435456,
+        "xelink_spec_gbps": 318.0,
+        "pct_of_spec": 30.0,
+        "pct_of_pcie_gen5_x16": 151.6,
+        "verdict": "走了 P2P 但远低于 Xe Link 标称"
+      },
+      "status": "ok",
+      "note": "走了 P2P 但远低于 Xe Link 标称；PCIe Gen5 x16 原始带宽仅 63.0 GB/s，故该值仍高于 PCIe"
+    },
+    {
+      "suite": "p2p",
+      "name": "peak_overall",
+      "params": {
+        "method": "所有方向/尺寸的最大值"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 95.5,
+        "direction": "1->0",
+        "at_size_bytes": 268435456,
+        "xelink_spec_gbps": 318.0,
+        "pct_of_spec": 30.0,
+        "ratio_vs_pcie_gen5": 1.52
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "p2p",
+      "name": "plateau_convergence",
+      "params": {
+        "threshold_bytes": 16777216
+      },
+      "stats": null,
+      "metrics": {
+        "samples": 6,
+        "min_gbps": 90.87,
+        "max_gbps": 95.5,
+        "spread_pct": 4.85,
+        "converged": true
+      },
+      "status": "ok",
+      "note": "大消息带宽收敛 → 该值是稳定的链路带宽，不是噪声"
+    },
+    {
+      "suite": "imb",
+      "name": "env.I_MPI_OFFLOAD_required",
+      "params": {
+        "without": {
+          "ZE_ENABLE_PCI_ID_DEVICE_ORDER": "1"
+        },
+        "with": {
+          "I_MPI_OFFLOAD": "1",
+          "ZE_ENABLE_PCI_ID_DEVICE_ORDER": "1"
+        }
+      },
+      "stats": null,
+      "metrics": {
+        "crashes_without": true,
+        "returncode": 255,
+        "evidence": "Segmentation fault from GPU ... PTE NotPresent Write"
+      },
+      "status": "ok",
+      "note": "不加 I_MPI_OFFLOAD=1 时 IMB-MPI1-GPU 触发 GPU 缺页段错误（access=Write, type=NotPresent）并被 SIGKILL；加后全程正常。→ 这是必设环境变量"
+    },
+    {
+      "suite": "imb",
+      "name": "gpu_pingpong_meta",
+      "params": {
+        "exe": "/opt/intel/oneapi/mpi/2021.18/bin/IMB-MPI1-GPU",
+        "command": "mpirun -n 2 -genv I_MPI_OFFLOAD 1 -genv ZE_ENABLE_PCI_ID_DEVICE_ORDER 1 /opt/intel/oneapi/mpi/2021.18/bin/IMB-MPI1-GPU PingPong PingPing -msglog 12:30"
+      },
+      "stats": null,
+      "metrics": {
+        "benchmarks": [
+          "PingPing",
+          "PingPong"
+        ],
+        "processes": 2,
+        "rows": 38
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "imb",
+      "name": "gpu.PingPong.0",
+      "params": {
+        "benchmark": "PingPong",
+        "size_bytes": 0,
+        "processes": 2,
+        "genv": {
+          "I_MPI_OFFLOAD": "1",
+          "ZE_ENABLE_PCI_ID_DEVICE_ORDER": "1"
+        },
+        "path": "GPU-aware MPI over Xe Link"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 0.0,
+        "mbps": 0.0,
+        "t_usec": 0.44,
+        "repetitions": 1000
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "imb",
+      "name": "gpu.PingPong.4096",
+      "params": {
+        "benchmark": "PingPong",
+        "size_bytes": 4096,
+        "processes": 2,
+        "genv": {
+          "I_MPI_OFFLOAD": "1",
+          "ZE_ENABLE_PCI_ID_DEVICE_ORDER": "1"
+        },
+        "path": "GPU-aware MPI over Xe Link"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 0.6412,
+        "mbps": 641.23,
+        "t_usec": 6.39,
+        "repetitions": 1000
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "imb",
+      "name": "gpu.PingPong.8192",
+      "params": {
+        "benchmark": "PingPong",
+        "size_bytes": 8192,
+        "processes": 2,
+        "genv": {
+          "I_MPI_OFFLOAD": "1",
+          "ZE_ENABLE_PCI_ID_DEVICE_ORDER": "1"
+        },
+        "path": "GPU-aware MPI over Xe Link"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 0.8499,
+        "mbps": 849.9,
+        "t_usec": 9.64,
+        "repetitions": 1000
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "imb",
+      "name": "gpu.PingPong.16384",
+      "params": {
+        "benchmark": "PingPong",
+        "size_bytes": 16384,
+        "processes": 2,
+        "genv": {
+          "I_MPI_OFFLOAD": "1",
+          "ZE_ENABLE_PCI_ID_DEVICE_ORDER": "1"
+        },
+        "path": "GPU-aware MPI over Xe Link"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 1.6975,
+        "mbps": 1697.51,
+        "t_usec": 9.65,
+        "repetitions": 1000
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "imb",
+      "name": "gpu.PingPong.32768",
+      "params": {
+        "benchmark": "PingPong",
+        "size_bytes": 32768,
+        "processes": 2,
+        "genv": {
+          "I_MPI_OFFLOAD": "1",
+          "ZE_ENABLE_PCI_ID_DEVICE_ORDER": "1"
+        },
+        "path": "GPU-aware MPI over Xe Link"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 3.371,
+        "mbps": 3370.98,
+        "t_usec": 9.72,
+        "repetitions": 1000
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "imb",
+      "name": "gpu.PingPong.65536",
+      "params": {
+        "benchmark": "PingPong",
+        "size_bytes": 65536,
+        "processes": 2,
+        "genv": {
+          "I_MPI_OFFLOAD": "1",
+          "ZE_ENABLE_PCI_ID_DEVICE_ORDER": "1"
+        },
+        "path": "GPU-aware MPI over Xe Link"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 5.8854,
+        "mbps": 5885.42,
+        "t_usec": 11.14,
+        "repetitions": 640
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "imb",
+      "name": "gpu.PingPong.131072",
+      "params": {
+        "benchmark": "PingPong",
+        "size_bytes": 131072,
+        "processes": 2,
+        "genv": {
+          "I_MPI_OFFLOAD": "1",
+          "ZE_ENABLE_PCI_ID_DEVICE_ORDER": "1"
+        },
+        "path": "GPU-aware MPI over Xe Link"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 9.9232,
+        "mbps": 9923.21,
+        "t_usec": 13.21,
+        "repetitions": 320
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "imb",
+      "name": "gpu.PingPong.262144",
+      "params": {
+        "benchmark": "PingPong",
+        "size_bytes": 262144,
+        "processes": 2,
+        "genv": {
+          "I_MPI_OFFLOAD": "1",
+          "ZE_ENABLE_PCI_ID_DEVICE_ORDER": "1"
+        },
+        "path": "GPU-aware MPI over Xe Link"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 16.0045,
+        "mbps": 16004.54,
+        "t_usec": 16.38,
+        "repetitions": 160
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "imb",
+      "name": "gpu.PingPong.524288",
+      "params": {
+        "benchmark": "PingPong",
+        "size_bytes": 524288,
+        "processes": 2,
+        "genv": {
+          "I_MPI_OFFLOAD": "1",
+          "ZE_ENABLE_PCI_ID_DEVICE_ORDER": "1"
+        },
+        "path": "GPU-aware MPI over Xe Link"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 23.6104,
+        "mbps": 23610.39,
+        "t_usec": 22.21,
+        "repetitions": 80
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "imb",
+      "name": "gpu.PingPong.1048576",
+      "params": {
+        "benchmark": "PingPong",
+        "size_bytes": 1048576,
+        "processes": 2,
+        "genv": {
+          "I_MPI_OFFLOAD": "1",
+          "ZE_ENABLE_PCI_ID_DEVICE_ORDER": "1"
+        },
+        "path": "GPU-aware MPI over Xe Link"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 30.596,
+        "mbps": 30596.01,
+        "t_usec": 34.27,
+        "repetitions": 40
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "imb",
+      "name": "gpu.PingPong.2097152",
+      "params": {
+        "benchmark": "PingPong",
+        "size_bytes": 2097152,
+        "processes": 2,
+        "genv": {
+          "I_MPI_OFFLOAD": "1",
+          "ZE_ENABLE_PCI_ID_DEVICE_ORDER": "1"
+        },
+        "path": "GPU-aware MPI over Xe Link"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 36.1338,
+        "mbps": 36133.82,
+        "t_usec": 58.04,
+        "repetitions": 20
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "imb",
+      "name": "gpu.PingPong.4194304",
+      "params": {
+        "benchmark": "PingPong",
+        "size_bytes": 4194304,
+        "processes": 2,
+        "genv": {
+          "I_MPI_OFFLOAD": "1",
+          "ZE_ENABLE_PCI_ID_DEVICE_ORDER": "1"
+        },
+        "path": "GPU-aware MPI over Xe Link"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 41.0334,
+        "mbps": 41033.42,
+        "t_usec": 102.22,
+        "repetitions": 10
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "imb",
+      "name": "gpu.PingPong.8388608",
+      "params": {
+        "benchmark": "PingPong",
+        "size_bytes": 8388608,
+        "processes": 2,
+        "genv": {
+          "I_MPI_OFFLOAD": "1",
+          "ZE_ENABLE_PCI_ID_DEVICE_ORDER": "1"
+        },
+        "path": "GPU-aware MPI over Xe Link"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 43.298,
+        "mbps": 43298.02,
+        "t_usec": 193.74,
+        "repetitions": 5
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "imb",
+      "name": "gpu.PingPong.16777216",
+      "params": {
+        "benchmark": "PingPong",
+        "size_bytes": 16777216,
+        "processes": 2,
+        "genv": {
+          "I_MPI_OFFLOAD": "1",
+          "ZE_ENABLE_PCI_ID_DEVICE_ORDER": "1"
+        },
+        "path": "GPU-aware MPI over Xe Link"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 44.6054,
+        "mbps": 44605.42,
+        "t_usec": 376.13,
+        "repetitions": 2
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "imb",
+      "name": "gpu.PingPong.33554432",
+      "params": {
+        "benchmark": "PingPong",
+        "size_bytes": 33554432,
+        "processes": 2,
+        "genv": {
+          "I_MPI_OFFLOAD": "1",
+          "ZE_ENABLE_PCI_ID_DEVICE_ORDER": "1"
+        },
+        "path": "GPU-aware MPI over Xe Link"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 41.019,
+        "mbps": 41019.04,
+        "t_usec": 818.02,
+        "repetitions": 1
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "imb",
+      "name": "gpu.PingPong.67108864",
+      "params": {
+        "benchmark": "PingPong",
+        "size_bytes": 67108864,
+        "processes": 2,
+        "genv": {
+          "I_MPI_OFFLOAD": "1",
+          "ZE_ENABLE_PCI_ID_DEVICE_ORDER": "1"
+        },
+        "path": "GPU-aware MPI over Xe Link"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 35.5666,
+        "mbps": 35566.63,
+        "t_usec": 1886.85,
+        "repetitions": 1
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "imb",
+      "name": "gpu.PingPong.134217728",
+      "params": {
+        "benchmark": "PingPong",
+        "size_bytes": 134217728,
+        "processes": 2,
+        "genv": {
+          "I_MPI_OFFLOAD": "1",
+          "ZE_ENABLE_PCI_ID_DEVICE_ORDER": "1"
+        },
+        "path": "GPU-aware MPI over Xe Link"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 35.5522,
+        "mbps": 35552.15,
+        "t_usec": 3775.24,
+        "repetitions": 1
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "imb",
+      "name": "gpu.PingPong.268435456",
+      "params": {
+        "benchmark": "PingPong",
+        "size_bytes": 268435456,
+        "processes": 2,
+        "genv": {
+          "I_MPI_OFFLOAD": "1",
+          "ZE_ENABLE_PCI_ID_DEVICE_ORDER": "1"
+        },
+        "path": "GPU-aware MPI over Xe Link"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 35.3791,
+        "mbps": 35379.11,
+        "t_usec": 7587.4,
+        "repetitions": 1
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "imb",
+      "name": "gpu.PingPong.536870912",
+      "params": {
+        "benchmark": "PingPong",
+        "size_bytes": 536870912,
+        "processes": 2,
+        "genv": {
+          "I_MPI_OFFLOAD": "1",
+          "ZE_ENABLE_PCI_ID_DEVICE_ORDER": "1"
+        },
+        "path": "GPU-aware MPI over Xe Link"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 36.6472,
+        "mbps": 36647.25,
+        "t_usec": 14649.69,
+        "repetitions": 1
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "imb",
+      "name": "gpu_peak.PingPong",
+      "params": {
+        "benchmark": "PingPong",
+        "processes": 2
+      },
+      "stats": null,
+      "metrics": {
+        "bandwidth_gbps": 44.605,
+        "bandwidth_at_bytes": 16777216,
+        "bw_t_usec": 376.13,
+        "latency_us": 0.44,
+        "latency_at_bytes": 0,
+        "points": 19,
+        "xelink_spec_gbps": 318.0,
+        "pct_of_spec": 14.0,
+        "ratio_vs_pcie_gen5": 0.71,
+        "verdict": "疑似 PCIe/host"
+      },
+      "status": "ok",
+      "note": "PingPong 是单向；判据见 §判读标准"
+    },
+    {
+      "suite": "imb",
+      "name": "gpu.PingPing.0",
+      "params": {
+        "benchmark": "PingPing",
+        "size_bytes": 0,
+        "processes": 2,
+        "genv": {
+          "I_MPI_OFFLOAD": "1",
+          "ZE_ENABLE_PCI_ID_DEVICE_ORDER": "1"
+        },
+        "path": "GPU-aware MPI over Xe Link"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 0.0,
+        "mbps": 0.0,
+        "t_usec": 0.55,
+        "repetitions": 1000
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "imb",
+      "name": "gpu.PingPing.4096",
+      "params": {
+        "benchmark": "PingPing",
+        "size_bytes": 4096,
+        "processes": 2,
+        "genv": {
+          "I_MPI_OFFLOAD": "1",
+          "ZE_ENABLE_PCI_ID_DEVICE_ORDER": "1"
+        },
+        "path": "GPU-aware MPI over Xe Link"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 0.5792,
+        "mbps": 579.16,
+        "t_usec": 7.07,
+        "repetitions": 1000
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "imb",
+      "name": "gpu.PingPing.8192",
+      "params": {
+        "benchmark": "PingPing",
+        "size_bytes": 8192,
+        "processes": 2,
+        "genv": {
+          "I_MPI_OFFLOAD": "1",
+          "ZE_ENABLE_PCI_ID_DEVICE_ORDER": "1"
+        },
+        "path": "GPU-aware MPI over Xe Link"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 0.817,
+        "mbps": 817.05,
+        "t_usec": 10.03,
+        "repetitions": 1000
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "imb",
+      "name": "gpu.PingPing.16384",
+      "params": {
+        "benchmark": "PingPing",
+        "size_bytes": 16384,
+        "processes": 2,
+        "genv": {
+          "I_MPI_OFFLOAD": "1",
+          "ZE_ENABLE_PCI_ID_DEVICE_ORDER": "1"
+        },
+        "path": "GPU-aware MPI over Xe Link"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 1.6043,
+        "mbps": 1604.34,
+        "t_usec": 10.21,
+        "repetitions": 1000
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "imb",
+      "name": "gpu.PingPing.32768",
+      "params": {
+        "benchmark": "PingPing",
+        "size_bytes": 32768,
+        "processes": 2,
+        "genv": {
+          "I_MPI_OFFLOAD": "1",
+          "ZE_ENABLE_PCI_ID_DEVICE_ORDER": "1"
+        },
+        "path": "GPU-aware MPI over Xe Link"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 3.0852,
+        "mbps": 3085.25,
+        "t_usec": 10.62,
+        "repetitions": 1000
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "imb",
+      "name": "gpu.PingPing.65536",
+      "params": {
+        "benchmark": "PingPing",
+        "size_bytes": 65536,
+        "processes": 2,
+        "genv": {
+          "I_MPI_OFFLOAD": "1",
+          "ZE_ENABLE_PCI_ID_DEVICE_ORDER": "1"
+        },
+        "path": "GPU-aware MPI over Xe Link"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 5.5455,
+        "mbps": 5545.49,
+        "t_usec": 11.82,
+        "repetitions": 640
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "imb",
+      "name": "gpu.PingPing.131072",
+      "params": {
+        "benchmark": "PingPing",
+        "size_bytes": 131072,
+        "processes": 2,
+        "genv": {
+          "I_MPI_OFFLOAD": "1",
+          "ZE_ENABLE_PCI_ID_DEVICE_ORDER": "1"
+        },
+        "path": "GPU-aware MPI over Xe Link"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 9.2518,
+        "mbps": 9251.78,
+        "t_usec": 14.17,
+        "repetitions": 320
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "imb",
+      "name": "gpu.PingPing.262144",
+      "params": {
+        "benchmark": "PingPing",
+        "size_bytes": 262144,
+        "processes": 2,
+        "genv": {
+          "I_MPI_OFFLOAD": "1",
+          "ZE_ENABLE_PCI_ID_DEVICE_ORDER": "1"
+        },
+        "path": "GPU-aware MPI over Xe Link"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 15.28,
+        "mbps": 15280.01,
+        "t_usec": 17.16,
+        "repetitions": 160
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "imb",
+      "name": "gpu.PingPing.524288",
+      "params": {
+        "benchmark": "PingPing",
+        "size_bytes": 524288,
+        "processes": 2,
+        "genv": {
+          "I_MPI_OFFLOAD": "1",
+          "ZE_ENABLE_PCI_ID_DEVICE_ORDER": "1"
+        },
+        "path": "GPU-aware MPI over Xe Link"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 22.5583,
+        "mbps": 22558.28,
+        "t_usec": 23.24,
+        "repetitions": 80
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "imb",
+      "name": "gpu.PingPing.1048576",
+      "params": {
+        "benchmark": "PingPing",
+        "size_bytes": 1048576,
+        "processes": 2,
+        "genv": {
+          "I_MPI_OFFLOAD": "1",
+          "ZE_ENABLE_PCI_ID_DEVICE_ORDER": "1"
+        },
+        "path": "GPU-aware MPI over Xe Link"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 28.603,
+        "mbps": 28603.04,
+        "t_usec": 36.66,
+        "repetitions": 40
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "imb",
+      "name": "gpu.PingPing.2097152",
+      "params": {
+        "benchmark": "PingPing",
+        "size_bytes": 2097152,
+        "processes": 2,
+        "genv": {
+          "I_MPI_OFFLOAD": "1",
+          "ZE_ENABLE_PCI_ID_DEVICE_ORDER": "1"
+        },
+        "path": "GPU-aware MPI over Xe Link"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 36.1598,
+        "mbps": 36159.83,
+        "t_usec": 58.0,
+        "repetitions": 20
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "imb",
+      "name": "gpu.PingPing.4194304",
+      "params": {
+        "benchmark": "PingPing",
+        "size_bytes": 4194304,
+        "processes": 2,
+        "genv": {
+          "I_MPI_OFFLOAD": "1",
+          "ZE_ENABLE_PCI_ID_DEVICE_ORDER": "1"
+        },
+        "path": "GPU-aware MPI over Xe Link"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 34.6829,
+        "mbps": 34682.93,
+        "t_usec": 120.93,
+        "repetitions": 10
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "imb",
+      "name": "gpu.PingPing.8388608",
+      "params": {
+        "benchmark": "PingPing",
+        "size_bytes": 8388608,
+        "processes": 2,
+        "genv": {
+          "I_MPI_OFFLOAD": "1",
+          "ZE_ENABLE_PCI_ID_DEVICE_ORDER": "1"
+        },
+        "path": "GPU-aware MPI over Xe Link"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 41.5285,
+        "mbps": 41528.53,
+        "t_usec": 202.0,
+        "repetitions": 5
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "imb",
+      "name": "gpu.PingPing.16777216",
+      "params": {
+        "benchmark": "PingPing",
+        "size_bytes": 16777216,
+        "processes": 2,
+        "genv": {
+          "I_MPI_OFFLOAD": "1",
+          "ZE_ENABLE_PCI_ID_DEVICE_ORDER": "1"
+        },
+        "path": "GPU-aware MPI over Xe Link"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 43.6517,
+        "mbps": 43651.65,
+        "t_usec": 384.34,
+        "repetitions": 2
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "imb",
+      "name": "gpu.PingPing.33554432",
+      "params": {
+        "benchmark": "PingPing",
+        "size_bytes": 33554432,
+        "processes": 2,
+        "genv": {
+          "I_MPI_OFFLOAD": "1",
+          "ZE_ENABLE_PCI_ID_DEVICE_ORDER": "1"
+        },
+        "path": "GPU-aware MPI over Xe Link"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 38.6465,
+        "mbps": 38646.49,
+        "t_usec": 868.24,
+        "repetitions": 1
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "imb",
+      "name": "gpu.PingPing.67108864",
+      "params": {
+        "benchmark": "PingPing",
+        "size_bytes": 67108864,
+        "processes": 2,
+        "genv": {
+          "I_MPI_OFFLOAD": "1",
+          "ZE_ENABLE_PCI_ID_DEVICE_ORDER": "1"
+        },
+        "path": "GPU-aware MPI over Xe Link"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 35.0474,
+        "mbps": 35047.4,
+        "t_usec": 1914.8,
+        "repetitions": 1
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "imb",
+      "name": "gpu.PingPing.134217728",
+      "params": {
+        "benchmark": "PingPing",
+        "size_bytes": 134217728,
+        "processes": 2,
+        "genv": {
+          "I_MPI_OFFLOAD": "1",
+          "ZE_ENABLE_PCI_ID_DEVICE_ORDER": "1"
+        },
+        "path": "GPU-aware MPI over Xe Link"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 34.1188,
+        "mbps": 34118.78,
+        "t_usec": 3933.84,
+        "repetitions": 1
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "imb",
+      "name": "gpu.PingPing.268435456",
+      "params": {
+        "benchmark": "PingPing",
+        "size_bytes": 268435456,
+        "processes": 2,
+        "genv": {
+          "I_MPI_OFFLOAD": "1",
+          "ZE_ENABLE_PCI_ID_DEVICE_ORDER": "1"
+        },
+        "path": "GPU-aware MPI over Xe Link"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 35.4679,
+        "mbps": 35467.94,
+        "t_usec": 7568.4,
+        "repetitions": 1
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "imb",
+      "name": "gpu.PingPing.536870912",
+      "params": {
+        "benchmark": "PingPing",
+        "size_bytes": 536870912,
+        "processes": 2,
+        "genv": {
+          "I_MPI_OFFLOAD": "1",
+          "ZE_ENABLE_PCI_ID_DEVICE_ORDER": "1"
+        },
+        "path": "GPU-aware MPI over Xe Link"
+      },
+      "stats": null,
+      "metrics": {
+        "gbps": 34.7239,
+        "mbps": 34723.9,
+        "t_usec": 15461.14,
+        "repetitions": 1
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "imb",
+      "name": "gpu_peak.PingPing",
+      "params": {
+        "benchmark": "PingPing",
+        "processes": 2
+      },
+      "stats": null,
+      "metrics": {
+        "bandwidth_gbps": 43.652,
+        "bandwidth_at_bytes": 16777216,
+        "bw_t_usec": 384.34,
+        "latency_us": 0.55,
+        "latency_at_bytes": 0,
+        "points": 19,
+        "xelink_spec_gbps": 318.0,
+        "pct_of_spec": 13.7,
+        "ratio_vs_pcie_gen5": 0.69,
+        "verdict": "疑似 PCIe/host"
+      },
+      "status": "ok",
+      "note": "PingPong 是单向；判据见 §判读标准"
+    },
+    {
+      "suite": "imb",
+      "name": "gpu_collectives",
+      "params": {},
+      "stats": null,
+      "metrics": {},
+      "status": "error",
+      "note": "IMB-MPI1-GPU 集合通信无数据 rc=0；输出尾部：2       139.30       138.61\n     16777216            2       256.92       256.94       256.93\n     33554432            1       567.28       568.27       567.78\n     67108864            1       993.45       994.39       993.92\n    134217728            1      1967.02      1968.15      1967.58\n    268435456            1      3912.29      3915.09      3913.69\n\n\n# All processes entering MPI_Finalize\n\n\n"
+    },
+    {
+      "suite": "imb",
+      "name": "cpu_peak.PingPong",
+      "params": {
+        "exe": "/opt/intel/oneapi/mpi/2021.18/bin/IMB-MPI1",
+        "path": "纯 CPU MPI（同机 shm）",
+        "command": "mpirun -n 2 /opt/intel/oneapi/mpi/2021.18/bin/IMB-MPI1 PingPong -msglog 12:30"
+      },
+      "stats": null,
+      "metrics": {
+        "bandwidth_gbps": 12.62,
+        "bandwidth_at_bytes": 524288,
+        "bw_t_usec": 41.54,
+        "latency_us": 0.44,
+        "latency_at_bytes": 0,
+        "points": 19
+      },
+      "status": "ok",
+      "note": "同机共享内存路径 —— 它是 host 内存的上限，**不是** PCIe 基线；PCIe 的 H2D/D2H 对照见 03-memory-bandwidth"
+    },
+    {
+      "suite": "imb",
+      "name": "fi_pingpong",
+      "params": {},
+      "stats": null,
+      "metrics": {},
+      "status": "skipped",
+      "note": "libfabric provider=shm/tcp 均失败：pingpong.c:463 bind() EADDRINUSE 后挂起（rc=98，已 60 s 硬超时）；输出尾部：bind(): util/pingpong.c:463 , ret=-98 (Address already in use)\nbind(): util/pingpong.c:463 , ret=-98 (Address already in use)\n"
+    },
+    {
+      "suite": "ccl",
+      "name": "allreduce.float32.1024",
+      "params": {
+        "op": "allreduce",
+        "dtype": "float32",
+        "size_bytes": 1024,
+        "world_size": 2,
+        "backend": "xccl (oneCCL)"
+      },
+      "stats": null,
+      "metrics": {
+        "algbw_gbps": 0.014,
+        "busbw_gbps": 0.014,
+        "seconds": 7.24e-05,
+        "seconds_median": 7.8e-05
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "ccl",
+      "name": "allgather.float32.1024",
+      "params": {
+        "op": "allgather",
+        "dtype": "float32",
+        "size_bytes": 1024,
+        "world_size": 2,
+        "backend": "xccl (oneCCL)"
+      },
+      "stats": null,
+      "metrics": {
+        "algbw_gbps": 0.013,
+        "busbw_gbps": 0.013,
+        "seconds": 7.712e-05,
+        "seconds_median": 8.176e-05
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "ccl",
+      "name": "broadcast.float32.1024",
+      "params": {
+        "op": "broadcast",
+        "dtype": "float32",
+        "size_bytes": 1024,
+        "world_size": 2,
+        "backend": "xccl (oneCCL)"
+      },
+      "stats": null,
+      "metrics": {
+        "algbw_gbps": 0.012,
+        "busbw_gbps": 0.012,
+        "seconds": 8.607999999999999e-05,
+        "seconds_median": 9.112e-05
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "ccl",
+      "name": "allgather.float32.65536",
+      "params": {
+        "op": "allgather",
+        "dtype": "float32",
+        "size_bytes": 65536,
+        "world_size": 2,
+        "backend": "xccl (oneCCL)"
+      },
+      "stats": null,
+      "metrics": {
+        "algbw_gbps": 0.869,
+        "busbw_gbps": 0.869,
+        "seconds": 7.544e-05,
+        "seconds_median": 8.231999999999998e-05
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "ccl",
+      "name": "broadcast.float32.65536",
+      "params": {
+        "op": "broadcast",
+        "dtype": "float32",
+        "size_bytes": 65536,
+        "world_size": 2,
+        "backend": "xccl (oneCCL)"
+      },
+      "stats": null,
+      "metrics": {
+        "algbw_gbps": 0.766,
+        "busbw_gbps": 0.766,
+        "seconds": 8.56e-05,
+        "seconds_median": 9.351999999999999e-05
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "ccl",
+      "name": "allreduce.float32.1048576",
+      "params": {
+        "op": "allreduce",
+        "dtype": "float32",
+        "size_bytes": 1048576,
+        "world_size": 2,
+        "backend": "xccl (oneCCL)"
+      },
+      "stats": null,
+      "metrics": {
+        "algbw_gbps": 5.952,
+        "busbw_gbps": 5.952,
+        "seconds": 0.00017616,
+        "seconds_median": 0.00019912
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "ccl",
+      "name": "allgather.float32.1048576",
+      "params": {
+        "op": "allgather",
+        "dtype": "float32",
+        "size_bytes": 1048576,
+        "world_size": 2,
+        "backend": "xccl (oneCCL)"
+      },
+      "stats": null,
+      "metrics": {
+        "algbw_gbps": 5.955,
+        "busbw_gbps": 5.955,
+        "seconds": 0.00017607999999999998,
+        "seconds_median": 0.00021248
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "ccl",
+      "name": "broadcast.float32.1048576",
+      "params": {
+        "op": "broadcast",
+        "dtype": "float32",
+        "size_bytes": 1048576,
+        "world_size": 2,
+        "backend": "xccl (oneCCL)"
+      },
+      "stats": null,
+      "metrics": {
+        "algbw_gbps": 5.797,
+        "busbw_gbps": 5.797,
+        "seconds": 0.00018088,
+        "seconds_median": 0.000198
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "ccl",
+      "name": "broadcast.float32.16777216",
+      "params": {
+        "op": "broadcast",
+        "dtype": "float32",
+        "size_bytes": 16777216,
+        "world_size": 2,
+        "backend": "xccl (oneCCL)"
+      },
+      "stats": null,
+      "metrics": {
+        "algbw_gbps": 54.842,
+        "busbw_gbps": 54.842,
+        "seconds": 0.00030591999999999994,
+        "seconds_median": 0.00033336
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "ccl",
+      "name": "allgather.float32.67108864",
+      "params": {
+        "op": "allgather",
+        "dtype": "float32",
+        "size_bytes": 67108864,
+        "world_size": 2,
+        "backend": "xccl (oneCCL)"
+      },
+      "stats": null,
+      "metrics": {
+        "algbw_gbps": 62.578,
+        "busbw_gbps": 62.578,
+        "seconds": 0.0010724,
+        "seconds_median": 0.0010984
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "ccl",
+      "name": "broadcast.float32.67108864",
+      "params": {
+        "op": "broadcast",
+        "dtype": "float32",
+        "size_bytes": 67108864,
+        "world_size": 2,
+        "backend": "xccl (oneCCL)"
+      },
+      "stats": null,
+      "metrics": {
+        "algbw_gbps": 79.355,
+        "busbw_gbps": 79.355,
+        "seconds": 0.00084568,
+        "seconds_median": 0.00088216
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "ccl",
+      "name": "allreduce.float32.268435456",
+      "params": {
+        "op": "allreduce",
+        "dtype": "float32",
+        "size_bytes": 268435456,
+        "world_size": 2,
+        "backend": "xccl (oneCCL)"
+      },
+      "stats": null,
+      "metrics": {
+        "algbw_gbps": 78.475,
+        "busbw_gbps": 78.475,
+        "seconds": 0.0034206399999999995,
+        "seconds_median": 0.00344272
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "ccl",
+      "name": "allgather.float32.268435456",
+      "params": {
+        "op": "allgather",
+        "dtype": "float32",
+        "size_bytes": 268435456,
+        "world_size": 2,
+        "backend": "xccl (oneCCL)"
+      },
+      "stats": null,
+      "metrics": {
+        "algbw_gbps": 68.964,
+        "busbw_gbps": 68.964,
+        "seconds": 0.0038924,
+        "seconds_median": 0.0039043199999999998
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "ccl",
+      "name": "broadcast.float32.268435456",
+      "params": {
+        "op": "broadcast",
+        "dtype": "float32",
+        "size_bytes": 268435456,
+        "world_size": 2,
+        "backend": "xccl (oneCCL)"
+      },
+      "stats": null,
+      "metrics": {
+        "algbw_gbps": 90.737,
+        "busbw_gbps": 90.737,
+        "seconds": 0.0029583999999999995,
+        "seconds_median": 0.00296888
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "ccl",
+      "name": "allgather.float32.1073741824",
+      "params": {
+        "op": "allgather",
+        "dtype": "float32",
+        "size_bytes": 1073741824,
+        "world_size": 2,
+        "backend": "xccl (oneCCL)"
+      },
+      "stats": null,
+      "metrics": {
+        "algbw_gbps": 71.335,
+        "busbw_gbps": 71.335,
+        "seconds": 0.01505208,
+        "seconds_median": 0.01508272
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "ccl",
+      "name": "broadcast.bfloat16.1024",
+      "params": {
+        "op": "broadcast",
+        "dtype": "bfloat16",
+        "size_bytes": 1024,
+        "world_size": 2,
+        "backend": "xccl (oneCCL)"
+      },
+      "stats": null,
+      "metrics": {
+        "algbw_gbps": 0.012,
+        "busbw_gbps": 0.012,
+        "seconds": 8.408000000000001e-05,
+        "seconds_median": 9.072e-05
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "ccl",
+      "name": "allreduce.bfloat16.65536",
+      "params": {
+        "op": "allreduce",
+        "dtype": "bfloat16",
+        "size_bytes": 65536,
+        "world_size": 2,
+        "backend": "xccl (oneCCL)"
+      },
+      "stats": null,
+      "metrics": {
+        "algbw_gbps": 0.85,
+        "busbw_gbps": 0.85,
+        "seconds": 7.712e-05,
+        "seconds_median": 9.192e-05
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "ccl",
+      "name": "allgather.bfloat16.65536",
+      "params": {
+        "op": "allgather",
+        "dtype": "bfloat16",
+        "size_bytes": 65536,
+        "world_size": 2,
+        "backend": "xccl (oneCCL)"
+      },
+      "stats": null,
+      "metrics": {
+        "algbw_gbps": 0.745,
+        "busbw_gbps": 0.745,
+        "seconds": 8.8e-05,
+        "seconds_median": 9.559999999999999e-05
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "ccl",
+      "name": "allreduce.bfloat16.1048576",
+      "params": {
+        "op": "allreduce",
+        "dtype": "bfloat16",
+        "size_bytes": 1048576,
+        "world_size": 2,
+        "backend": "xccl (oneCCL)"
+      },
+      "stats": null,
+      "metrics": {
+        "algbw_gbps": 5.789,
+        "busbw_gbps": 5.789,
+        "seconds": 0.00018112,
+        "seconds_median": 0.00020776
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "ccl",
+      "name": "allgather.bfloat16.1048576",
+      "params": {
+        "op": "allgather",
+        "dtype": "bfloat16",
+        "size_bytes": 1048576,
+        "world_size": 2,
+        "backend": "xccl (oneCCL)"
+      },
+      "stats": null,
+      "metrics": {
+        "algbw_gbps": 5.746,
+        "busbw_gbps": 5.746,
+        "seconds": 0.00018248,
+        "seconds_median": 0.00020208
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "ccl",
+      "name": "broadcast.bfloat16.1048576",
+      "params": {
+        "op": "broadcast",
+        "dtype": "bfloat16",
+        "size_bytes": 1048576,
+        "world_size": 2,
+        "backend": "xccl (oneCCL)"
+      },
+      "stats": null,
+      "metrics": {
+        "algbw_gbps": 5.844,
+        "busbw_gbps": 5.844,
+        "seconds": 0.00017943999999999998,
+        "seconds_median": 0.00019176
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "ccl",
+      "name": "allgather.bfloat16.67108864",
+      "params": {
+        "op": "allgather",
+        "dtype": "bfloat16",
+        "size_bytes": 67108864,
+        "world_size": 2,
+        "backend": "xccl (oneCCL)"
+      },
+      "stats": null,
+      "metrics": {
+        "algbw_gbps": 62.658,
+        "busbw_gbps": 62.658,
+        "seconds": 0.00107104,
+        "seconds_median": 0.00109208
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "ccl",
+      "name": "broadcast.bfloat16.67108864",
+      "params": {
+        "op": "broadcast",
+        "dtype": "bfloat16",
+        "size_bytes": 67108864,
+        "world_size": 2,
+        "backend": "xccl (oneCCL)"
+      },
+      "stats": null,
+      "metrics": {
+        "algbw_gbps": 78.744,
+        "busbw_gbps": 78.744,
+        "seconds": 0.00085224,
+        "seconds_median": 0.0008803999999999999
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "ccl",
+      "name": "allreduce.bfloat16.268435456",
+      "params": {
+        "op": "allreduce",
+        "dtype": "bfloat16",
+        "size_bytes": 268435456,
+        "world_size": 2,
+        "backend": "xccl (oneCCL)"
+      },
+      "stats": null,
+      "metrics": {
+        "algbw_gbps": 78.205,
+        "busbw_gbps": 78.205,
+        "seconds": 0.00343248,
+        "seconds_median": 0.00344856
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "ccl",
+      "name": "allgather.bfloat16.268435456",
+      "params": {
+        "op": "allgather",
+        "dtype": "bfloat16",
+        "size_bytes": 268435456,
+        "world_size": 2,
+        "backend": "xccl (oneCCL)"
+      },
+      "stats": null,
+      "metrics": {
+        "algbw_gbps": 68.948,
+        "busbw_gbps": 68.948,
+        "seconds": 0.00389328,
+        "seconds_median": 0.00391368
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "ccl",
+      "name": "broadcast.bfloat16.268435456",
+      "params": {
+        "op": "broadcast",
+        "dtype": "bfloat16",
+        "size_bytes": 268435456,
+        "world_size": 2,
+        "backend": "xccl (oneCCL)"
+      },
+      "stats": null,
+      "metrics": {
+        "algbw_gbps": 90.813,
+        "busbw_gbps": 90.813,
+        "seconds": 0.00295592,
+        "seconds_median": 0.00296272
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "ccl",
+      "name": "allreduce.bfloat16.536870912",
+      "params": {
+        "op": "allreduce",
+        "dtype": "bfloat16",
+        "size_bytes": 536870912,
+        "world_size": 2,
+        "backend": "xccl (oneCCL)"
+      },
+      "stats": null,
+      "metrics": {
+        "algbw_gbps": 80.028,
+        "busbw_gbps": 80.028,
+        "seconds": 0.00670856,
+        "seconds_median": 0.00675104
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "ccl",
+      "name": "allgather.bfloat16.536870912",
+      "params": {
+        "op": "allgather",
+        "dtype": "bfloat16",
+        "size_bytes": 536870912,
+        "world_size": 2,
+        "backend": "xccl (oneCCL)"
+      },
+      "stats": null,
+      "metrics": {
+        "algbw_gbps": 70.37,
+        "busbw_gbps": 70.37,
+        "seconds": 0.00762928,
+        "seconds_median": 0.00764832
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "ccl",
+      "name": "broadcast.bfloat16.536870912",
+      "params": {
+        "op": "broadcast",
+        "dtype": "bfloat16",
+        "size_bytes": 536870912,
+        "world_size": 2,
+        "backend": "xccl (oneCCL)"
+      },
+      "stats": null,
+      "metrics": {
+        "algbw_gbps": 93.04,
+        "busbw_gbps": 93.04,
+        "seconds": 0.00577032,
+        "seconds_median": 0.00577408
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "ccl",
+      "name": "allreduce.bfloat16.1073741824",
+      "params": {
+        "op": "allreduce",
+        "dtype": "bfloat16",
+        "size_bytes": 1073741824,
+        "world_size": 2,
+        "backend": "xccl (oneCCL)"
+      },
+      "stats": null,
+      "metrics": {
+        "algbw_gbps": 80.895,
+        "busbw_gbps": 80.895,
+        "seconds": 0.01327328,
+        "seconds_median": 0.0133104
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "ccl",
+      "name": "allgather.bfloat16.1073741824",
+      "params": {
+        "op": "allgather",
+        "dtype": "bfloat16",
+        "size_bytes": 1073741824,
+        "world_size": 2,
+        "backend": "xccl (oneCCL)"
+      },
+      "stats": null,
+      "metrics": {
+        "algbw_gbps": 71.09,
+        "busbw_gbps": 71.09,
+        "seconds": 0.015103919999999998,
+        "seconds_median": 0.01513256
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "ccl",
+      "name": "peak.allgather.bfloat16",
+      "params": {
+        "op": "allgather",
+        "dtype": "bfloat16"
+      },
+      "stats": null,
+      "metrics": {
+        "busbw_gbps": 71.09,
+        "at_size_bytes": 1073741824,
+        "xelink_spec_gbps": 318.0,
+        "pct_of_spec": 22.4
+      },
+      "status": "ok",
+      "note": "busbw 是集合通信总线口径"
+    },
+    {
+      "suite": "ccl",
+      "name": "peak.allgather.float32",
+      "params": {
+        "op": "allgather",
+        "dtype": "float32"
+      },
+      "stats": null,
+      "metrics": {
+        "busbw_gbps": 71.335,
+        "at_size_bytes": 1073741824,
+        "xelink_spec_gbps": 318.0,
+        "pct_of_spec": 22.4
+      },
+      "status": "ok",
+      "note": "busbw 是集合通信总线口径"
+    },
+    {
+      "suite": "ccl",
+      "name": "peak.allreduce.bfloat16",
+      "params": {
+        "op": "allreduce",
+        "dtype": "bfloat16"
+      },
+      "stats": null,
+      "metrics": {
+        "busbw_gbps": 80.895,
+        "at_size_bytes": 1073741824,
+        "xelink_spec_gbps": 318.0,
+        "pct_of_spec": 25.4
+      },
+      "status": "ok",
+      "note": "busbw 是集合通信总线口径"
+    },
+    {
+      "suite": "ccl",
+      "name": "peak.allreduce.float32",
+      "params": {
+        "op": "allreduce",
+        "dtype": "float32"
+      },
+      "stats": null,
+      "metrics": {
+        "busbw_gbps": 81.187,
+        "at_size_bytes": 1073741824,
+        "xelink_spec_gbps": 318.0,
+        "pct_of_spec": 25.5
+      },
+      "status": "ok",
+      "note": "busbw 是集合通信总线口径"
+    },
+    {
+      "suite": "ccl",
+      "name": "peak.broadcast.bfloat16",
+      "params": {
+        "op": "broadcast",
+        "dtype": "bfloat16"
+      },
+      "stats": null,
+      "metrics": {
+        "busbw_gbps": 94.561,
+        "at_size_bytes": 1073741824,
+        "xelink_spec_gbps": 318.0,
+        "pct_of_spec": 29.7
+      },
+      "status": "ok",
+      "note": "busbw 是集合通信总线口径"
+    },
+    {
+      "suite": "ccl",
+      "name": "peak.broadcast.float32",
+      "params": {
+        "op": "broadcast",
+        "dtype": "float32"
+      },
+      "stats": null,
+      "metrics": {
+        "busbw_gbps": 94.854,
+        "at_size_bytes": 1073741824,
+        "xelink_spec_gbps": 318.0,
+        "pct_of_spec": 29.8
+      },
+      "status": "ok",
+      "note": "busbw 是集合通信总线口径"
+    },
+    {
+      "suite": "xelink_telemetry",
+      "name": "under_p2p_load",
+      "params": {
+        "device": 0,
+        "while": "p2p_probe bw (1 GiB)",
+        "source": "xpu-smi stats -d 0"
+      },
+      "stats": null,
+      "metrics": {
+        "returncode": 0,
+        "raw_tail": "U Memory Used (MiB)       | 22                                                                 |\n| GPU Memory Util (%)         | 0                                                                  |\n| Xe Link Throughput (kB/s)   | N/A                                                                |\n+-----------------------------+--------------------------------------------------------------------+\n",
+        "xelink_throughput": "N/A",
+        "mem_read_kbs": "578",
+        "mem_write_kbs": "578",
+        "gpu_util_pct": "0",
+        "gpu_freq_mhz": "1550"
+      },
+      "status": "skipped",
+      "note": "本机 i915 驱动的 Xe Link Throughput 读 N/A → **无法从硬件侧独立取证**，只能以软件测量为准"
+    }
+  ]
+}

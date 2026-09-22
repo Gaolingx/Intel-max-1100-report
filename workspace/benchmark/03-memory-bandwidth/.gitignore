@@ -1,0 +1,40 @@
+# 03-memory-bandwidth —— HBM / 主机内存 / PCIe 带宽
+#
+# 入库：源码与脚本（probes/*.c|cpp|py、babelstream/ 源码）、run_bench.py、
+#       README.md，以及 results/ 下的全部测量产物。
+# 不入库：编译产物、日志、字节码缓存。
+# 注：results/ 不做任何忽略，全部测量产物入库（docs/ 的溯源链接因此都有效）。
+
+# ---------- Python ----------
+__pycache__/
+*.py[cod]
+
+# ---------- 编译产物 ----------
+# 03-memory-bandwidth/build/host_stream  由 probes/host_stream.c 编出
+# babelstream/build/sycl-stream          由 babelstream 的 cmake 构建编出
+#                                        （babelstream 自己的 .gitignore 也覆盖了 build/、
+#                                          Makefile、CMakeFiles/ 等，这里再兜一层）
+build/
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+*.o
+*.a
+
+# ---------- 第三方检出 babelstream ----------
+# 只忽略构建产物，源码保留：hwt 上 git-over-https 到 github.com 不可靠
+# （GnuTLS recv error / timeout），babelstream 是手工逐个取文件拼出来的，删了就不好再取。
+# 已知限制：babelstream/.git 是一个完整的嵌套仓库，git 会把整个目录当成
+# embedded repo / gitlink，**无法 add 里面的具体文件**。若要让本仓库真正跟踪
+# 这些源码，需要二选一：
+#     rm -rf babelstream/.git        # 去掉内嵌历史，当作 vendored 源码
+#     或把它注册为 submodule
+# 因此这里**不对 babelstream/ 施加任何排除规则**：除了它自己 build/ 产物之外，
+# 上游源码（src/、docs/、.github/、results/ 等）一律保留原样。
+
+# ---------- 日志 ----------
+*.log
+
+# ---------- 编辑器 / 系统 ----------
+.DS_Store
+*.swp

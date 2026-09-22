@@ -1,0 +1,347 @@
+{
+  "meta": {
+    "timestamp": "2026-09-22T01:23:25",
+    "hostname": "hwt",
+    "platform": "Linux-6.14.0-37-generic-x86_64-with-glibc2.41",
+    "device": {
+      "device_index": 0,
+      "name": "Intel(R) Data Center GPU Max 1100",
+      "driver_version": "1.6.33578+77",
+      "device_count": 2,
+      "total_memory_gib": 47.98,
+      "max_compute_units": 448,
+      "gpu_eu_count": 448,
+      "gpu_subslice_count": 56,
+      "last_level_cache_mb": 192.0,
+      "memory_clock_mhz": 3200,
+      "has_fp64": true,
+      "has_fp16": true,
+      "torch_version": "2.14.0+xpu",
+      "python_version": "3.13.3",
+      "oneapi_reference_clock_ghz": 1.55
+    },
+    "arguments": {
+      "suite": "bert",
+      "warmup": 5,
+      "iters": 20,
+      "size_mb": 1024,
+      "gemm_sizes": [
+        256,
+        512,
+        1024,
+        2048,
+        4096,
+        8192
+      ],
+      "bw_sizes": [
+        4,
+        16,
+        64,
+        128,
+        192,
+        256,
+        512,
+        1024,
+        2048
+      ],
+      "reduce_cols": 4096,
+      "xfer_mib": 256,
+      "real_shapes": true,
+      "batched": true,
+      "int8": true,
+      "manual_attn": true,
+      "dtype_bw": true,
+      "size_sweep": true,
+      "host_transfer": true,
+      "quant_verify": true,
+      "quant_compare": true,
+      "model_batches": "64,128,256",
+      "model_dtypes": "fp32,bf16",
+      "bert_model": "bert-base-uncased",
+      "bert_seq_lens": "128,512",
+      "bert_batches": "16,32",
+      "llm_model": "Qwen/Qwen2.5-0.5B-Instruct",
+      "llm_batches": "1,4,8",
+      "llm_input_lens": "128,512,2048",
+      "llm_new_tokens": 32,
+      "llm_compile": "off",
+      "hf_endpoint": "https://hf-mirror.com",
+      "pipe_batch": 64,
+      "pipe_workers": "0,1,2,4,8",
+      "pipe_cpu_scale": 3,
+      "pipe_batches": 20,
+      "pipe_e2e_batches": 20,
+      "ddp_model": "resnet50",
+      "ddp_backends": "xccl",
+      "ddp_dtypes": "bf16",
+      "ddp_batches": "64,128",
+      "ddp_iters": 20,
+      "outdir": "/root/workspace/benchmark/05-ai-dl/results"
+    },
+    "triton_version": "3.8.0"
+  },
+  "highlights": [
+    "BERT-base seq=128 batch=16: BF16 AMP / FP32 = **1.92×**（312.9 vs 162.7 seq/s）",
+    "BERT-base seq=128 batch=32: BF16 AMP / FP32 = **2.41×**（442.2 vs 183.2 seq/s）",
+    "BERT-base seq=512 batch=16: BF16 AMP / FP32 = **3.20×**（132.9 vs 41.6 seq/s）",
+    "BERT-base seq=512 batch=32: BF16 AMP / FP32 = **3.56×**（150.6 vs 42.3 seq/s）"
+  ],
+  "results": [
+    {
+      "suite": "bert",
+      "name": "train_step",
+      "params": {
+        "dtype": "fp32",
+        "batch": 16,
+        "seq_len": 128,
+        "model": "bert-base-mlm",
+        "layers": 12,
+        "hidden": 768,
+        "weights": "pretrained:bert-base-uncased",
+        "params_m": 109.5
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 98.32397599999999,
+        "median_ms": 98.32684,
+        "min_ms": 97.61887999999999,
+        "max_ms": 99.09536,
+        "std_ms": 0.4056894261180586
+      },
+      "metrics": {
+        "seq_per_s": 162.72260961503488,
+        "tokens_per_s": 20828.494030724465,
+        "ms_per_step": 98.32684,
+        "tflops": 13.686107413031882,
+        "peak_mem_gib": 3.221
+      },
+      "status": "ok",
+      "note": "fwd ≈ 2 × N_params × tokens，训练 = 3 × fwd（与 ResNet-50 口径一致）"
+    },
+    {
+      "suite": "bert",
+      "name": "train_step",
+      "params": {
+        "dtype": "fp32",
+        "batch": 32,
+        "seq_len": 128,
+        "model": "bert-base-mlm",
+        "layers": 12,
+        "hidden": 768,
+        "weights": "pretrained:bert-base-uncased",
+        "params_m": 109.5
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 174.663904,
+        "median_ms": 174.62932,
+        "min_ms": 174.18576,
+        "max_ms": 175.20983999999999,
+        "std_ms": 0.2984225563592671
+      },
+      "metrics": {
+        "seq_per_s": 183.24528779016032,
+        "tokens_per_s": 23455.39683714052,
+        "ms_per_step": 174.62932,
+        "tflops": 15.412207913585188,
+        "peak_mem_gib": 5.253
+      },
+      "status": "ok",
+      "note": "fwd ≈ 2 × N_params × tokens，训练 = 3 × fwd（与 ResNet-50 口径一致）"
+    },
+    {
+      "suite": "bert",
+      "name": "train_step",
+      "params": {
+        "dtype": "bf16",
+        "batch": 16,
+        "seq_len": 128,
+        "model": "bert-base-mlm",
+        "layers": 12,
+        "hidden": 768,
+        "weights": "pretrained:bert-base-uncased",
+        "params_m": 109.5
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 51.128616,
+        "median_ms": 51.14019999999999,
+        "min_ms": 50.812239999999996,
+        "max_ms": 51.40696,
+        "std_ms": 0.17926268742825432
+      },
+      "metrics": {
+        "seq_per_s": 312.86541703004684,
+        "tokens_per_s": 40046.773379845996,
+        "ms_per_step": 51.14019999999999,
+        "tflops": 26.314165643153526,
+        "peak_mem_gib": 2.889
+      },
+      "status": "ok",
+      "note": "fwd ≈ 2 × N_params × tokens，训练 = 3 × fwd（与 ResNet-50 口径一致）"
+    },
+    {
+      "suite": "bert",
+      "name": "train_step",
+      "params": {
+        "dtype": "bf16",
+        "batch": 32,
+        "seq_len": 128,
+        "model": "bert-base-mlm",
+        "layers": 12,
+        "hidden": 768,
+        "weights": "pretrained:bert-base-uncased",
+        "params_m": 109.5
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 72.40258,
+        "median_ms": 72.36504,
+        "min_ms": 71.90088,
+        "max_ms": 73.06927999999999,
+        "std_ms": 0.30397347239520645
+      },
+      "metrics": {
+        "seq_per_s": 442.20247788158485,
+        "tokens_per_s": 56601.91716884286,
+        "ms_per_step": 72.36504,
+        "tflops": 37.192315345199845,
+        "peak_mem_gib": 4.336
+      },
+      "status": "ok",
+      "note": "fwd ≈ 2 × N_params × tokens，训练 = 3 × fwd（与 ResNet-50 口径一致）"
+    },
+    {
+      "suite": "bert",
+      "name": "train_step",
+      "params": {
+        "dtype": "fp32",
+        "batch": 16,
+        "seq_len": 512,
+        "model": "bert-base-mlm",
+        "layers": 12,
+        "hidden": 768,
+        "weights": "pretrained:bert-base-uncased",
+        "params_m": 109.5
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 384.782688,
+        "median_ms": 384.82259999999997,
+        "min_ms": 384.09168,
+        "max_ms": 385.34904,
+        "std_ms": 0.3428189664764785
+      },
+      "metrics": {
+        "seq_per_s": 41.57759965241127,
+        "tokens_per_s": 21287.73102203457,
+        "ms_per_step": 384.82259999999997,
+        "tflops": 13.98786551334563,
+        "peak_mem_gib": 10.889
+      },
+      "status": "ok",
+      "note": "fwd ≈ 2 × N_params × tokens，训练 = 3 × fwd（与 ResNet-50 口径一致）"
+    },
+    {
+      "suite": "bert",
+      "name": "train_step",
+      "params": {
+        "dtype": "fp32",
+        "batch": 32,
+        "seq_len": 512,
+        "model": "bert-base-mlm",
+        "layers": 12,
+        "hidden": 768,
+        "weights": "pretrained:bert-base-uncased",
+        "params_m": 109.5
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 757.086888,
+        "median_ms": 757.0903599999999,
+        "min_ms": 756.0083999999999,
+        "max_ms": 758.14824,
+        "std_ms": 0.5313670399413242
+      },
+      "metrics": {
+        "seq_per_s": 42.26708156738385,
+        "tokens_per_s": 21640.74576250053,
+        "ms_per_step": 757.0903599999999,
+        "tflops": 14.219826482260322,
+        "peak_mem_gib": 20.564
+      },
+      "status": "ok",
+      "note": "fwd ≈ 2 × N_params × tokens，训练 = 3 × fwd（与 ResNet-50 口径一致）"
+    },
+    {
+      "suite": "bert",
+      "name": "train_step",
+      "params": {
+        "dtype": "bf16",
+        "batch": 16,
+        "seq_len": 512,
+        "model": "bert-base-mlm",
+        "layers": 12,
+        "hidden": 768,
+        "weights": "pretrained:bert-base-uncased",
+        "params_m": 109.5
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 120.315804,
+        "median_ms": 120.40728,
+        "min_ms": 119.41583999999999,
+        "max_ms": 120.99528,
+        "std_ms": 0.4472986384776948
+      },
+      "metrics": {
+        "seq_per_s": 132.8823307029276,
+        "tokens_per_s": 68035.75331989893,
+        "ms_per_step": 120.40728,
+        "tflops": 44.7053265823794,
+        "peak_mem_gib": 7.17
+      },
+      "status": "ok",
+      "note": "fwd ≈ 2 × N_params × tokens，训练 = 3 × fwd（与 ResNet-50 口径一致）"
+    },
+    {
+      "suite": "bert",
+      "name": "train_step",
+      "params": {
+        "dtype": "bf16",
+        "batch": 32,
+        "seq_len": 512,
+        "model": "bert-base-mlm",
+        "layers": 12,
+        "hidden": 768,
+        "weights": "pretrained:bert-base-uncased",
+        "params_m": 109.5
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 212.25295599999998,
+        "median_ms": 212.46204,
+        "min_ms": 210.474,
+        "max_ms": 213.5412,
+        "std_ms": 0.8926116150622302
+      },
+      "metrics": {
+        "seq_per_s": 150.61514047403477,
+        "tokens_per_s": 77114.9519227058,
+        "ms_per_step": 212.46204,
+        "tflops": 50.671138950713264,
+        "peak_mem_gib": 12.847
+      },
+      "status": "ok",
+      "note": "fwd ≈ 2 × N_params × tokens，训练 = 3 × fwd（与 ResNet-50 口径一致）"
+    }
+  ]
+}

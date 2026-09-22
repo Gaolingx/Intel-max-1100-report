@@ -1,0 +1,3319 @@
+{
+  "meta": {
+    "timestamp": "2026-09-21T23:11:40",
+    "hostname": "hwt",
+    "platform": "Linux-6.14.0-37-generic-x86_64-with-glibc2.41",
+    "device": {
+      "device_index": 0,
+      "name": "Intel(R) Data Center GPU Max 1100",
+      "driver_version": "1.6.33578+77",
+      "device_count": 2,
+      "total_memory_gib": 47.98,
+      "max_compute_units": 448,
+      "gpu_eu_count": 448,
+      "gpu_subslice_count": 56,
+      "last_level_cache_mb": 192.0,
+      "memory_clock_mhz": 3200,
+      "has_fp64": true,
+      "has_fp16": true,
+      "torch_version": "2.14.0+xpu",
+      "python_version": "3.13.3",
+      "oneapi_reference_clock_ghz": 1.55
+    },
+    "arguments": {
+      "suite": "precision",
+      "warmup": 5,
+      "iters": 20,
+      "size_mb": 1024,
+      "gemm_sizes": [
+        256,
+        512,
+        1024,
+        2048,
+        4096,
+        8192
+      ],
+      "bw_sizes": [
+        4,
+        16,
+        64,
+        128,
+        192,
+        256,
+        512,
+        1024,
+        2048
+      ],
+      "reduce_cols": 4096,
+      "xfer_mib": 256,
+      "large": true,
+      "real_shapes": true,
+      "batched": true,
+      "int8": true,
+      "manual_attn": true,
+      "dtype_bw": true,
+      "size_sweep": true,
+      "host_transfer": true,
+      "quant_verify": true,
+      "quant_compare": true,
+      "outdir": "/root/workspace/benchmark/05-ai-dl/results"
+    },
+    "triton_version": "3.8.0"
+  },
+  "highlights": [
+    "**vector 路径可用格式**（9 种）：fp64, fp32, fp16, bf16, int8, int16, int32, int64, uint8",
+    "**matmul 路径可用格式**（10 种）：fp64, fp32, fp16, bf16, int8, fp8_e4m3fn, fp8_e5m2, mxfp8, mxfp4, nvfp4",
+    "⚠ **仅能跑权重独占（非稠密 matmul）**：int4",
+    "⚠ **能跑但不是真正累加器**（输出与输入同为 8bit，直接饱和）：uint8",
+    "**本 torch 构建中不存在对应张量类型**（无法测试）：mxfp6, tf32",
+    "**专用量化 matmul 算子可用**：int8_dense=_int_mm, int8_weight=_weight_int8pack_mm, int4_weight=_weight_int4pack_mm, fp8_scaled=_scaled_mm",
+    "matmul 峰值 fp32: 22.2 TFLOPS @ 16384x16384x16384（ALU 路径）",
+    "matmul 峰值 fp64: 17.4 TFLOPS @ 2048x2048x2048（ALU 路径）",
+    "matmul 峰值 fp16: 233.9 TFLOPS @ 8192x8192x8192（XMX 路径）",
+    "matmul 峰值 bf16: 232.8 TFLOPS @ 4096x4096x4096（XMX 路径）",
+    "matmul 峰值 int8: 398.9 TOPS @ 16384x16384x16384（XMX 路径）",
+    "低精度浮点 fp8_e4m3fn matmul 峰值 80.9 TFLOPS @ 4096x4096x4096，为 BF16 峰值的 0.35×",
+    "低精度浮点 fp8_e5m2 matmul 峰值 145.5 TFLOPS @ 4096x4096x4096，为 BF16 峰值的 0.63×",
+    "低精度浮点 mxfp4 matmul 峰值 32.1 TFLOPS @ 8192x8192x8192，为 BF16 峰值的 0.14×",
+    "低精度浮点 mxfp8 matmul 峰值 49.8 TFLOPS @ 8192x8192x8192，为 BF16 峰值的 0.21×",
+    "低精度浮点 nvfp4 matmul 峰值 29.7 TFLOPS @ 8192x8192x8192，为 BF16 峰值的 0.13×",
+    "⚠ FP8 / MXFP8 / MXFP4 / NVFP4 **全部没有原生 XMX 单元**（PVC 的 XMX 只支持 FP16 / BF16 / INT8），这些格式依赖 oneDNN 软件/回退实现，吞吐显著低于 BF16，**不建议在本卡上当作加速手段**。",
+    "fp32 matmul 实测 22.16 TFLOPS，ALU 理论 22.22 TFLOPS（达成率 100%）→ fp32 走 ALU 而非 XMX",
+    "XMX 倍数 fp16/fp32 = **10.55×**（233.9 vs 22.2）",
+    "XMX 倍数 bf16/fp32 = **10.50×**（232.8 vs 22.2）",
+    "XMX 倍数 int8/fp32 = **18.00×**（398.9 vs 22.2）",
+    "W4A16 峰值 44.8 TOPS，仅为 INT8 稠密的 0.11×（未达 XMX INT4 = INT8 2× 的理论值）；INT4 的收益在**权重显存/带宽**",
+    "vector 峰值有效带宽 834.0 GB/s （bf16 sqrt，io_factor=2）",
+    "fp32: exp 带宽 798.5 GB/s ≈ copy 796.9 GB/s（100%）→ 该精度下 elementwise **纯带宽受限**，ALU 远未打满",
+    "bf16: exp 带宽 817.5 GB/s ≈ copy 799.5 GB/s（102%）→ 该精度下 elementwise **纯带宽受限**，ALU 远未打满"
+  ],
+  "results": [
+    {
+      "suite": "precision",
+      "name": "capability",
+      "params": {
+        "format": "fp64",
+        "hw_vector": true,
+        "hw_matrix": true,
+        "torch_dtype": "float64"
+      },
+      "stats": null,
+      "metrics": {
+        "vector": "OK",
+        "matmul": "OK"
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "capability",
+      "params": {
+        "format": "fp32",
+        "hw_vector": true,
+        "hw_matrix": true,
+        "torch_dtype": "float32"
+      },
+      "stats": null,
+      "metrics": {
+        "vector": "OK",
+        "matmul": "OK"
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "capability",
+      "params": {
+        "format": "fp16",
+        "hw_vector": true,
+        "hw_matrix": true,
+        "torch_dtype": "float16"
+      },
+      "stats": null,
+      "metrics": {
+        "vector": "OK",
+        "matmul": "OK"
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "capability",
+      "params": {
+        "format": "bf16",
+        "hw_vector": true,
+        "hw_matrix": true,
+        "torch_dtype": "bfloat16"
+      },
+      "stats": null,
+      "metrics": {
+        "vector": "OK",
+        "matmul": "OK"
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "capability",
+      "params": {
+        "format": "int8",
+        "hw_vector": true,
+        "hw_matrix": true,
+        "torch_dtype": "int8"
+      },
+      "stats": null,
+      "metrics": {
+        "vector": "OK",
+        "matmul": "OK"
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "capability",
+      "params": {
+        "format": "int16",
+        "hw_vector": true,
+        "hw_matrix": false,
+        "torch_dtype": "int16"
+      },
+      "stats": null,
+      "metrics": {
+        "vector": "OK",
+        "matmul": "FAIL"
+      },
+      "status": "ok",
+      "note": "matmul: RuntimeError: Short is not supported in oneDNN!"
+    },
+    {
+      "suite": "precision",
+      "name": "capability",
+      "params": {
+        "format": "int32",
+        "hw_vector": true,
+        "hw_matrix": false,
+        "torch_dtype": "int32"
+      },
+      "stats": null,
+      "metrics": {
+        "vector": "OK",
+        "matmul": "FAIL"
+      },
+      "status": "ok",
+      "note": "matmul: RuntimeError: could not create a primitive descriptor for the matmul primitive. Run workload with environment variable ONEDNN_VERBOSE=all to get additional diag"
+    },
+    {
+      "suite": "precision",
+      "name": "capability",
+      "params": {
+        "format": "int64",
+        "hw_vector": false,
+        "hw_matrix": false,
+        "torch_dtype": "int64"
+      },
+      "stats": null,
+      "metrics": {
+        "vector": "OK",
+        "matmul": "FAIL"
+      },
+      "status": "ok",
+      "note": "matmul: RuntimeError: Long is not supported in oneDNN!"
+    },
+    {
+      "suite": "precision",
+      "name": "capability",
+      "params": {
+        "format": "uint8",
+        "hw_vector": false,
+        "hw_matrix": false,
+        "torch_dtype": "uint8"
+      },
+      "stats": null,
+      "metrics": {
+        "vector": "OK",
+        "matmul": "SAT"
+      },
+      "status": "ok",
+      "note": "输出仍为 uint8：200×200×4=160000 → 255（饱和），**不是真正的累加器**；uint8 无 ``_int_mm`` 类算子，实际使用必须自行分块/提精度"
+    },
+    {
+      "suite": "precision",
+      "name": "capability",
+      "params": {
+        "format": "int4",
+        "hw_vector": true,
+        "hw_matrix": true,
+        "torch_dtype": "int4"
+      },
+      "stats": null,
+      "metrics": {
+        "vector": "FAIL",
+        "matmul": "SPECIAL"
+      },
+      "status": "ok",
+      "note": "vector: NotImplementedError: \"add_xpu\" not implemented for 'Int4'；torch.matmul 不支持；仅 _weight_int4pack_mm 权重独占（见下表）"
+    },
+    {
+      "suite": "precision",
+      "name": "capability",
+      "params": {
+        "format": "int2",
+        "hw_vector": false,
+        "hw_matrix": true,
+        "torch_dtype": "int2"
+      },
+      "stats": null,
+      "metrics": {
+        "vector": "FAIL",
+        "matmul": "FAIL"
+      },
+      "status": "ok",
+      "note": "vector: NotImplementedError: \"add_xpu\" not implemented for 'Int2'；matmul: torch.matmul 不支持该窄整型（无任何算子路径）"
+    },
+    {
+      "suite": "precision",
+      "name": "capability",
+      "params": {
+        "format": "int1",
+        "hw_vector": false,
+        "hw_matrix": true,
+        "torch_dtype": "int1"
+      },
+      "stats": null,
+      "metrics": {
+        "vector": "FAIL",
+        "matmul": "FAIL"
+      },
+      "status": "ok",
+      "note": "vector: NotImplementedError: \"add_xpu\" not implemented for 'Int1'；matmul: torch.matmul 不支持该窄整型（无任何算子路径）"
+    },
+    {
+      "suite": "precision",
+      "name": "capability",
+      "params": {
+        "format": "fp8_e4m3fn",
+        "hw_vector": false,
+        "hw_matrix": false,
+        "torch_dtype": "float8_e4m3fn"
+      },
+      "stats": null,
+      "metrics": {
+        "vector": "FAIL",
+        "matmul": "OK"
+      },
+      "status": "ok",
+      "note": "vector: NotImplementedError: \"add_xpu\" not implemented for 'Float8_e4m3fn'；经 `_scaled_mm`（fp32 累加 → bf16）；⚠ **无原生 FP8 XMX**，吞吐远低于 BF16"
+    },
+    {
+      "suite": "precision",
+      "name": "capability",
+      "params": {
+        "format": "fp8_e5m2",
+        "hw_vector": false,
+        "hw_matrix": false,
+        "torch_dtype": "float8_e5m2"
+      },
+      "stats": null,
+      "metrics": {
+        "vector": "FAIL",
+        "matmul": "OK"
+      },
+      "status": "ok",
+      "note": "vector: NotImplementedError: \"add_xpu\" not implemented for 'Float8_e5m2'；经 `_scaled_mm`（fp32 累加 → bf16）；⚠ **无原生 FP8 XMX**，吞吐远低于 BF16"
+    },
+    {
+      "suite": "precision",
+      "name": "capability",
+      "params": {
+        "format": "fp8_e4m3fnuz",
+        "hw_vector": false,
+        "hw_matrix": false,
+        "torch_dtype": "float8_e4m3fnuz"
+      },
+      "stats": null,
+      "metrics": {
+        "vector": "FAIL",
+        "matmul": "FAIL"
+      },
+      "status": "ok",
+      "note": "vector: NotImplementedError: \"add_xpu\" not implemented for 'Float8_e4m3fnuz'；matmul: `_scaled_mm` → RuntimeError: Float8_e4m3fnuz is not supported in oneDNN!；`torch.matmul` → RuntimeError: Float8_e4m3fnuz is not supported in oneDNN!"
+    },
+    {
+      "suite": "precision",
+      "name": "capability",
+      "params": {
+        "format": "fp8_e5m2fnuz",
+        "hw_vector": false,
+        "hw_matrix": false,
+        "torch_dtype": "float8_e5m2fnuz"
+      },
+      "stats": null,
+      "metrics": {
+        "vector": "FAIL",
+        "matmul": "FAIL"
+      },
+      "status": "ok",
+      "note": "vector: NotImplementedError: \"add_xpu\" not implemented for 'Float8_e5m2fnuz'；matmul: `_scaled_mm` → RuntimeError: Float8_e5m2fnuz is not supported in oneDNN!；`torch.matmul` → RuntimeError: Float8_e5m2fnuz is not supported in oneDNN!"
+    },
+    {
+      "suite": "precision",
+      "name": "capability",
+      "params": {
+        "format": "fp8_e8m0fnu",
+        "hw_vector": false,
+        "hw_matrix": false,
+        "torch_dtype": "float8_e8m0fnu"
+      },
+      "stats": null,
+      "metrics": {
+        "vector": "FAIL",
+        "matmul": "FAIL"
+      },
+      "status": "ok",
+      "note": "vector: NotImplementedError: \"add_xpu\" not implemented for 'Float8_e8m0fnu'；matmul: `_scaled_mm` → RuntimeError: could not create a primitive descriptor for the matmul primitive. Run workload with environment variable ONEDNN_VERBOSE=all to get additional diag；`torch.matmul` → RuntimeError: could not create a primitive descriptor for the matmul primitive. Run workload with environment variable ONEDNN_VERBOSE=all to get additional diag"
+    },
+    {
+      "suite": "precision",
+      "name": "capability",
+      "params": {
+        "format": "fp4_e2m1fn_x2",
+        "hw_vector": false,
+        "hw_matrix": false,
+        "torch_dtype": "float4_e2m1fn_x2"
+      },
+      "stats": null,
+      "metrics": {
+        "vector": "FAIL",
+        "matmul": "FAIL"
+      },
+      "status": "ok",
+      "note": "vector: NotImplementedError: \"add_xpu\" not implemented for 'Float4_e2m1fn_x2'；matmul: torch.matmul 不支持该窄整型（无任何算子路径）"
+    },
+    {
+      "suite": "precision",
+      "name": "capability",
+      "params": {
+        "format": "mxfp8",
+        "hw_vector": false,
+        "hw_matrix": true,
+        "torch_dtype": "fp8_e4m3fn + fp8_e8m0fnu scale(1x32)"
+      },
+      "stats": null,
+      "metrics": {
+        "vector": "FAIL",
+        "matmul": "OK"
+      },
+      "status": "ok",
+      "note": "vector: 无逐元素算子；matmul: 块缩放经 `_scaled_mm`（1x32，scale=fp8_e8m0fnu）；⚠ 无原生 XMX，吞吐远低于 BF16（见下表）"
+    },
+    {
+      "suite": "precision",
+      "name": "capability",
+      "params": {
+        "format": "mxfp4",
+        "hw_vector": false,
+        "hw_matrix": true,
+        "torch_dtype": "fp4_e2m1fn_x2 + fp8_e8m0fnu scale(1x32)"
+      },
+      "stats": null,
+      "metrics": {
+        "vector": "FAIL",
+        "matmul": "OK"
+      },
+      "status": "ok",
+      "note": "vector: 无逐元素算子；matmul: 块缩放经 `_scaled_mm`（1x32，scale=fp8_e8m0fnu）；⚠ 无原生 XMX，吞吐远低于 BF16（见下表）"
+    },
+    {
+      "suite": "precision",
+      "name": "capability",
+      "params": {
+        "format": "nvfp4",
+        "hw_vector": false,
+        "hw_matrix": true,
+        "torch_dtype": "fp4_e2m1fn_x2 + fp8_e4m3fn scale(1x16)"
+      },
+      "stats": null,
+      "metrics": {
+        "vector": "FAIL",
+        "matmul": "OK"
+      },
+      "status": "ok",
+      "note": "vector: 无逐元素算子；matmul: 块缩放经 `_scaled_mm`（1x16，scale=fp8_e4m3fn）；⚠ 无原生 XMX，吞吐远低于 BF16（见下表）"
+    },
+    {
+      "suite": "precision",
+      "name": "capability",
+      "params": {
+        "format": "mxfp6",
+        "hw_vector": false,
+        "hw_matrix": true,
+        "torch_dtype": "-"
+      },
+      "stats": null,
+      "metrics": {
+        "vector": "ABSENT",
+        "matmul": "ABSENT"
+      },
+      "status": "ok",
+      "note": "本 torch 构建里不存在该 dtype：torch 无 ``float6_*`` 张量类型（MXFP6 无法构造）"
+    },
+    {
+      "suite": "precision",
+      "name": "capability",
+      "params": {
+        "format": "tf32",
+        "hw_vector": false,
+        "hw_matrix": true,
+        "torch_dtype": "-"
+      },
+      "stats": null,
+      "metrics": {
+        "vector": "ABSENT",
+        "matmul": "ABSENT"
+      },
+      "status": "ok",
+      "note": "本 torch 构建里不存在该 dtype：torch 无 TF32 张量类型（TF32 只是 cuBLAS/oneDNN 的 fp32 计算模式）"
+    },
+    {
+      "suite": "precision",
+      "name": "quantized_op",
+      "params": {
+        "op": "int8_dense=_int_mm"
+      },
+      "stats": null,
+      "metrics": {
+        "status": "OK"
+      },
+      "status": "ok",
+      "note": "int8×int8→int32，XMX（int32 累加）"
+    },
+    {
+      "suite": "precision",
+      "name": "quantized_op",
+      "params": {
+        "op": "int8_weight=_weight_int8pack_mm"
+      },
+      "stats": null,
+      "metrics": {
+        "status": "OK"
+      },
+      "status": "ok",
+      "note": "W8A16 权重独占，per-channel scale"
+    },
+    {
+      "suite": "precision",
+      "name": "quantized_op",
+      "params": {
+        "op": "int4_weight=_weight_int4pack_mm"
+      },
+      "stats": null,
+      "metrics": {
+        "status": "OK"
+      },
+      "status": "ok",
+      "note": "W4A16 权重独占，dequant=scale*(q-8)+zero"
+    },
+    {
+      "suite": "precision",
+      "name": "quantized_op",
+      "params": {
+        "op": "fp8_scaled=_scaled_mm"
+      },
+      "stats": null,
+      "metrics": {
+        "status": "OK"
+      },
+      "status": "ok",
+      "note": "FP8 稠密（e4m3 × e4m3）"
+    },
+    {
+      "suite": "precision",
+      "name": "vector",
+      "params": {
+        "dtype": "fp64",
+        "op": "copy",
+        "elems": 134217728,
+        "size_mib": 1024,
+        "io_factor": 2
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 2.7041,
+        "median_ms": 2.7024,
+        "min_ms": 2.69136,
+        "max_ms": 2.7268,
+        "std_ms": 0.007596457068923648
+      },
+      "metrics": {
+        "gbps": 794.6579514505625,
+        "gops": 49.66612196566015
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "vector",
+      "params": {
+        "dtype": "fp64",
+        "op": "add",
+        "elems": 134217728,
+        "size_mib": 1024,
+        "io_factor": 3
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 4.083807999999999,
+        "median_ms": 4.084759999999999,
+        "min_ms": 4.07048,
+        "max_ms": 4.09528,
+        "std_ms": 0.006546640054256801
+      },
+      "metrics": {
+        "gbps": 788.5960183707243,
+        "gops": 32.85816743211352
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "vector",
+      "params": {
+        "dtype": "fp64",
+        "op": "mul",
+        "elems": 134217728,
+        "size_mib": 1024,
+        "io_factor": 3
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 4.084636,
+        "median_ms": 4.0816,
+        "min_ms": 4.06776,
+        "max_ms": 4.12432,
+        "std_ms": 0.011308488139446432
+      },
+      "metrics": {
+        "gbps": 789.2065542924344,
+        "gops": 32.88360642885143
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "vector",
+      "params": {
+        "dtype": "fp64",
+        "op": "triad",
+        "elems": 134217728,
+        "size_mib": 1024,
+        "io_factor": 3
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 4.0831599999999995,
+        "median_ms": 4.08272,
+        "min_ms": 4.0709599999999995,
+        "max_ms": 4.0988,
+        "std_ms": 0.0077162685282460425
+      },
+      "metrics": {
+        "gbps": 788.9900536896969,
+        "gops": 32.87458557040404
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "vector",
+      "params": {
+        "dtype": "fp64",
+        "op": "exp",
+        "elems": 134217728,
+        "size_mib": 1024,
+        "io_factor": 2
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 2.672384,
+        "median_ms": 2.6715999999999998,
+        "min_ms": 2.66008,
+        "max_ms": 2.6942399999999997,
+        "std_ms": 0.008235322944487342
+      },
+      "metrics": {
+        "gbps": 803.8193022907622,
+        "gops": 50.238706393172635
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "vector",
+      "params": {
+        "dtype": "fp64",
+        "op": "tanh",
+        "elems": 134217728,
+        "size_mib": 1024,
+        "io_factor": 2
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 2.59258,
+        "median_ms": 2.59284,
+        "min_ms": 2.58304,
+        "max_ms": 2.61064,
+        "std_ms": 0.0059929491905071595
+      },
+      "metrics": {
+        "gbps": 828.2360839851283,
+        "gops": 51.76475524907052
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "vector",
+      "params": {
+        "dtype": "fp64",
+        "op": "sqrt",
+        "elems": 134217728,
+        "size_mib": 1024,
+        "io_factor": 2
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 2.6933759999999998,
+        "median_ms": 2.69196,
+        "min_ms": 2.68256,
+        "max_ms": 2.71808,
+        "std_ms": 0.008232485894309204
+      },
+      "metrics": {
+        "gbps": 797.7398059406529,
+        "gops": 49.858737871290806
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "vector",
+      "params": {
+        "dtype": "fp32",
+        "op": "copy",
+        "elems": 268435456,
+        "size_mib": 1024,
+        "io_factor": 2
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 2.693608,
+        "median_ms": 2.6948799999999995,
+        "min_ms": 2.67128,
+        "max_ms": 2.7066399999999997,
+        "std_ms": 0.008445510996973514
+      },
+      "metrics": {
+        "gbps": 796.8754259929941,
+        "gops": 99.60942824912426
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "vector",
+      "params": {
+        "dtype": "fp32",
+        "op": "add",
+        "elems": 268435456,
+        "size_mib": 1024,
+        "io_factor": 3
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 4.0808,
+        "median_ms": 4.07976,
+        "min_ms": 4.06792,
+        "max_ms": 4.09472,
+        "std_ms": 0.006741489449669175
+      },
+      "metrics": {
+        "gbps": 789.5624919112889,
+        "gops": 65.79687432594075
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "vector",
+      "params": {
+        "dtype": "fp32",
+        "op": "mul",
+        "elems": 268435456,
+        "size_mib": 1024,
+        "io_factor": 3
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 4.084391999999999,
+        "median_ms": 4.085,
+        "min_ms": 4.06872,
+        "max_ms": 4.09872,
+        "std_ms": 0.006609370317965215
+      },
+      "metrics": {
+        "gbps": 788.5496871481027,
+        "gops": 65.71247392900857
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "vector",
+      "params": {
+        "dtype": "fp32",
+        "op": "triad",
+        "elems": 268435456,
+        "size_mib": 1024,
+        "io_factor": 3
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 4.081812,
+        "median_ms": 4.081799999999999,
+        "min_ms": 4.07112,
+        "max_ms": 4.0914399999999995,
+        "std_ms": 0.005213537762402806
+      },
+      "metrics": {
+        "gbps": 789.1678847567251,
+        "gops": 65.76399039639377
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "vector",
+      "params": {
+        "dtype": "fp32",
+        "op": "exp",
+        "elems": 268435456,
+        "size_mib": 1024,
+        "io_factor": 2
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 2.6884319999999997,
+        "median_ms": 2.6894799999999996,
+        "min_ms": 2.67896,
+        "max_ms": 2.69448,
+        "std_ms": 0.003834279071742186
+      },
+      "metrics": {
+        "gbps": 798.4754108600921,
+        "gops": 99.80942635751151
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "vector",
+      "params": {
+        "dtype": "fp32",
+        "op": "tanh",
+        "elems": 268435456,
+        "size_mib": 1024,
+        "io_factor": 2
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 3.2850960000000002,
+        "median_ms": 3.28552,
+        "min_ms": 3.27792,
+        "max_ms": 3.28888,
+        "std_ms": 0.0022311396191184137
+      },
+      "metrics": {
+        "gbps": 653.6206286980447,
+        "gops": 81.70257858725559
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "vector",
+      "params": {
+        "dtype": "fp32",
+        "op": "sqrt",
+        "elems": 268435456,
+        "size_mib": 1024,
+        "io_factor": 2
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 2.681064,
+        "median_ms": 2.6817599999999997,
+        "min_ms": 2.66616,
+        "max_ms": 2.70232,
+        "std_ms": 0.007221173311865546
+      },
+      "metrics": {
+        "gbps": 800.7739872322655,
+        "gops": 100.09674840403319
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "vector",
+      "params": {
+        "dtype": "fp16",
+        "op": "copy",
+        "elems": 536870912,
+        "size_mib": 1024,
+        "io_factor": 2
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 2.6960279999999996,
+        "median_ms": 2.6966799999999997,
+        "min_ms": 2.68152,
+        "max_ms": 2.7068,
+        "std_ms": 0.006713104795845187
+      },
+      "metrics": {
+        "gbps": 796.3435216636755,
+        "gops": 199.08588041591887
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "vector",
+      "params": {
+        "dtype": "fp16",
+        "op": "add",
+        "elems": 536870912,
+        "size_mib": 1024,
+        "io_factor": 3
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 4.2964199999999995,
+        "median_ms": 4.2982,
+        "min_ms": 4.2752799999999995,
+        "max_ms": 4.31208,
+        "std_ms": 0.009740402455751066
+      },
+      "metrics": {
+        "gbps": 749.4359201526221,
+        "gops": 124.90598669210368
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "vector",
+      "params": {
+        "dtype": "fp16",
+        "op": "mul",
+        "elems": 536870912,
+        "size_mib": 1024,
+        "io_factor": 3
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 4.297032,
+        "median_ms": 4.29776,
+        "min_ms": 4.27952,
+        "max_ms": 4.31664,
+        "std_ms": 0.008958532022602814
+      },
+      "metrics": {
+        "gbps": 749.5126465879899,
+        "gops": 124.91877443133167
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "vector",
+      "params": {
+        "dtype": "fp16",
+        "op": "triad",
+        "elems": 536870912,
+        "size_mib": 1024,
+        "io_factor": 3
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 4.297544,
+        "median_ms": 4.2979199999999995,
+        "min_ms": 4.272959999999999,
+        "max_ms": 4.3178399999999995,
+        "std_ms": 0.009116669567336508
+      },
+      "metrics": {
+        "gbps": 749.4847442483807,
+        "gops": 124.91412404139679
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "vector",
+      "params": {
+        "dtype": "fp16",
+        "op": "exp",
+        "elems": 536870912,
+        "size_mib": 1024,
+        "io_factor": 2
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 2.6881559999999998,
+        "median_ms": 2.68832,
+        "min_ms": 2.67656,
+        "max_ms": 2.6973599999999998,
+        "std_ms": 0.005514227416420196
+      },
+      "metrics": {
+        "gbps": 798.8199500059517,
+        "gops": 199.70498750148792
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "vector",
+      "params": {
+        "dtype": "fp16",
+        "op": "tanh",
+        "elems": 536870912,
+        "size_mib": 1024,
+        "io_factor": 2
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 6.227396,
+        "median_ms": 6.224919999999999,
+        "min_ms": 6.2192799999999995,
+        "max_ms": 6.25768,
+        "std_ms": 0.00799373654807312
+      },
+      "metrics": {
+        "gbps": 344.98172635150337,
+        "gops": 86.24543158787584
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "vector",
+      "params": {
+        "dtype": "fp16",
+        "op": "sqrt",
+        "elems": 536870912,
+        "size_mib": 1024,
+        "io_factor": 2
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 2.652376,
+        "median_ms": 2.6531599999999997,
+        "min_ms": 2.64328,
+        "max_ms": 2.6668,
+        "std_ms": 0.005957991607916198
+      },
+      "metrics": {
+        "gbps": 809.4060094378025,
+        "gops": 202.35150235945062
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "vector",
+      "params": {
+        "dtype": "bf16",
+        "op": "copy",
+        "elems": 536870912,
+        "size_mib": 1024,
+        "io_factor": 2
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 2.6840719999999996,
+        "median_ms": 2.6861999999999995,
+        "min_ms": 2.67032,
+        "max_ms": 2.6919999999999997,
+        "std_ms": 0.005682416387418286
+      },
+      "metrics": {
+        "gbps": 799.4503938649394,
+        "gops": 199.86259846623486
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "vector",
+      "params": {
+        "dtype": "bf16",
+        "op": "add",
+        "elems": 536870912,
+        "size_mib": 1024,
+        "io_factor": 3
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 4.08332,
+        "median_ms": 4.08412,
+        "min_ms": 4.05928,
+        "max_ms": 4.10704,
+        "std_ms": 0.011138215296895508
+      },
+      "metrics": {
+        "gbps": 788.7195949188565,
+        "gops": 131.4532658198094
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "vector",
+      "params": {
+        "dtype": "bf16",
+        "op": "mul",
+        "elems": 536870912,
+        "size_mib": 1024,
+        "io_factor": 3
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 4.079576,
+        "median_ms": 4.0799199999999995,
+        "min_ms": 4.06952,
+        "max_ms": 4.0868,
+        "std_ms": 0.0053011757186496545
+      },
+      "metrics": {
+        "gbps": 789.5315280691779,
+        "gops": 131.58858801152965
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "vector",
+      "params": {
+        "dtype": "bf16",
+        "op": "triad",
+        "elems": 536870912,
+        "size_mib": 1024,
+        "io_factor": 3
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 4.082724,
+        "median_ms": 4.08252,
+        "min_ms": 4.06552,
+        "max_ms": 4.10448,
+        "std_ms": 0.008342718022323338
+      },
+      "metrics": {
+        "gbps": 789.0287057993593,
+        "gops": 131.5047842998932
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "vector",
+      "params": {
+        "dtype": "bf16",
+        "op": "exp",
+        "elems": 536870912,
+        "size_mib": 1024,
+        "io_factor": 2
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 2.627688,
+        "median_ms": 2.62688,
+        "min_ms": 2.6200799999999997,
+        "max_ms": 2.63408,
+        "std_ms": 0.0035802033461802326
+      },
+      "metrics": {
+        "gbps": 817.5035205262517,
+        "gops": 204.37588013156292
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "vector",
+      "params": {
+        "dtype": "bf16",
+        "op": "tanh",
+        "elems": 536870912,
+        "size_mib": 1024,
+        "io_factor": 2
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 6.536704,
+        "median_ms": 6.533479999999999,
+        "min_ms": 6.52488,
+        "max_ms": 6.560639999999999,
+        "std_ms": 0.008921366711440582
+      },
+      "metrics": {
+        "gbps": 328.68909799984084,
+        "gops": 82.17227449996021
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "vector",
+      "params": {
+        "dtype": "bf16",
+        "op": "sqrt",
+        "elems": 536870912,
+        "size_mib": 1024,
+        "io_factor": 2
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 2.574632,
+        "median_ms": 2.5750399999999996,
+        "min_ms": 2.56712,
+        "max_ms": 2.582,
+        "std_ms": 0.003562641716479455
+      },
+      "metrics": {
+        "gbps": 833.9612774947186,
+        "gops": 208.49031937367965
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "vector",
+      "params": {
+        "dtype": "int8",
+        "op": "copy",
+        "elems": 1073741824,
+        "size_mib": 1024,
+        "io_factor": 2
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 2.693536,
+        "median_ms": 2.6935599999999997,
+        "min_ms": 2.68288,
+        "max_ms": 2.7142399999999998,
+        "std_ms": 0.0066672981034298934
+      },
+      "metrics": {
+        "gbps": 797.2659409851647,
+        "gops": 398.63297049258233
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "vector",
+      "params": {
+        "dtype": "int8",
+        "op": "add",
+        "elems": 1073741824,
+        "size_mib": 1024,
+        "io_factor": 3
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 4.088655999999999,
+        "median_ms": 4.0882000000000005,
+        "min_ms": 4.07752,
+        "max_ms": 4.1008,
+        "std_ms": 0.005360394015368597
+      },
+      "metrics": {
+        "gbps": 787.9324573161782,
+        "gops": 262.64415243872605
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "vector",
+      "params": {
+        "dtype": "int8",
+        "op": "mul",
+        "elems": 1073741824,
+        "size_mib": 1024,
+        "io_factor": 3
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 4.092676,
+        "median_ms": 4.093,
+        "min_ms": 4.0816,
+        "max_ms": 4.11072,
+        "std_ms": 0.005894891347599229
+      },
+      "metrics": {
+        "gbps": 787.0084221842169,
+        "gops": 262.3361407280723
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "vector",
+      "params": {
+        "dtype": "int8",
+        "op": "sub",
+        "elems": 1073741824,
+        "size_mib": 1024,
+        "io_factor": 3
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 4.090459999999999,
+        "median_ms": 4.09108,
+        "min_ms": 4.0789599999999995,
+        "max_ms": 4.10112,
+        "std_ms": 0.005330178233417822
+      },
+      "metrics": {
+        "gbps": 787.3777760395789,
+        "gops": 262.4592586798596
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "vector",
+      "params": {
+        "dtype": "int16",
+        "op": "copy",
+        "elems": 536870912,
+        "size_mib": 1024,
+        "io_factor": 2
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 2.692268,
+        "median_ms": 2.6919199999999996,
+        "min_ms": 2.68144,
+        "max_ms": 2.70632,
+        "std_ms": 0.005610006773614493
+      },
+      "metrics": {
+        "gbps": 797.7516597818659,
+        "gops": 199.43791494546647
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "vector",
+      "params": {
+        "dtype": "int16",
+        "op": "add",
+        "elems": 536870912,
+        "size_mib": 1024,
+        "io_factor": 3
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 4.124452,
+        "median_ms": 4.12556,
+        "min_ms": 4.11464,
+        "max_ms": 4.13392,
+        "std_ms": 0.005483839530839715
+      },
+      "metrics": {
+        "gbps": 780.7971455996276,
+        "gops": 130.13285759993795
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "vector",
+      "params": {
+        "dtype": "int16",
+        "op": "mul",
+        "elems": 536870912,
+        "size_mib": 1024,
+        "io_factor": 3
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 4.12528,
+        "median_ms": 4.12568,
+        "min_ms": 4.11336,
+        "max_ms": 4.13568,
+        "std_ms": 0.0060424101151774325
+      },
+      "metrics": {
+        "gbps": 780.7744352446141,
+        "gops": 130.12907254076902
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "vector",
+      "params": {
+        "dtype": "int16",
+        "op": "sub",
+        "elems": 536870912,
+        "size_mib": 1024,
+        "io_factor": 3
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 4.1257719999999996,
+        "median_ms": 4.12728,
+        "min_ms": 4.11336,
+        "max_ms": 4.13656,
+        "std_ms": 0.005902529627202175
+      },
+      "metrics": {
+        "gbps": 780.4717567017503,
+        "gops": 130.0786261169584
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "vector",
+      "params": {
+        "dtype": "int32",
+        "op": "copy",
+        "elems": 268435456,
+        "size_mib": 1024,
+        "io_factor": 2
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 2.69212,
+        "median_ms": 2.6915999999999998,
+        "min_ms": 2.6843999999999997,
+        "max_ms": 2.7008799999999997,
+        "std_ms": 0.0047483555048037085
+      },
+      "metrics": {
+        "gbps": 797.8465031951256,
+        "gops": 99.7308128993907
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "vector",
+      "params": {
+        "dtype": "int32",
+        "op": "add",
+        "elems": 268435456,
+        "size_mib": 1024,
+        "io_factor": 3
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 4.084464,
+        "median_ms": 4.08324,
+        "min_ms": 4.07472,
+        "max_ms": 4.0931999999999995,
+        "std_ms": 0.004459280659478497
+      },
+      "metrics": {
+        "gbps": 788.8895759250007,
+        "gops": 65.74079799375006
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "vector",
+      "params": {
+        "dtype": "int32",
+        "op": "mul",
+        "elems": 268435456,
+        "size_mib": 1024,
+        "io_factor": 3
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 4.09134,
+        "median_ms": 4.0918399999999995,
+        "min_ms": 4.07968,
+        "max_ms": 4.10456,
+        "std_ms": 0.0075664469865320905
+      },
+      "metrics": {
+        "gbps": 787.2315320247128,
+        "gops": 65.60262766872606
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "vector",
+      "params": {
+        "dtype": "int32",
+        "op": "sub",
+        "elems": 268435456,
+        "size_mib": 1024,
+        "io_factor": 3
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 4.08524,
+        "median_ms": 4.0832,
+        "min_ms": 4.07928,
+        "max_ms": 4.09624,
+        "std_ms": 0.00461271286771684
+      },
+      "metrics": {
+        "gbps": 788.8973040752352,
+        "gops": 65.7414420062696
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "vector",
+      "params": {
+        "dtype": "uint8",
+        "op": "copy",
+        "elems": 1073741824,
+        "size_mib": 1024,
+        "io_factor": 2
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 2.692812,
+        "median_ms": 2.6908399999999997,
+        "min_ms": 2.6813599999999997,
+        "max_ms": 2.70256,
+        "std_ms": 0.006019237160969852
+      },
+      "metrics": {
+        "gbps": 798.0718467095778,
+        "gops": 399.0359233547889
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "vector",
+      "params": {
+        "dtype": "uint8",
+        "op": "add",
+        "elems": 1073741824,
+        "size_mib": 1024,
+        "io_factor": 3
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 4.127132,
+        "median_ms": 4.12688,
+        "min_ms": 4.12168,
+        "max_ms": 4.13768,
+        "std_ms": 0.00458339786621233
+      },
+      "metrics": {
+        "gbps": 780.5474043345092,
+        "gops": 260.1824681115031
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "vector",
+      "params": {
+        "dtype": "uint8",
+        "op": "mul",
+        "elems": 1073741824,
+        "size_mib": 1024,
+        "io_factor": 3
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 4.127516,
+        "median_ms": 4.126799999999999,
+        "min_ms": 4.115279999999999,
+        "max_ms": 4.14768,
+        "std_ms": 0.008093749687258798
+      },
+      "metrics": {
+        "gbps": 780.5625356208202,
+        "gops": 260.1875118736067
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "vector",
+      "params": {
+        "dtype": "uint8",
+        "op": "sub",
+        "elems": 1073741824,
+        "size_mib": 1024,
+        "io_factor": 3
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 4.128387999999999,
+        "median_ms": 4.12824,
+        "min_ms": 4.11704,
+        "max_ms": 4.1367199999999995,
+        "std_ms": 0.004305105805900642
+      },
+      "metrics": {
+        "gbps": 780.2902621940585,
+        "gops": 260.09675406468614
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "matmul",
+      "params": {
+        "dtype": "fp64",
+        "m": 1024,
+        "n": 1024,
+        "k": 1024,
+        "shape": "1024x1024x1024",
+        "path": "ALU"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.16921999999999998,
+        "median_ms": 0.16859999999999997,
+        "min_ms": 0.16448,
+        "max_ms": 0.1896,
+        "std_ms": 0.005155928626348507
+      },
+      "metrics": {
+        "tflops": 12.737150937129302
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "matmul",
+      "params": {
+        "dtype": "fp64",
+        "m": 2048,
+        "n": 2048,
+        "k": 2048,
+        "shape": "2048x2048x2048",
+        "path": "ALU"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.997748,
+        "median_ms": 0.98888,
+        "min_ms": 0.98352,
+        "max_ms": 1.04352,
+        "std_ms": 0.017739163903634243
+      },
+      "metrics": {
+        "tflops": 17.37305758433784
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "matmul",
+      "params": {
+        "dtype": "fp64",
+        "m": 4096,
+        "n": 4096,
+        "k": 4096,
+        "shape": "4096x4096x4096",
+        "path": "ALU"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 8.255144,
+        "median_ms": 8.3034,
+        "min_ms": 7.542879999999999,
+        "max_ms": 8.92816,
+        "std_ms": 0.36950157919013016
+      },
+      "metrics": {
+        "tflops": 16.55212966640171
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "matmul",
+      "params": {
+        "dtype": "fp64",
+        "m": 8192,
+        "n": 8192,
+        "k": 8192,
+        "shape": "8192x8192x8192",
+        "path": "ALU"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 76.04342799999999,
+        "median_ms": 76.06899999999999,
+        "min_ms": 75.86784,
+        "max_ms": 76.22296,
+        "std_ms": 0.08119645420829633
+      },
+      "metrics": {
+        "tflops": 14.454135426730998
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "matmul",
+      "params": {
+        "dtype": "fp64",
+        "m": 16384,
+        "n": 16384,
+        "k": 16384,
+        "shape": "16384x16384x16384",
+        "path": "ALU"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 602.980272,
+        "median_ms": 603.0401999999999,
+        "min_ms": 601.9812,
+        "max_ms": 604.0484799999999,
+        "std_ms": 0.559370475531204
+      },
+      "metrics": {
+        "tflops": 14.586246525866768
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "matmul",
+      "params": {
+        "dtype": "fp32",
+        "m": 1024,
+        "n": 1024,
+        "k": 1024,
+        "shape": "1024x1024x1024",
+        "path": "ALU"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.140312,
+        "median_ms": 0.13932,
+        "min_ms": 0.13735999999999998,
+        "max_ms": 0.14736,
+        "std_ms": 0.00254028659800425
+      },
+      "metrics": {
+        "tflops": 15.414037094458799
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "matmul",
+      "params": {
+        "dtype": "fp32",
+        "m": 2048,
+        "n": 2048,
+        "k": 2048,
+        "shape": "2048x2048x2048",
+        "path": "ALU"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.82254,
+        "median_ms": 0.82184,
+        "min_ms": 0.81984,
+        "max_ms": 0.8280799999999999,
+        "std_ms": 0.002290414809592361
+      },
+      "metrics": {
+        "tflops": 20.90415310036017
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "matmul",
+      "params": {
+        "dtype": "fp32",
+        "m": 4096,
+        "n": 4096,
+        "k": 4096,
+        "shape": "4096x4096x4096",
+        "path": "ALU"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 6.276344,
+        "median_ms": 6.27424,
+        "min_ms": 6.25936,
+        "max_ms": 6.31232,
+        "std_ms": 0.01576528033369535
+      },
+      "metrics": {
+        "tflops": 21.905275136430863
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "matmul",
+      "params": {
+        "dtype": "fp32",
+        "m": 8192,
+        "n": 8192,
+        "k": 8192,
+        "shape": "8192x8192x8192",
+        "path": "ALU"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 49.703984,
+        "median_ms": 49.699079999999995,
+        "min_ms": 49.68696,
+        "max_ms": 49.72976,
+        "std_ms": 0.01472333875179089
+      },
+      "metrics": {
+        "tflops": 22.123379905141107
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "matmul",
+      "params": {
+        "dtype": "fp32",
+        "m": 16384,
+        "n": 16384,
+        "k": 16384,
+        "shape": "16384x16384x16384",
+        "path": "ALU"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 396.882548,
+        "median_ms": 396.883,
+        "min_ms": 396.83671999999996,
+        "max_ms": 396.92848,
+        "std_ms": 0.024511682439198584
+      },
+      "metrics": {
+        "tflops": 22.162937243993824
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "matmul",
+      "params": {
+        "dtype": "fp16",
+        "m": 1024,
+        "n": 1024,
+        "k": 1024,
+        "shape": "1024x1024x1024",
+        "path": "XMX"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.065748,
+        "median_ms": 0.06412,
+        "min_ms": 0.06032,
+        "max_ms": 0.07792,
+        "std_ms": 0.00451941766160199
+      },
+      "metrics": {
+        "tflops": 33.49163518402994
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "matmul",
+      "params": {
+        "dtype": "fp16",
+        "m": 2048,
+        "n": 2048,
+        "k": 2048,
+        "shape": "2048x2048x2048",
+        "path": "XMX"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.114604,
+        "median_ms": 0.11456,
+        "min_ms": 0.11159999999999999,
+        "max_ms": 0.11792,
+        "std_ms": 0.001797148853044734
+      },
+      "metrics": {
+        "tflops": 149.96394189944135
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "matmul",
+      "params": {
+        "dtype": "fp16",
+        "m": 4096,
+        "n": 4096,
+        "k": 4096,
+        "shape": "4096x4096x4096",
+        "path": "XMX"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.6692279999999999,
+        "median_ms": 0.6632399999999999,
+        "min_ms": 0.64608,
+        "max_ms": 0.7152,
+        "std_ms": 0.020012000799520275
+      },
+      "metrics": {
+        "tflops": 207.2235593028165
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "matmul",
+      "params": {
+        "dtype": "fp16",
+        "m": 8192,
+        "n": 8192,
+        "k": 8192,
+        "shape": "8192x8192x8192",
+        "path": "XMX"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 4.806364,
+        "median_ms": 4.70116,
+        "min_ms": 4.57344,
+        "max_ms": 5.2801599999999995,
+        "std_ms": 0.22276326659483156
+      },
+      "metrics": {
+        "tflops": 233.88092040602743
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "matmul",
+      "params": {
+        "dtype": "fp16",
+        "m": 16384,
+        "n": 16384,
+        "k": 16384,
+        "shape": "16384x16384x16384",
+        "path": "XMX"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 90.15509999999999,
+        "median_ms": 90.39547999999999,
+        "min_ms": 87.85056,
+        "max_ms": 91.20376,
+        "std_ms": 0.8025599632675421
+      },
+      "metrics": {
+        "tflops": 97.30677930144296
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "matmul",
+      "params": {
+        "dtype": "bf16",
+        "m": 1024,
+        "n": 1024,
+        "k": 1024,
+        "shape": "1024x1024x1024",
+        "path": "XMX"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.06451199999999999,
+        "median_ms": 0.06308,
+        "min_ms": 0.060719999999999996,
+        "max_ms": 0.07592,
+        "std_ms": 0.0038268441306120644
+      },
+      "metrics": {
+        "tflops": 34.043811794546606
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "matmul",
+      "params": {
+        "dtype": "bf16",
+        "m": 2048,
+        "n": 2048,
+        "k": 2048,
+        "shape": "2048x2048x2048",
+        "path": "XMX"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.11321200000000001,
+        "median_ms": 0.1126,
+        "min_ms": 0.10264,
+        "max_ms": 0.15688,
+        "std_ms": 0.010471608090451055
+      },
+      "metrics": {
+        "tflops": 152.57432667850796
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "matmul",
+      "params": {
+        "dtype": "bf16",
+        "m": 4096,
+        "n": 4096,
+        "k": 4096,
+        "shape": "4096x4096x4096",
+        "path": "XMX"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.6067319999999999,
+        "median_ms": 0.59044,
+        "min_ms": 0.58504,
+        "max_ms": 0.67296,
+        "std_ms": 0.02515648655913621
+      },
+      "metrics": {
+        "tflops": 232.77378475713027
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "matmul",
+      "params": {
+        "dtype": "bf16",
+        "m": 8192,
+        "n": 8192,
+        "k": 8192,
+        "shape": "8192x8192x8192",
+        "path": "XMX"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 4.76466,
+        "median_ms": 4.7476,
+        "min_ms": 4.3584,
+        "max_ms": 5.4395999999999995,
+        "std_ms": 0.2937411234403518
+      },
+      "metrics": {
+        "tflops": 231.59314764849606
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "matmul",
+      "params": {
+        "dtype": "bf16",
+        "m": 16384,
+        "n": 16384,
+        "k": 16384,
+        "shape": "16384x16384x16384",
+        "path": "XMX"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 74.23202,
+        "median_ms": 75.20016,
+        "min_ms": 58.676719999999996,
+        "max_ms": 79.47592,
+        "std_ms": 4.407950433614244
+      },
+      "metrics": {
+        "tflops": 116.9690732334612
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "matmul",
+      "params": {
+        "dtype": "int8",
+        "m": 1024,
+        "n": 1024,
+        "k": 1024,
+        "shape": "1024x1024x1024",
+        "path": "XMX"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.09454,
+        "median_ms": 0.09248,
+        "min_ms": 0.08856,
+        "max_ms": 0.10592,
+        "std_ms": 0.005134097778578043
+      },
+      "metrics": {
+        "tflops": 23.221060207612453
+      },
+      "status": "ok",
+      "note": "int8×int8→int32"
+    },
+    {
+      "suite": "precision",
+      "name": "matmul",
+      "params": {
+        "dtype": "int8",
+        "m": 2048,
+        "n": 2048,
+        "k": 2048,
+        "shape": "2048x2048x2048",
+        "path": "XMX"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.1122,
+        "median_ms": 0.11171999999999999,
+        "min_ms": 0.1076,
+        "max_ms": 0.11879999999999999,
+        "std_ms": 0.0030024523310120997
+      },
+      "metrics": {
+        "tflops": 153.77612946652346
+      },
+      "status": "ok",
+      "note": "int8×int8→int32"
+    },
+    {
+      "suite": "precision",
+      "name": "matmul",
+      "params": {
+        "dtype": "int8",
+        "m": 4096,
+        "n": 4096,
+        "k": 4096,
+        "shape": "4096x4096x4096",
+        "path": "XMX"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.407184,
+        "median_ms": 0.40343999999999997,
+        "min_ms": 0.3952,
+        "max_ms": 0.4556,
+        "std_ms": 0.014224454435935324
+      },
+      "metrics": {
+        "tflops": 340.6676419591513
+      },
+      "status": "ok",
+      "note": "int8×int8→int32"
+    },
+    {
+      "suite": "precision",
+      "name": "matmul",
+      "params": {
+        "dtype": "int8",
+        "m": 8192,
+        "n": 8192,
+        "k": 8192,
+        "shape": "8192x8192x8192",
+        "path": "XMX"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 2.8538919999999997,
+        "median_ms": 2.8775999999999997,
+        "min_ms": 2.7012799999999997,
+        "max_ms": 2.9779999999999998,
+        "std_ms": 0.07948160149367903
+      },
+      "metrics": {
+        "tflops": 382.0932818237421
+      },
+      "status": "ok",
+      "note": "int8×int8→int32"
+    },
+    {
+      "suite": "precision",
+      "name": "matmul",
+      "params": {
+        "dtype": "int8",
+        "m": 16384,
+        "n": 16384,
+        "k": 16384,
+        "shape": "16384x16384x16384",
+        "path": "XMX"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 22.035468,
+        "median_ms": 22.05216,
+        "min_ms": 21.80672,
+        "max_ms": 22.16008,
+        "std_ms": 0.08469065884736064
+      },
+      "metrics": {
+        "tflops": 398.87670968322374
+      },
+      "status": "ok",
+      "note": "int8×int8→int32"
+    },
+    {
+      "suite": "precision",
+      "name": "matmul",
+      "params": {
+        "dtype": "int8",
+        "m": 1,
+        "n": 4096,
+        "k": 4096,
+        "shape": "1x4096x4096",
+        "path": "XMX",
+        "label": "llm_decode_gemv"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.097272,
+        "median_ms": 0.095,
+        "min_ms": 0.09064,
+        "max_ms": 0.1108,
+        "std_ms": 0.00592096748851064
+      },
+      "metrics": {
+        "tflops": 0.353204547368421
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "matmul",
+      "params": {
+        "dtype": "int8",
+        "m": 16,
+        "n": 4096,
+        "k": 4096,
+        "shape": "16x4096x4096",
+        "path": "XMX",
+        "label": "llm_decode_m16"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.09915199999999999,
+        "median_ms": 0.09731999999999999,
+        "min_ms": 0.09247999999999999,
+        "max_ms": 0.11471999999999999,
+        "std_ms": 0.005904216798187544
+      },
+      "metrics": {
+        "tflops": 5.516552733251131
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "matmul",
+      "params": {
+        "dtype": "int8",
+        "m": 64,
+        "n": 4096,
+        "k": 4096,
+        "shape": "64x4096x4096",
+        "path": "XMX",
+        "label": "llm_decode_m64"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.098676,
+        "median_ms": 0.09468,
+        "min_ms": 0.09136,
+        "max_ms": 0.12847999999999998,
+        "std_ms": 0.008728417038615877
+      },
+      "metrics": {
+        "tflops": 22.68149184621884
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "matmul",
+      "params": {
+        "dtype": "int8",
+        "m": 2048,
+        "n": 4096,
+        "k": 4096,
+        "shape": "2048x4096x4096",
+        "path": "XMX",
+        "label": "llm_prefill_m2k"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.22888799999999998,
+        "median_ms": 0.22696,
+        "min_ms": 0.22232,
+        "max_ms": 0.24656,
+        "std_ms": 0.006007669764559303
+      },
+      "metrics": {
+        "tflops": 302.78232611913995
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "matmul",
+      "params": {
+        "dtype": "int8",
+        "m": 4096,
+        "n": 11008,
+        "k": 4096,
+        "shape": "4096x11008x4096",
+        "path": "XMX",
+        "label": "ffn_up"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 1.021224,
+        "median_ms": 1.01812,
+        "min_ms": 0.9543999999999999,
+        "max_ms": 1.10544,
+        "std_ms": 0.03413961077692598
+      },
+      "metrics": {
+        "tflops": 362.7933715632735
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "matmul",
+      "params": {
+        "dtype": "int8",
+        "m": 4096,
+        "n": 4096,
+        "k": 11008,
+        "shape": "4096x4096x11008",
+        "path": "XMX",
+        "label": "ffn_down"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.9713999999999998,
+        "median_ms": 0.9747999999999999,
+        "min_ms": 0.9223199999999999,
+        "max_ms": 1.0364799999999998,
+        "std_ms": 0.02570105678761089
+      },
+      "metrics": {
+        "tflops": 378.9158673122692
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "matmul",
+      "params": {
+        "dtype": "int8",
+        "m": 4096,
+        "n": 4096,
+        "k": 16384,
+        "shape": "4096x4096x16384",
+        "path": "XMX",
+        "label": "k_dominant"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 1.4018599999999999,
+        "median_ms": 1.397,
+        "min_ms": 1.34096,
+        "max_ms": 1.50576,
+        "std_ms": 0.04464493789893764
+      },
+      "metrics": {
+        "tflops": 393.5259941932713
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "matmul",
+      "params": {
+        "dtype": "int8",
+        "m": 4096,
+        "n": 16384,
+        "k": 4096,
+        "shape": "4096x16384x4096",
+        "path": "XMX",
+        "label": "n_dominant"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 1.496648,
+        "median_ms": 1.49128,
+        "min_ms": 1.45952,
+        "max_ms": 1.54904,
+        "std_ms": 0.02647697747100302
+      },
+      "metrics": {
+        "tflops": 368.6469434901561
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "matmul",
+      "params": {
+        "dtype": "int8",
+        "m": 8192,
+        "n": 8192,
+        "k": 128,
+        "shape": "8192x8192x128",
+        "path": "XMX",
+        "label": "skinny_k"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.386204,
+        "median_ms": 0.38592,
+        "min_ms": 0.37423999999999996,
+        "max_ms": 0.39624,
+        "std_ms": 0.005873246461710936
+      },
+      "metrics": {
+        "tflops": 44.51665936981758
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "matmul",
+      "params": {
+        "dtype": "int8",
+        "m": 128,
+        "n": 8192,
+        "k": 8192,
+        "shape": "128x8192x8192",
+        "path": "XMX",
+        "label": "skinny_m"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.145888,
+        "median_ms": 0.14388,
+        "min_ms": 0.13904,
+        "max_ms": 0.16191999999999998,
+        "std_ms": 0.0056037930011733975
+      },
+      "metrics": {
+        "tflops": 119.40415056991938
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "fp8_matmul",
+      "params": {
+        "dtype": "fp8_e4m3fn",
+        "m": 4096,
+        "n": 4096,
+        "k": 4096,
+        "shape": "4096x4096x4096",
+        "path": "SW(无FP8 XMX)"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 1.7164439999999999,
+        "median_ms": 1.69916,
+        "min_ms": 1.67272,
+        "max_ms": 1.90872,
+        "std_ms": 0.05284258570509207
+      },
+      "metrics": {
+        "tflops": 80.88641062171897
+      },
+      "status": "ok",
+      "note": "fp32 累加 → bf16 输出"
+    },
+    {
+      "suite": "precision",
+      "name": "fp8_matmul",
+      "params": {
+        "dtype": "fp8_e4m3fn",
+        "m": 8192,
+        "n": 8192,
+        "k": 8192,
+        "shape": "8192x8192x8192",
+        "path": "SW(无FP8 XMX)"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 16.633795999999997,
+        "median_ms": 16.82304,
+        "min_ms": 15.136239999999999,
+        "max_ms": 17.39784,
+        "std_ms": 0.6093784240223803
+      },
+      "metrics": {
+        "tflops": 65.35748757513505
+      },
+      "status": "ok",
+      "note": "fp32 累加 → bf16 输出"
+    },
+    {
+      "suite": "precision",
+      "name": "fp8_matmul",
+      "params": {
+        "dtype": "fp8_e4m3fn",
+        "m": 16384,
+        "n": 16384,
+        "k": 16384,
+        "shape": "16384x16384x16384",
+        "path": "SW(无FP8 XMX)"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 135.889252,
+        "median_ms": 135.89675999999997,
+        "min_ms": 135.7192,
+        "max_ms": 136.06119999999999,
+        "std_ms": 0.1020412192008689
+      },
+      "metrics": {
+        "tflops": 64.7262894436041
+      },
+      "status": "ok",
+      "note": "fp32 累加 → bf16 输出"
+    },
+    {
+      "suite": "precision",
+      "name": "fp8_matmul",
+      "params": {
+        "dtype": "fp8_e5m2",
+        "m": 4096,
+        "n": 4096,
+        "k": 4096,
+        "shape": "4096x4096x4096",
+        "path": "SW(无FP8 XMX)"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.955144,
+        "median_ms": 0.94444,
+        "min_ms": 0.94024,
+        "max_ms": 1.0088,
+        "std_ms": 0.019796486152850443
+      },
+      "metrics": {
+        "tflops": 145.52428261403585
+      },
+      "status": "ok",
+      "note": "fp32 累加 → bf16 输出"
+    },
+    {
+      "suite": "precision",
+      "name": "fp8_matmul",
+      "params": {
+        "dtype": "fp8_e5m2",
+        "m": 8192,
+        "n": 8192,
+        "k": 8192,
+        "shape": "8192x8192x8192",
+        "path": "SW(无FP8 XMX)"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 8.539404,
+        "median_ms": 8.50344,
+        "min_ms": 8.34792,
+        "max_ms": 9.25104,
+        "std_ms": 0.19589362415351866
+      },
+      "metrics": {
+        "tflops": 129.30197987826105
+      },
+      "status": "ok",
+      "note": "fp32 累加 → bf16 输出"
+    },
+    {
+      "suite": "precision",
+      "name": "fp8_matmul",
+      "params": {
+        "dtype": "fp8_e5m2",
+        "m": 16384,
+        "n": 16384,
+        "k": 16384,
+        "shape": "16384x16384x16384",
+        "path": "SW(无FP8 XMX)"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 70.624,
+        "median_ms": 68.35991999999999,
+        "min_ms": 65.51248,
+        "max_ms": 81.5152,
+        "std_ms": 5.103527786306253
+      },
+      "metrics": {
+        "tflops": 128.6732492110582
+      },
+      "status": "ok",
+      "note": "fp32 累加 → bf16 输出"
+    },
+    {
+      "suite": "precision",
+      "name": "block_matmul",
+      "params": {
+        "fmt": "mxfp8",
+        "dtype": "fp8_e4m3fn",
+        "scale": "fp8_e8m0fnu",
+        "block_k": 32,
+        "m": 4096,
+        "n": 4096,
+        "k": 4096,
+        "shape": "4096x4096x4096",
+        "path": "SW(无原生XMX)"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 2.8924639999999995,
+        "median_ms": 2.8913599999999997,
+        "min_ms": 2.8789599999999997,
+        "max_ms": 2.9052,
+        "std_ms": 0.006204648579895557
+      },
+      "metrics": {
+        "tflops": 47.53436219356981
+      },
+      "status": "ok",
+      "note": "fp32 累加 → bf16 输出"
+    },
+    {
+      "suite": "precision",
+      "name": "block_matmul",
+      "params": {
+        "fmt": "mxfp8",
+        "dtype": "fp8_e4m3fn",
+        "scale": "fp8_e8m0fnu",
+        "block_k": 32,
+        "m": 8192,
+        "n": 8192,
+        "k": 8192,
+        "shape": "8192x8192x8192",
+        "path": "SW(无原生XMX)"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 22.004572,
+        "median_ms": 22.060679999999998,
+        "min_ms": 20.568559999999998,
+        "max_ms": 22.306639999999998,
+        "std_ms": 0.3412081492813442
+      },
+      "metrics": {
+        "tflops": 49.8403325634568
+      },
+      "status": "ok",
+      "note": "fp32 累加 → bf16 输出"
+    },
+    {
+      "suite": "precision",
+      "name": "block_matmul",
+      "params": {
+        "fmt": "mxfp8",
+        "dtype": "fp8_e4m3fn",
+        "scale": "fp8_e8m0fnu",
+        "block_k": 32,
+        "m": 16384,
+        "n": 16384,
+        "k": 16384,
+        "shape": "16384x16384x16384",
+        "path": "SW(无原生XMX)"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 180.373528,
+        "median_ms": 180.36199999999997,
+        "min_ms": 177.2,
+        "max_ms": 182.59696,
+        "std_ms": 1.4640461787033916
+      },
+      "metrics": {
+        "tflops": 48.76910337104269
+      },
+      "status": "ok",
+      "note": "fp32 累加 → bf16 输出"
+    },
+    {
+      "suite": "precision",
+      "name": "block_matmul",
+      "params": {
+        "fmt": "mxfp4",
+        "dtype": "fp4_e2m1fn_x2",
+        "scale": "fp8_e8m0fnu",
+        "block_k": 32,
+        "m": 4096,
+        "n": 4096,
+        "k": 4096,
+        "shape": "4096x4096x4096",
+        "path": "SW(无原生XMX)"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 4.359668,
+        "median_ms": 4.358,
+        "min_ms": 4.32472,
+        "max_ms": 4.394,
+        "std_ms": 0.012436649709628374
+      },
+      "metrics": {
+        "tflops": 31.537162338687473
+      },
+      "status": "ok",
+      "note": "fp32 累加 → bf16 输出"
+    },
+    {
+      "suite": "precision",
+      "name": "block_matmul",
+      "params": {
+        "fmt": "mxfp4",
+        "dtype": "fp4_e2m1fn_x2",
+        "scale": "fp8_e8m0fnu",
+        "block_k": 32,
+        "m": 8192,
+        "n": 8192,
+        "k": 8192,
+        "shape": "8192x8192x8192",
+        "path": "SW(无原生XMX)"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 34.29844799999999,
+        "median_ms": 34.297200000000004,
+        "min_ms": 34.27944,
+        "max_ms": 34.33992,
+        "std_ms": 0.013559336856941155
+      },
+      "metrics": {
+        "tflops": 32.05834959635188
+      },
+      "status": "ok",
+      "note": "fp32 累加 → bf16 输出"
+    },
+    {
+      "suite": "precision",
+      "name": "block_matmul",
+      "params": {
+        "fmt": "mxfp4",
+        "dtype": "fp4_e2m1fn_x2",
+        "scale": "fp8_e8m0fnu",
+        "block_k": 32,
+        "m": 16384,
+        "n": 16384,
+        "k": 16384,
+        "shape": "16384x16384x16384",
+        "path": "SW(无原生XMX)"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 275.981204,
+        "median_ms": 276.0426,
+        "min_ms": 275.63712,
+        "max_ms": 276.50527999999997,
+        "std_ms": 0.21682906591137796
+      },
+      "metrics": {
+        "tflops": 31.864983963373774
+      },
+      "status": "ok",
+      "note": "fp32 累加 → bf16 输出"
+    },
+    {
+      "suite": "precision",
+      "name": "block_matmul",
+      "params": {
+        "fmt": "nvfp4",
+        "dtype": "fp4_e2m1fn_x2",
+        "scale": "fp8_e4m3fn",
+        "block_k": 16,
+        "m": 4096,
+        "n": 4096,
+        "k": 4096,
+        "shape": "4096x4096x4096",
+        "path": "SW(无原生XMX)"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 4.723596,
+        "median_ms": 4.72108,
+        "min_ms": 4.7184,
+        "max_ms": 4.74048,
+        "std_ms": 0.005275966641289516
+      },
+      "metrics": {
+        "tflops": 29.111761180068967
+      },
+      "status": "ok",
+      "note": "fp32 累加 → bf16 输出"
+    },
+    {
+      "suite": "precision",
+      "name": "block_matmul",
+      "params": {
+        "fmt": "nvfp4",
+        "dtype": "fp4_e2m1fn_x2",
+        "scale": "fp8_e4m3fn",
+        "block_k": 16,
+        "m": 8192,
+        "n": 8192,
+        "k": 8192,
+        "shape": "8192x8192x8192",
+        "path": "SW(无原生XMX)"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 37.024564,
+        "median_ms": 37.01824,
+        "min_ms": 37.01128,
+        "max_ms": 37.07472,
+        "std_ms": 0.014540128747711087
+      },
+      "metrics": {
+        "tflops": 29.701888252277797
+      },
+      "status": "ok",
+      "note": "fp32 累加 → bf16 输出"
+    },
+    {
+      "suite": "precision",
+      "name": "block_matmul",
+      "params": {
+        "fmt": "nvfp4",
+        "dtype": "fp4_e2m1fn_x2",
+        "scale": "fp8_e4m3fn",
+        "block_k": 16,
+        "m": 16384,
+        "n": 16384,
+        "k": 16384,
+        "shape": "16384x16384x16384",
+        "path": "SW(无原生XMX)"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 299.580628,
+        "median_ms": 299.67459999999994,
+        "min_ms": 298.6688,
+        "max_ms": 299.77871999999996,
+        "std_ms": 0.2854767557893334
+      },
+      "metrics": {
+        "tflops": 29.352147369873858
+      },
+      "status": "ok",
+      "note": "fp32 累加 → bf16 输出"
+    },
+    {
+      "suite": "precision",
+      "name": "weight_only",
+      "params": {
+        "kind": "bf16",
+        "m": 1,
+        "n": 4096,
+        "k": 4096,
+        "shape": "1x4096x4096"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.07118,
+        "median_ms": 0.0696,
+        "min_ms": 0.06591999999999999,
+        "max_ms": 0.08688,
+        "std_ms": 0.005463002837268163
+      },
+      "metrics": {
+        "tflops": 0.482103908045977,
+        "weight_gb_s": 482.10390804597705,
+        "weight_mib": 32.0
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "weight_only",
+      "params": {
+        "kind": "w8a16",
+        "m": 1,
+        "n": 4096,
+        "k": 4096,
+        "shape": "1x4096x4096"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 3.1613999999999995,
+        "median_ms": 3.15836,
+        "min_ms": 3.1533599999999997,
+        "max_ms": 3.1928799999999997,
+        "std_ms": 0.009324428132598784
+      },
+      "metrics": {
+        "tflops": 0.010624004863283475,
+        "weight_gb_s": 5.312002431641738,
+        "weight_mib": 16.0
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "weight_only",
+      "params": {
+        "kind": "w4a16",
+        "m": 1,
+        "n": 4096,
+        "k": 4096,
+        "shape": "1x4096x4096"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.10706799999999998,
+        "median_ms": 0.10744,
+        "min_ms": 0.10464,
+        "max_ms": 0.11023999999999999,
+        "std_ms": 0.0015213204790575849
+      },
+      "metrics": {
+        "tflops": 0.31230856291883846,
+        "weight_gb_s": 82.95696202531646,
+        "weight_mib": 8.5
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "weight_only",
+      "params": {
+        "kind": "bf16",
+        "m": 32,
+        "n": 4096,
+        "k": 4096,
+        "shape": "32x4096x4096"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.094928,
+        "median_ms": 0.09228,
+        "min_ms": 0.08656,
+        "max_ms": 0.11656,
+        "std_ms": 0.009147901180052176
+      },
+      "metrics": {
+        "tflops": 11.635693801473776,
+        "weight_gb_s": 363.6154312960555,
+        "weight_mib": 32.0
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "weight_only",
+      "params": {
+        "kind": "w8a16",
+        "m": 32,
+        "n": 4096,
+        "k": 4096,
+        "shape": "32x4096x4096"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 7.092820000000001,
+        "median_ms": 7.09052,
+        "min_ms": 6.937119999999999,
+        "max_ms": 7.32864,
+        "std_ms": 0.0916632371237238
+      },
+      "metrics": {
+        "tflops": 0.1514334384502124,
+        "weight_gb_s": 2.366147475784569,
+        "weight_mib": 16.0
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "weight_only",
+      "params": {
+        "kind": "w4a16",
+        "m": 32,
+        "n": 4096,
+        "k": 4096,
+        "shape": "32x4096x4096"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.30275599999999997,
+        "median_ms": 0.30244,
+        "min_ms": 0.3,
+        "max_ms": 0.30632,
+        "std_ms": 0.0016586211140583015
+      },
+      "metrics": {
+        "tflops": 3.5502639333421504,
+        "weight_gb_s": 29.469964290437773,
+        "weight_mib": 8.5
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "weight_only",
+      "params": {
+        "kind": "bf16",
+        "m": 512,
+        "n": 4096,
+        "k": 4096,
+        "shape": "512x4096x4096"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.15722399999999997,
+        "median_ms": 0.15467999999999998,
+        "min_ms": 0.1504,
+        "max_ms": 0.17984,
+        "std_ms": 0.0073614389897628035
+      },
+      "metrics": {
+        "tflops": 111.06716565813294,
+        "weight_gb_s": 216.9280579260409,
+        "weight_mib": 32.0
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "weight_only",
+      "params": {
+        "kind": "w8a16",
+        "m": 512,
+        "n": 4096,
+        "k": 4096,
+        "shape": "512x4096x4096"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 69.55506399999999,
+        "median_ms": 69.89616,
+        "min_ms": 66.59496,
+        "max_ms": 69.94351999999999,
+        "std_ms": 0.985843449835723
+      },
+      "metrics": {
+        "tflops": 0.24579131649006183,
+        "weight_gb_s": 0.240030582509826,
+        "weight_mib": 16.0
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "weight_only",
+      "params": {
+        "kind": "w4a16",
+        "m": 512,
+        "n": 4096,
+        "k": 4096,
+        "shape": "512x4096x4096"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.384576,
+        "median_ms": 0.38312,
+        "min_ms": 0.37911999999999996,
+        "max_ms": 0.40071999999999997,
+        "std_ms": 0.005378927774194403
+      },
+      "metrics": {
+        "tflops": 44.84200559615786,
+        "weight_gb_s": 23.26397995406139,
+        "weight_mib": 8.5
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "precision",
+      "name": "accuracy",
+      "params": {
+        "dtype": "fp64",
+        "shape": "1024x1024x1024"
+      },
+      "stats": null,
+      "metrics": {
+        "max_abs_err": 0.0,
+        "rel_err": 0.0
+      },
+      "status": "ok",
+      "note": "相对 fp64 参考；rel_err 与输出精度位宽一致，不随 K 增长 ⇒ FP32 累加"
+    },
+    {
+      "suite": "precision",
+      "name": "accuracy",
+      "params": {
+        "dtype": "fp32",
+        "shape": "1024x1024x1024"
+      },
+      "stats": null,
+      "metrics": {
+        "max_abs_err": 0.00015110417210451033,
+        "rel_err": 3.6695400797807516e-07
+      },
+      "status": "ok",
+      "note": "相对 fp64 参考；rel_err 与输出精度位宽一致，不随 K 增长 ⇒ FP32 累加"
+    },
+    {
+      "suite": "precision",
+      "name": "accuracy",
+      "params": {
+        "dtype": "fp16",
+        "shape": "1024x1024x1024"
+      },
+      "stats": null,
+      "metrics": {
+        "max_abs_err": 0.06217497808393091,
+        "rel_err": 0.00017634332576270872
+      },
+      "status": "ok",
+      "note": "相对 fp64 参考；rel_err 与输出精度位宽一致，不随 K 增长 ⇒ FP32 累加"
+    },
+    {
+      "suite": "precision",
+      "name": "accuracy",
+      "params": {
+        "dtype": "bf16",
+        "shape": "1024x1024x1024"
+      },
+      "stats": null,
+      "metrics": {
+        "max_abs_err": 0.4997315816581249,
+        "rel_err": 0.001410180688235535
+      },
+      "status": "ok",
+      "note": "相对 fp64 参考；rel_err 与输出精度位宽一致，不随 K 增长 ⇒ FP32 累加"
+    }
+  ]
+}

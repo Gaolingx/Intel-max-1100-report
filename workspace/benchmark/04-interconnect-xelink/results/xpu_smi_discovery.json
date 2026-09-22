@@ -1,0 +1,26 @@
+{
+    "device_list": [
+        {
+            "device_function_type": "physical",
+            "device_id": 0,
+            "device_name": "Intel(R) Data Center GPU Max 1100",
+            "device_type": "GPU",
+            "drm_device": "/dev/dri/card0",
+            "pci_bdf_address": "0000:40:00.0",
+            "pci_device_id": "0xbda",
+            "uuid": "00000000-0000-0000-74d8-64836dad91a4",
+            "vendor_name": "Intel(R) Corporation"
+        },
+        {
+            "device_function_type": "physical",
+            "device_id": 1,
+            "device_name": "Intel(R) Data Center GPU Max 1100",
+            "device_type": "GPU",
+            "drm_device": "/dev/dri/card2",
+            "pci_bdf_address": "0000:8c:00.0",
+            "pci_device_id": "0xbda",
+            "uuid": "00000000-0000-0000-76d6-44d7fa576257",
+            "vendor_name": "Intel(R) Corporation"
+        }
+    ]
+}

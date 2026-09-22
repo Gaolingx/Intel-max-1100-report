@@ -1,0 +1,48 @@
+#----------------------------------------------------------------
+#    Intel(R) MPI Benchmarks 2021.11, MPI-1 part (GPU)
+#----------------------------------------------------------------
+# Date                  : Tue Sep 22 20:09:01 2026
+# Machine               : x86_64
+# System                : Linux
+# Release               : 6.14.0-37-generic
+# Version               : #37-Ubuntu SMP PREEMPT_DYNAMIC Fri Nov 14 22:10:32 UTC 2025
+# MPI Version           : 4.1
+# MPI Thread Environment: 
+
+
+# Calling sequence was: 
+
+# /opt/intel/oneapi/mpi/2021.18/bin/IMB-MPI1-GPU PingPong -msglog 0:16 
+
+# Minimum message length in bytes:   0
+# Maximum message length in bytes:   65536
+#
+# MPI_Datatype                   :   MPI_BYTE 
+# MPI_Datatype for reductions    :   MPI_FLOAT 
+# MPI_Op                         :   MPI_SUM  
+# 
+# 
+
+# List of Benchmarks to run:
+
+# PingPong
+
+#---------------------------------------------------
+# Benchmarking PingPong 
+# #processes = 2 
+#---------------------------------------------------
+       #bytes #repetitions      t[usec]   Mbytes/sec
+            0         1000         0.42         0.00
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   RANK 0 PID 46620 RUNNING AT hwt
+=   KILLED BY SIGNAL: 11 (Segmentation fault)
+===================================================================================
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   RANK 1 PID 46621 RUNNING AT hwt
+=   KILLED BY SIGNAL: 9 (Killed)
+===================================================================================
+

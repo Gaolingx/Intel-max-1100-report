@@ -1,0 +1,21 @@
+P2PINFO {"driver_count":1,"gpu_device_count":2}
+P2PDEV {"index":0,"name":"Intel(R) Data Center GPU Max 1100","pci_bdf":"0000:40:00.0","vendor_id":32902,"device_id":3034}
+P2PDEV {"index":1,"name":"Intel(R) Data Center GPU Max 1100","pci_bdf":"0000:8c:00.0","vendor_id":32902,"device_id":3034}
+P2PPEER {"src":0,"dst":1,"can_access":true,"p2p_flags":["ACCESS","ATOMICS"],"can_access_rc":"SUCCESS","props_rc":"SUCCESS"}
+P2PPEER {"src":1,"dst":0,"can_access":true,"p2p_flags":["ACCESS","ATOMICS"],"can_access_rc":"SUCCESS","props_rc":"SUCCESS"}
+P2PINFO {"ordered_pairs":2,"accessible_pairs":2,"p2p_available":true}
+P2PBW {"src":0,"dst":1,"size_bytes":4096,"seconds":0.000006442,"gbps":0.64,"gibps":0.59}
+P2PBW {"src":0,"dst":1,"size_bytes":65536,"seconds":0.000007003,"gbps":9.36,"gibps":8.72}
+P2PBW {"src":0,"dst":1,"size_bytes":1048576,"seconds":0.000017459,"gbps":60.06,"gibps":55.93}
+P2PBW {"src":0,"dst":1,"size_bytes":4194304,"seconds":0.000055794,"gbps":75.17,"gibps":70.01}
+P2PBW {"src":0,"dst":1,"size_bytes":16777216,"seconds":0.000182113,"gbps":92.13,"gibps":85.80}
+P2PBW {"src":0,"dst":1,"size_bytes":67108864,"seconds":0.000707873,"gbps":94.80,"gibps":88.29}
+P2PBW {"src":0,"dst":1,"size_bytes":268435456,"seconds":0.002810485,"gbps":95.51,"gibps":88.95}
+P2PBW {"src":1,"dst":0,"size_bytes":4096,"seconds":0.000007027,"gbps":0.58,"gibps":0.54}
+P2PBW {"src":1,"dst":0,"size_bytes":65536,"seconds":0.000007561,"gbps":8.67,"gibps":8.07}
+P2PBW {"src":1,"dst":0,"size_bytes":1048576,"seconds":0.000017903,"gbps":58.57,"gibps":54.55}
+P2PBW {"src":1,"dst":0,"size_bytes":4194304,"seconds":0.000054382,"gbps":77.13,"gibps":71.83}
+P2PBW {"src":1,"dst":0,"size_bytes":16777216,"seconds":0.000182788,"gbps":91.79,"gibps":85.48}
+P2PBW {"src":1,"dst":0,"size_bytes":67108864,"seconds":0.000709154,"gbps":94.63,"gibps":88.13}
+P2PBW {"src":1,"dst":0,"size_bytes":268435456,"seconds":0.002810522,"gbps":95.51,"gibps":88.95}
+P2PINFO {"max_gbps":95.51,"best_direction":"0->1","xe_link_spec_gbps":318.0,"pct_of_spec":30.0}

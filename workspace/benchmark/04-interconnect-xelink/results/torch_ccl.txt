@@ -1,0 +1,70 @@
+CCLDEV {"rank": 0, "world_size": 2, "device": "xpu:0", "name": "Intel(R) Data Center GPU Max 1100", "torch": "2.14.0+xpu", "backend": "xccl", "master_addr": "hwt.lan", "master_port": "38729"}
+2026:09:22-20:09:26:46825 |CCL_WARN| did not find MPI-launcher specific variables, switch to ATL/OFI, to force enable ATL/MPI set CCL_ATL_TRANSPORT=mpi
+2026:09:22-20:09:26:46825 |CCL_WARN| could not get local_idx/count from environment variables, trying to get them from ATL
+2026:09:22-20:09:26:46826 |CCL_WARN| did not find MPI-launcher specific variables, switch to ATL/OFI, to force enable ATL/MPI set CCL_ATL_TRANSPORT=mpi
+2026:09:22-20:09:26:46826 |CCL_WARN| could not get local_idx/count from environment variables, trying to get them from ATL
+CCLOP {"rank": 0, "op": "allreduce", "size_bytes": 1024, "dtype": "float32", "seconds": 0.00015144, "seconds_median": 0.00016368, "algbw_gbps": 0.007, "busbw_gbps": 0.007}
+CCLOP {"rank": 0, "op": "allgather", "size_bytes": 1024, "dtype": "float32", "seconds": 7.624e-05, "seconds_median": 8.344e-05, "algbw_gbps": 0.013, "busbw_gbps": 0.013}
+CCLOP {"rank": 0, "op": "broadcast", "size_bytes": 1024, "dtype": "float32", "seconds": 8.208e-05, "seconds_median": 8.856e-05, "algbw_gbps": 0.012, "busbw_gbps": 0.012}
+CCLOP {"rank": 0, "op": "allreduce", "size_bytes": 65536, "dtype": "float32", "seconds": 7.464e-05, "seconds_median": 7.656e-05, "algbw_gbps": 0.878, "busbw_gbps": 0.878}
+CCLOP {"rank": 0, "op": "allgather", "size_bytes": 65536, "dtype": "float32", "seconds": 7.392e-05, "seconds_median": 8.143999999999999e-05, "algbw_gbps": 0.887, "busbw_gbps": 0.887}
+CCLOP {"rank": 0, "op": "broadcast", "size_bytes": 65536, "dtype": "float32", "seconds": 8.256e-05, "seconds_median": 0.00011199999999999998, "algbw_gbps": 0.794, "busbw_gbps": 0.794}
+CCLOP {"rank": 0, "op": "allreduce", "size_bytes": 1048576, "dtype": "float32", "seconds": 0.00017063999999999998, "seconds_median": 0.00019599999999999997, "algbw_gbps": 6.145, "busbw_gbps": 6.145}
+CCLOP {"rank": 0, "op": "allgather", "size_bytes": 1048576, "dtype": "float32", "seconds": 0.000154, "seconds_median": 0.0001812, "algbw_gbps": 6.809, "busbw_gbps": 6.809}
+CCLOP {"rank": 0, "op": "broadcast", "size_bytes": 1048576, "dtype": "float32", "seconds": 0.00017104, "seconds_median": 0.00018559999999999998, "algbw_gbps": 6.131, "busbw_gbps": 6.131}
+CCLOP {"rank": 0, "op": "allreduce", "size_bytes": 16777216, "dtype": "float32", "seconds": 0.00031823999999999996, "seconds_median": 0.00033168, "algbw_gbps": 52.719, "busbw_gbps": 52.719}
+CCLOP {"rank": 0, "op": "allgather", "size_bytes": 16777216, "dtype": "float32", "seconds": 0.00034768, "seconds_median": 0.00037448, "algbw_gbps": 48.255, "busbw_gbps": 48.255}
+CCLOP {"rank": 0, "op": "broadcast", "size_bytes": 16777216, "dtype": "float32", "seconds": 0.00029128, "seconds_median": 0.00029976, "algbw_gbps": 57.598, "busbw_gbps": 57.598}
+CCLOP {"rank": 0, "op": "allreduce", "size_bytes": 67108864, "dtype": "float32", "seconds": 0.00093304, "seconds_median": 0.00095016, "algbw_gbps": 71.925, "busbw_gbps": 71.925}
+CCLOP {"rank": 0, "op": "allgather", "size_bytes": 67108864, "dtype": "float32", "seconds": 0.0010443199999999998, "seconds_median": 0.0010589599999999998, "algbw_gbps": 64.261, "busbw_gbps": 64.261}
+CCLOP {"rank": 0, "op": "broadcast", "size_bytes": 67108864, "dtype": "float32", "seconds": 0.0008088799999999999, "seconds_median": 0.0008216, "algbw_gbps": 82.965, "busbw_gbps": 82.965}
+CCLOP {"rank": 0, "op": "allreduce", "size_bytes": 268435456, "dtype": "float32", "seconds": 0.00339112, "seconds_median": 0.0034127999999999997, "algbw_gbps": 79.158, "busbw_gbps": 79.158}
+CCLOP {"rank": 0, "op": "allgather", "size_bytes": 268435456, "dtype": "float32", "seconds": 0.00387832, "seconds_median": 0.0038968799999999997, "algbw_gbps": 69.214, "busbw_gbps": 69.214}
+CCLOP {"rank": 0, "op": "broadcast", "size_bytes": 268435456, "dtype": "float32", "seconds": 0.00294312, "seconds_median": 0.00296248, "algbw_gbps": 91.208, "busbw_gbps": 91.208}
+CCLOP {"rank": 0, "op": "allreduce", "size_bytes": 536870912, "dtype": "float32", "seconds": 0.00669352, "seconds_median": 0.00670592, "algbw_gbps": 80.208, "busbw_gbps": 80.208}
+CCLOP {"rank": 0, "op": "allgather", "size_bytes": 536870912, "dtype": "float32", "seconds": 0.00761168, "seconds_median": 0.00763136, "algbw_gbps": 70.533, "busbw_gbps": 70.533}
+CCLOP {"rank": 0, "op": "broadcast", "size_bytes": 536870912, "dtype": "float32", "seconds": 0.00573792, "seconds_median": 0.00575632, "algbw_gbps": 93.565, "busbw_gbps": 93.565}
+CCLOP {"rank": 0, "op": "allreduce", "size_bytes": 1073741824, "dtype": "float32", "seconds": 0.0132564, "seconds_median": 0.01327456, "algbw_gbps": 80.998, "busbw_gbps": 80.998}
+CCLOP {"rank": 0, "op": "allgather", "size_bytes": 1073741824, "dtype": "float32", "seconds": 0.015084479999999999, "seconds_median": 0.015101759999999999, "algbw_gbps": 71.182, "busbw_gbps": 71.182}
+CCLOP {"rank": 0, "op": "broadcast", "size_bytes": 1073741824, "dtype": "float32", "seconds": 0.01135168, "seconds_median": 0.011364319999999999, "algbw_gbps": 94.589, "busbw_gbps": 94.589}
+CCLOP {"rank": 0, "op": "allreduce", "size_bytes": 1024, "dtype": "bfloat16", "seconds": 7.76e-05, "seconds_median": 9.088e-05, "algbw_gbps": 0.013, "busbw_gbps": 0.013}
+CCLOP {"rank": 0, "op": "allgather", "size_bytes": 1024, "dtype": "bfloat16", "seconds": 7.68e-05, "seconds_median": 9.128e-05, "algbw_gbps": 0.013, "busbw_gbps": 0.013}
+CCLOP {"rank": 0, "op": "broadcast", "size_bytes": 1024, "dtype": "bfloat16", "seconds": 9.032e-05, "seconds_median": 0.00010824, "algbw_gbps": 0.011, "busbw_gbps": 0.011}
+CCLOP {"rank": 0, "op": "allreduce", "size_bytes": 65536, "dtype": "bfloat16", "seconds": 7.352e-05, "seconds_median": 8.376e-05, "algbw_gbps": 0.891, "busbw_gbps": 0.891}
+CCLOP {"rank": 0, "op": "allgather", "size_bytes": 65536, "dtype": "bfloat16", "seconds": 7.792e-05, "seconds_median": 9.175999999999999e-05, "algbw_gbps": 0.841, "busbw_gbps": 0.841}
+CCLOP {"rank": 0, "op": "broadcast", "size_bytes": 65536, "dtype": "bfloat16", "seconds": 8.416e-05, "seconds_median": 9.024e-05, "algbw_gbps": 0.779, "busbw_gbps": 0.779}
+CCLOP {"rank": 0, "op": "allreduce", "size_bytes": 1048576, "dtype": "bfloat16", "seconds": 0.00018808, "seconds_median": 0.00021112, "algbw_gbps": 5.575, "busbw_gbps": 5.575}
+CCLOP {"rank": 0, "op": "allgather", "size_bytes": 1048576, "dtype": "bfloat16", "seconds": 0.00017384, "seconds_median": 0.0001896, "algbw_gbps": 6.032, "busbw_gbps": 6.032}
+CCLOP {"rank": 0, "op": "broadcast", "size_bytes": 1048576, "dtype": "bfloat16", "seconds": 0.00017568, "seconds_median": 0.00019255999999999999, "algbw_gbps": 5.969, "busbw_gbps": 5.969}
+CCLOP {"rank": 0, "op": "allreduce", "size_bytes": 16777216, "dtype": "bfloat16", "seconds": 0.00032816000000000003, "seconds_median": 0.00035008, "algbw_gbps": 51.125, "busbw_gbps": 51.125}
+CCLOP {"rank": 0, "op": "allgather", "size_bytes": 16777216, "dtype": "bfloat16", "seconds": 0.00035208, "seconds_median": 0.00036792, "algbw_gbps": 47.652, "busbw_gbps": 47.652}
+CCLOP {"rank": 0, "op": "broadcast", "size_bytes": 16777216, "dtype": "bfloat16", "seconds": 0.00028920000000000004, "seconds_median": 0.00030448, "algbw_gbps": 58.013, "busbw_gbps": 58.013}
+CCLOP {"rank": 0, "op": "allreduce", "size_bytes": 67108864, "dtype": "bfloat16", "seconds": 0.0009436799999999999, "seconds_median": 0.00096168, "algbw_gbps": 71.114, "busbw_gbps": 71.114}
+CCLOP {"rank": 0, "op": "allgather", "size_bytes": 67108864, "dtype": "bfloat16", "seconds": 0.00105464, "seconds_median": 0.00107208, "algbw_gbps": 63.632, "busbw_gbps": 63.632}
+CCLOP {"rank": 0, "op": "broadcast", "size_bytes": 67108864, "dtype": "bfloat16", "seconds": 0.0008164, "seconds_median": 0.00084032, "algbw_gbps": 82.201, "busbw_gbps": 82.201}
+CCLOP {"rank": 0, "op": "allreduce", "size_bytes": 268435456, "dtype": "bfloat16", "seconds": 0.0034069599999999997, "seconds_median": 0.0034161599999999997, "algbw_gbps": 78.79, "busbw_gbps": 78.79}
+CCLOP {"rank": 0, "op": "allgather", "size_bytes": 268435456, "dtype": "bfloat16", "seconds": 0.0038558399999999997, "seconds_median": 0.00386936, "algbw_gbps": 69.618, "busbw_gbps": 69.618}
+CCLOP {"rank": 0, "op": "broadcast", "size_bytes": 268435456, "dtype": "bfloat16", "seconds": 0.00292056, "seconds_median": 0.00294224, "algbw_gbps": 91.912, "busbw_gbps": 91.912}
+CCLOP {"rank": 0, "op": "allreduce", "size_bytes": 536870912, "dtype": "bfloat16", "seconds": 0.006675759999999999, "seconds_median": 0.0066872799999999994, "algbw_gbps": 80.421, "busbw_gbps": 80.421}
+CCLOP {"rank": 0, "op": "allgather", "size_bytes": 536870912, "dtype": "bfloat16", "seconds": 0.0075904, "seconds_median": 0.00760816, "algbw_gbps": 70.73, "busbw_gbps": 70.73}
+CCLOP {"rank": 0, "op": "broadcast", "size_bytes": 536870912, "dtype": "bfloat16", "seconds": 0.0057223199999999995, "seconds_median": 0.00573008, "algbw_gbps": 93.82, "busbw_gbps": 93.82}
+CCLOP {"rank": 0, "op": "allreduce", "size_bytes": 1073741824, "dtype": "bfloat16", "seconds": 0.01324128, "seconds_median": 0.013245759999999999, "algbw_gbps": 81.09, "busbw_gbps": 81.09}
+CCLOP {"rank": 0, "op": "allgather", "size_bytes": 1073741824, "dtype": "bfloat16", "seconds": 0.01506152, "seconds_median": 0.015094799999999998, "algbw_gbps": 71.29, "busbw_gbps": 71.29}
+CCLOP {"rank": 0, "op": "broadcast", "size_bytes": 1073741824, "dtype": "bfloat16", "seconds": 0.011356159999999999, "seconds_median": 0.0113692, "algbw_gbps": 94.551, "busbw_gbps": 94.551}
+CCLPEAK {"op": "allgather", "dtype": "bfloat16", "size_bytes": 1073741824, "busbw_gbps": 71.29, "xe_link_spec_gbps": 318.0, "pct_of_spec": 22.4}
+CCLPEAK {"op": "allgather", "dtype": "float32", "size_bytes": 1073741824, "busbw_gbps": 71.182, "xe_link_spec_gbps": 318.0, "pct_of_spec": 22.4}
+CCLPEAK {"op": "allreduce", "dtype": "bfloat16", "size_bytes": 1073741824, "busbw_gbps": 81.09, "xe_link_spec_gbps": 318.0, "pct_of_spec": 25.5}
+CCLPEAK {"op": "allreduce", "dtype": "float32", "size_bytes": 1073741824, "busbw_gbps": 80.998, "xe_link_spec_gbps": 318.0, "pct_of_spec": 25.5}
+CCLPEAK {"op": "broadcast", "dtype": "bfloat16", "size_bytes": 1073741824, "busbw_gbps": 94.551, "xe_link_spec_gbps": 318.0, "pct_of_spec": 29.7}
+CCLPEAK {"op": "broadcast", "dtype": "float32", "size_bytes": 1073741824, "busbw_gbps": 94.589, "xe_link_spec_gbps": 318.0, "pct_of_spec": 29.7}
+
+
+*****************************************
+Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
+*****************************************
+/usr/local/lib/python3.13/dist-packages/torch/distributed/c10d_logger.py:83: UserWarning: barrier(): using the device under current context. You can specify `device_id` in `init_process_group` to mute this warning.
+  return func(*args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/torch/distributed/c10d_logger.py:83: FutureWarning: `torch.distributed.all_gather_into_tensor` is deprecated. Please use `torch.distributed.all_gather_single` instead.
+  return func(*args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/torch/distributed/c10d_logger.py:83: FutureWarning: `torch.distributed.all_gather_into_tensor` is deprecated. Please use `torch.distributed.all_gather_single` instead.
+  return func(*args, **kwargs)

@@ -1,0 +1,59 @@
+#----------------------------------------------------------------
+#    Intel(R) MPI Benchmarks 2021.11, MPI-1 part
+#----------------------------------------------------------------
+# Date                  : Tue Sep 22 20:09:19 2026
+# Machine               : x86_64
+# System                : Linux
+# Release               : 6.14.0-37-generic
+# Version               : #37-Ubuntu SMP PREEMPT_DYNAMIC Fri Nov 14 22:10:32 UTC 2025
+# MPI Version           : 4.1
+# MPI Thread Environment: 
+
+
+# Calling sequence was: 
+
+# /opt/intel/oneapi/mpi/2021.18/bin/IMB-MPI1 PingPong -msglog 12:30 
+
+# Minimum message length in bytes:   0
+# Maximum message length in bytes:   1073741824
+#
+# MPI_Datatype                   :   MPI_BYTE 
+# MPI_Datatype for reductions    :   MPI_FLOAT 
+# MPI_Op                         :   MPI_SUM  
+# 
+# 
+
+# List of Benchmarks to run:
+
+# PingPong
+
+#---------------------------------------------------
+# Benchmarking PingPong 
+# #processes = 2 
+#---------------------------------------------------
+       #bytes #repetitions      t[usec]   Mbytes/sec
+            0         1000         0.43         0.00
+         4096         1000         1.09      3767.92
+         8192         1000         1.64      4991.53
+        16384         1000         2.74      5981.24
+        32768         1000         5.06      6479.89
+        65536          640         9.55      6859.55
+       131072          320        17.85      7342.53
+       262144          160        25.04     10468.07
+       524288           80        42.32     12389.45
+      1048576           40        95.26     11007.41
+      2097152           20       192.93     10870.18
+      4194304           10       371.10     11302.24
+      8388608            5       712.30     11776.76
+     16777216            2      1385.35     12110.44
+     33554432            1      4082.77      8218.54
+     67108864            1      5622.50     11935.76
+    134217728            1     12098.74     11093.53
+    268435456            1     31186.55      8607.41
+    536870912            1     65261.26      8226.49
+   1073741824 out-of-mem.; needed X=   2.001 GB; use flag "-mem X" or MAX_MEM_USAGE>=X (IMB_mem_info.h)
+
+
+# All processes entering MPI_Finalize
+
+

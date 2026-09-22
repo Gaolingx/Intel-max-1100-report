@@ -1,0 +1,203 @@
+{
+  "meta": {
+    "timestamp": "2026-09-22T01:19:17",
+    "hostname": "hwt",
+    "platform": "Linux-6.14.0-37-generic-x86_64-with-glibc2.41",
+    "device": {
+      "device_index": 0,
+      "name": "Intel(R) Data Center GPU Max 1100",
+      "driver_version": "1.6.33578+77",
+      "device_count": 1,
+      "total_memory_gib": 47.98,
+      "max_compute_units": 448,
+      "gpu_eu_count": 448,
+      "gpu_subslice_count": 56,
+      "last_level_cache_mb": 192.0,
+      "memory_clock_mhz": 3200,
+      "has_fp64": true,
+      "has_fp16": true,
+      "torch_version": "2.14.0+xpu",
+      "python_version": "3.13.3",
+      "oneapi_reference_clock_ghz": 1.55
+    },
+    "arguments": {
+      "suite": "resnet",
+      "warmup": 5,
+      "iters": 20,
+      "size_mb": 1024,
+      "gemm_sizes": [
+        256,
+        512,
+        1024,
+        2048,
+        4096,
+        8192
+      ],
+      "bw_sizes": [
+        4,
+        16,
+        64,
+        128,
+        192,
+        256,
+        512,
+        1024,
+        2048
+      ],
+      "reduce_cols": 4096,
+      "xfer_mib": 256,
+      "real_shapes": true,
+      "batched": true,
+      "int8": true,
+      "manual_attn": true,
+      "dtype_bw": true,
+      "size_sweep": true,
+      "host_transfer": true,
+      "quant_verify": true,
+      "quant_compare": true,
+      "model_batches": "64,128",
+      "model_dtypes": "bf16",
+      "model_compile": true,
+      "bert_model": "bert-base-uncased",
+      "bert_seq_lens": "128,512",
+      "bert_batches": "16,32",
+      "llm_model": "Qwen/Qwen2.5-0.5B-Instruct",
+      "llm_batches": "1,4,8",
+      "llm_input_lens": "128,512,2048",
+      "llm_new_tokens": 32,
+      "llm_compile": "off",
+      "hf_endpoint": "https://hf-mirror.com",
+      "pipe_batch": 64,
+      "pipe_workers": "0,1,2,4,8",
+      "pipe_cpu_scale": 3,
+      "pipe_batches": 20,
+      "pipe_e2e_batches": 20,
+      "ddp_model": "resnet50",
+      "ddp_backends": "xccl",
+      "ddp_dtypes": "bf16",
+      "ddp_batches": "64,128",
+      "ddp_iters": 20,
+      "outdir": "/root/workspace/benchmark/05-ai-dl/results"
+    },
+    "triton_version": "3.8.0"
+  },
+  "highlights": [],
+  "results": [
+    {
+      "suite": "resnet",
+      "name": "train_step",
+      "params": {
+        "dtype": "bf16",
+        "batch": 64,
+        "img_size": 224,
+        "memory_format": "contiguous",
+        "model": "resnet50",
+        "compile": true
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 49.47536,
+        "median_ms": 49.50208,
+        "min_ms": 49.05632,
+        "max_ms": 50.21856,
+        "std_ms": 0.28524374306897526
+      },
+      "metrics": {
+        "img_per_s": 1292.874966062032,
+        "ms_per_step": 49.50208,
+        "tflops": 31.727151667162264,
+        "peak_mem_gib": 2.809
+      },
+      "status": "ok",
+      "note": "训练 FLOPs = 3 × fwd，fwd = 2 × 4.09 GMACs；torch.compile 已启用"
+    },
+    {
+      "suite": "resnet",
+      "name": "train_step",
+      "params": {
+        "dtype": "bf16",
+        "batch": 64,
+        "img_size": 224,
+        "memory_format": "channels_last",
+        "model": "resnet50",
+        "compile": true
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 48.470943999999996,
+        "median_ms": 48.38512,
+        "min_ms": 48.15712,
+        "max_ms": 49.0564,
+        "std_ms": 0.24476419293679358
+      },
+      "metrics": {
+        "img_per_s": 1322.7207042165028,
+        "ms_per_step": 48.38512,
+        "tflops": 32.45956608147298,
+        "peak_mem_gib": 2.806
+      },
+      "status": "ok",
+      "note": "训练 FLOPs = 3 × fwd，fwd = 2 × 4.09 GMACs；torch.compile 已启用"
+    },
+    {
+      "suite": "resnet",
+      "name": "train_step",
+      "params": {
+        "dtype": "bf16",
+        "batch": 128,
+        "img_size": 224,
+        "memory_format": "contiguous",
+        "model": "resnet50",
+        "compile": true
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 111.062608,
+        "median_ms": 111.05624,
+        "min_ms": 110.11367999999999,
+        "max_ms": 111.62783999999999,
+        "std_ms": 0.34623657706256306
+      },
+      "metrics": {
+        "img_per_s": 1152.569184766205,
+        "ms_per_step": 111.05624,
+        "tflops": 28.284047794162667,
+        "peak_mem_gib": 5.385
+      },
+      "status": "ok",
+      "note": "训练 FLOPs = 3 × fwd，fwd = 2 × 4.09 GMACs；torch.compile 已启用"
+    },
+    {
+      "suite": "resnet",
+      "name": "train_step",
+      "params": {
+        "dtype": "bf16",
+        "batch": 128,
+        "img_size": 224,
+        "memory_format": "channels_last",
+        "model": "resnet50",
+        "compile": true
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 108.95537199999998,
+        "median_ms": 109.06624,
+        "min_ms": 108.28264,
+        "max_ms": 109.7736,
+        "std_ms": 0.40524494777356457
+      },
+      "metrics": {
+        "img_per_s": 1173.5987231245892,
+        "ms_per_step": 109.06624,
+        "tflops": 28.80011266547742,
+        "peak_mem_gib": 5.368
+      },
+      "status": "ok",
+      "note": "训练 FLOPs = 3 × fwd，fwd = 2 × 4.09 GMACs；torch.compile 已启用"
+    }
+  ]
+}

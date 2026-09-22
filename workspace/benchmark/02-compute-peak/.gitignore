@@ -1,0 +1,29 @@
+# 02-compute-peak —— 计算峰值（ALU / XMX / DPAS / oneDNN / torch）
+#
+# 入库：源码与探针（sycl/*.cpp、probes/*.py、ze_peak_src/ 的源码与预编译内核）、
+#       run_bench.py、README.md，以及 results/ 下的全部测量产物。
+# 不入库：编译产物、日志、字节码缓存。
+# 注：results/ 不做任何忽略，全部测量产物入库（docs/ 的溯源链接因此都有效）。
+
+# ---------- Python ----------
+__pycache__/
+*.py[cod]
+
+# ---------- 编译产物 ----------
+# 02-compute-peak/build/              SYCL 探针（alu_peak、alu_peak_vec1..16、xmx_peak）
+# 02-compute-peak/ze_peak_src/build/  ze_peak 可执行文件 + 由 build.sh 从
+#                                     ze_peak/kernels/*.spv 复制过来的内核
+# 注意：ze_peak_src/ze_peak/kernels/ 下的 *.cl 与 *.spv 是**上游预编译内核**，
+#       属于源码，必须保留在版本库里（build/ 里的副本才是派生物）。
+build/
+*.o
+*.a
+
+# ---------- 日志 / 运行时输出 ----------
+*.log
+ze_peak_src/logs/*
+!ze_peak_src/logs/.gitkeep
+
+# ---------- 编辑器 / 系统 ----------
+.DS_Store
+*.swp

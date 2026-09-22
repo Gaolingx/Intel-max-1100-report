@@ -7,34 +7,40 @@
 
 ## 一、测试分类总览
 
-| # | 分类 | 目标 | 文档 | 优先级 |
-|---|---|---|---|---|
-| 1 | 硬件健康 / 稳定性 / 压力 | 确认硬件无异常、能稳定满载 | [`01-health-stress.md`](./01-health-stress.md) | **P0** |
-| 2 | 算力峰值 | FP32 / FP64 / INT / XMX 理论 vs 实测 | [`02-compute-peak.md`](./02-compute-peak.md) | **P1** |
-| 3 | 显存带宽 | HBM 读写带宽达成率 | [`03-memory-bandwidth.md`](./03-memory-bandwidth.md) | **P1** |
-| 4 | 互连 | Xe Link / GPU-aware MPI / oneCCL 带宽与延迟 | [`04-interconnect-xelink.md`](./04-interconnect-xelink.md) | **P1** |
-| 5 | AI / 深度学习 | 训练/推理吞吐、算子基准、双卡扩展 | [`05-ai-dl.md`](./05-ai-dl.md) | **P1** |
-| 6 | HPC 应用 | 真实科学计算应用性能 | [`06-hpc-apps.md`](./06-hpc-apps.md) | P2 |
-| 7 | Profiling | 瓶颈定位（算力受限 vs 带宽受限） | [`07-profiling.md`](./07-profiling.md) | P2 |
-| 8 | 功耗 / 能效 / 调度 | perf/W、功耗-性能曲线、锁频影响 | [`08-power-efficiency.md`](./08-power-efficiency.md) | P2 |
+| # | 分类 | 目标 | 文档 | 优先级 | 状态（2026-09-22） |
+|---|---|---|---|---|---|
+| 1 | 硬件健康 / 稳定性 / 压力 | 确认硬件无异常、能稳定满载 | [`01-health-stress.md`](./01-health-stress.md) | **P0** | ⬜ 未做 |
+| 2 | 算力峰值 | FP32 / FP64 / INT / XMX 理论 vs 实测 | [`02-compute-peak.md`](./02-compute-peak.md) | **P1** | ✅ **已完成** → [`../Conclusion/02-compute-peak/`](../Conclusion/02-compute-peak/) |
+| 3 | 显存带宽 | HBM 读写带宽达成率 | [`03-memory-bandwidth.md`](./03-memory-bandwidth.md) | **P1** | ✅ **已完成** → [`../Conclusion/03-memory-bandwidth/`](../Conclusion/03-memory-bandwidth/) |
+| 4 | 互连 | Xe Link / GPU-aware MPI / oneCCL 带宽与延迟 | [`04-interconnect-xelink.md`](./04-interconnect-xelink.md) | **P1** | ✅ **已完成** → [`../Conclusion/04-interconnect-xelink/`](../Conclusion/04-interconnect-xelink/) |
+| 5 | AI / 深度学习 | 训练/推理吞吐、算子基准、双卡扩展 | [`05-ai-dl.md`](./05-ai-dl.md) | **P1** | ✅ **已完成** → [`../Conclusion/05-ai-dl/`](../Conclusion/05-ai-dl/) |
+| 6 | HPC 应用 | 真实科学计算应用性能 | [`06-hpc-apps.md`](./06-hpc-apps.md) | P2 | ⬜ 未做 |
+| 7 | Profiling | 瓶颈定位（算力受限 vs 带宽受限） | [`07-profiling.md`](./07-profiling.md) | P2 | ⚠️ 部分（②③④ 内含定向 profiling，未用 VTune/Advisor） |
+| 8 | 功耗 / 能效 / 调度 | perf/W、功耗-性能曲线、锁频影响 | [`08-power-efficiency.md`](./08-power-efficiency.md) | P2 | ⚠️ 部分（② 锁频取证 + ③④ 满载功耗，未做功耗曲线） |
+
+> **完成度统计**：P1 的四项（②③④⑤）**全部完成**；P0 的 ① 与 P2 的 ⑥⑧ **未做**，
+> ⑦ 由 ②③④ 内的定向 profiling 部分覆盖。逐条核验见各 TODO 文档的 §4.6 / §4.7 / §4.9。
 
 ---
 
 ## 二、关键参数速查（写报告时引用）
 
-### 理论峰值（待实测验证）
+### 理论峰值（**已完成实测验证** 2026-09-22）
 
-| 指标 | 计算公式 / 值 | 状态 |
+| 指标 | 计算公式 / 值 | 实测结果与裁定 |
 |---|---|---|
-| **FP32 峰值** | 448 EU × 16 lane × 2 (FMA) × 1.55 GHz ≈ **22.2 TFLOPS** | 待实测 |
-| **FP64 峰值** | PVC 上 FP64 速率 = FP32 的 1/2 ≈ **11.1 TFLOPS** | 待实测 |
-| **XMX (BF16/FP16)** | 量级为 FP32 的数倍，**具体倍数需实测确定** | 待实测 |
-| **XMX (INT8)** | 通常为 BF16 的 2 倍 | 待实测 |
-| **HBM 带宽** | 量级 1–2.5 TB/s，**必须由 BabelStream 实测确定** | 待实测 |
-| **Xe Link 单向总带宽** | 6 × 50.66 GiB/s ≈ **304 GiB/s ≈ 318 GB/s** | 待实测 |
-| **PCIe 5.0 x16** | 原始约 63 GB/s，实测约 50–55 GB/s | 待实测 |
+| **FP32 峰值** | 448 EU × 16 lane × 2 (FMA) × 1.55 GHz ≈ **22.2 TFLOPS** | ✅ oneDNN **22.13**（99.6%）；⚠ 自研纯 FMA 探针 **50.75**（228.4%）→ **口径冲突，未解决**（见 ②） |
+| **FP64 峰值** | PVC 上 FP64 速率 = FP32 的 1/2 ≈ ~~11.1 TFLOPS~~ | ❌ **原假设已证伪**：实测 **0.78 × FP32**（17.37 TFLOPS） |
+| **XMX (BF16/FP16)** | 量级为 FP32 的数倍 | ✅ 裸 DPAS **355 TFLOPS = 16 × FP32**（99.8% 公式）；oneDNN 路径仅 226~238（覆盖 **58~67%**） |
+| **XMX (INT8)** | 通常为 BF16 的 2 倍 | ✅ 裸 DPAS **710 TFLOPS = 2.0 × BF16**（99.8% 公式）；oneDNN 416（58.5%） |
+| **HBM 带宽** | 量级 1–2.5 TB/s | ✅ BabelStream **900 GB/s** = 规格 1229 的 **73%**；双卡并发 **1679 GB/s（2.00× 线性）** |
+| **Xe Link 单向总带宽** | 6 × 50.66 GiB/s ≈ **304 GiB/s ≈ 318 GB/s** | ✅ 规格已核实 **318.8 GB/s**；❌ 实测仅 **95.5 GB/s = 30.0%**，且 `Xe Link Calibration Date: Not Calibrated` |
+| **PCIe 5.0 x16** | 原始约 63 GB/s，实测约 50–55 GB/s | ⚠ 实测 pinned **31.9 GB/s**（约 50%）；且 `LnkSta` 自相矛盾（GPU 端点报 2.5 GT/s ×1，上游桥报 32 GT/s ×16） |
 
-> ⚠️ **不要直接引用上表数字作为结论**。除 Xe Link 外均为公式推导或量级估计，必须以实测为准。
+> ✅ 上表已由 `benchmark/{02,03,04,05-ai-dl}` 实测填充，结论见
+> [`../Conclusion/`](../Conclusion/) 下各自 README。
+> ⚠️ **FP32 一行仍存在未解冲突**（标称 22.2 vs 自研探针 50.75），处理策略：保留公式值并标注
+> **「标称值（公式）」**，不做重标 —— 见 [`02-compute-peak.md`](./02-compute-peak.md) §6。
 
 ### 硬件配置
 
@@ -110,32 +116,35 @@ CPU               : 72c/144t ES，1 NUMA 节点
 - [ ] `xpu-smi diag -d 0,1 --stress --stresstime 600` 双卡压力测试
 - [ ] 压力期间遥测：频率是否掉、温度、ECC/Reset/Driver Error 计数
 
-### ② 算力峰值（P1）
-- [ ] `ze_peak`（需 clone 编译）→ FP32 / FP64 / INT
-- [ ] BabelStream 派生算力项
-- [ ] PyTorch/Triton GEMM sweep（M/N/K 扫点，fp32/fp64/bf16）
-- [ ] 各 dtype 相对 FP32 的加速比
+### ② 算力峰值（P1）— ✅ **已完成**（结论：[`../Conclusion/02-compute-peak/`](../Conclusion/02-compute-peak/)，逐条核验见 [`02-compute-peak.md`](./02-compute-peak.md) §4.6）
+- [x] `ze_peak` → FP32 / FP64 / INT　⚠️ **替代**：未构建 `ze_peak`，改用自研 SYCL 探针（`sycl/alu_peak.cpp`、`sycl/xmx_peak.cpp`），并**多出占用率拐点扫描**
+- [x] BabelStream 派生算力项　→ 由 ③ 的 BabelStream + ② 的 SYCL 探针覆盖
+- [x] PyTorch/Triton GEMM sweep　→ PyTorch ✅（23 条）；Triton ⬜ **未做**（与 ⑤ 同一缺口）
+- [x] 各 dtype 相对 FP32 的加速比　→ fp64 0.78× / fp16 16.0× / bf16 16.0× / int8 32.0×（裸 DPAS 口径）
+- [x] 附加：oneDNN 交叉验证、XMX 正确性校验、频率锁定取证
 
-### ③ 显存带宽（P1）
-- [ ] BabelStream SYCL：Copy / Mul / Add / Triad
-- [ ] PyTorch 大 tensor copy 交叉验证
-- [ ] `xpu-smi dump -m 6,7` 硬件侧读写计数对照
-- [ ] 不同访问粒度/向量宽度对带宽影响
+### ③ 显存带宽（P1）— ✅ **已完成**（结论：[`../Conclusion/03-memory-bandwidth/`](../Conclusion/03-memory-bandwidth/)，逐条核验见 [`03-memory-bandwidth.md`](./03-memory-bandwidth.md) §4.7）
+- [x] BabelStream SYCL：Copy / Mul / Add / Triad　→ 实测峰值 **899.6 GB/s**（= 规格 73%），含 Dot
+- [x] PyTorch 大 tensor copy 交叉验证　→ ✅ 15 条，与 BabelStream 互印证
+- [ ] `xpu-smi dump -m 6,7` 硬件侧读写计数对照　❌ **不可行**：`dump` 挂死；`stats -d 0` 的 m6/m7 **恒为 ~576 kB/s**（空载=满载），计数器在本驱动上不可用
+- [x] 不同访问粒度/向量宽度对带宽影响　→ vec 1/2/4/8/16、stride 扫描；**vec>4 反而腰斩**
+- [x] 附加：读/写拆分、双卡并发 2.00×、host DRAM 基线 39.6 GB/s、L2/L3 陷阱定量
 
-### ④ 互连（P1）
-- [ ] P2P 可用性检查（Level Zero / SYCL）
-- [ ] `IMB-MPI1-GPU` ↔ 卡间带宽/延迟
-- [ ] `IMB-MPI1-GPU` ↔ host↔device 带宽
-- [ ] oneCCL allreduce（需构建）
-- [ ] PyTorch DDP 扩展效率曲线
-- [ ] `xpu-smi dump` 的 Xe Link Throughput 对照
+### ④ 互连（P1）— ✅ **已完成**（结论：[`../Conclusion/04-interconnect-xelink/`](../Conclusion/04-interconnect-xelink/)，逐条核验见 [`04-interconnect-xelink.md`](./04-interconnect-xelink.md) §4.9）
+- [x] P2P 可用性检查（Level Zero）　→ **可用**（2/2 对，flags `ACCESS`+`ATOMICS`）
+- [x] `IMB-MPI1-GPU` ↔ 卡间带宽/延迟　→ 43.71 GB/s @16 MiB（**须加 `I_MPI_OFFLOAD=1`**）
+- [x] `IMB-MPI1-GPU` ↔ host↔device 带宽　→ `cpu_peak.PingPong` 12.39 GB/s；H2D/D2H 由 ③ 覆盖
+- [x] oneCCL allreduce（需构建）　⚠️ **替代**：未构建 oneCCL benchmarks，改用 `torch.distributed`(xccl) → broadcast **94.59 GB/s**
+- [x] PyTorch DDP 扩展效率曲线　→ 由 ⑤ 覆盖（`Conclusion/05-ai-dl/03-scaling.md`）
+- [ ] `xpu-smi dump` 的 Xe Link Throughput 对照　❌ **不可行**：`dump` 挂死；`stats -d 0` 的 `Xe Link Throughput` **恒为 N/A**（P2P 压满也是 N/A）
+- [x] 附加：裸 L0 P2P 峰值 **95.51 GB/s**、PCIe `LnkSta` 自相矛盾取证、`card1` 非 GPU 甄别、Xe Link 静态规格 + `Not Calibrated` 取证
 
-### ⑤ AI / 深度学习（P1）
-- [ ] ResNet-50 / BERT 训练吞吐（samples/sec、TFLOPS）
-- [ ] AMP + BF16 vs FP32 收益
-- [ ] 单卡 vs 双卡 DDP scaling efficiency
-- [ ] LLM 推理：prefill/decode 吞吐、TTFT、显存峰值
-- [ ] 算子 micro-benchmark：GEMM / attention / LayerNorm
+### ⑤ AI / 深度学习（P1）— ✅ **已完成**（结论：[`../Conclusion/05-ai-dl/`](../Conclusion/05-ai-dl/)）
+- [x] ResNet-50 / BERT 训练吞吐（samples/sec、TFLOPS）
+- [x] AMP + BF16 vs FP32 收益
+- [x] 单卡 vs 双卡 DDP scaling efficiency
+- [x] LLM 推理：prefill/decode 吞吐、TTFT、显存峰值
+- [x] 算子 micro-benchmark：GEMM / attention / LayerNorm
 
 ### ⑥ HPC 应用（P2）
 - [ ] GROMACS（SYCL）ns/day
@@ -261,9 +270,9 @@ cmake -B build -H. -DMODEL=sycl -DCMAKE_CXX_COMPILER=icpx && cmake --build build
 
 ## 七、最终交付物（建议）
 
-1. **硬件配置报告** — 本文档集第一部分
-2. **硬件能力基线表** — 算力 / 带宽 / 互连 实测 vs 理论
-3. **应用性能报告** — AI（训练/推理）+ HPC
-4. **扩展性报告** — 单卡 → 双卡 scaling efficiency
-5. **能效报告** — perf/W 与功耗-性能曲线
-6. **瓶颈分析报告** — VTune Roofline 结果与优化建议
+1. **硬件配置报告** — 本文档集第一部分　✅ 已交付：`../{README,hardware,interconnect,software-stack,precision-support,caveats}.md`
+2. **硬件能力基线表** — 算力 / 带宽 / 互连 实测 vs 理论　✅ 已交付：②③④ 各自 `Conclusion/0X-…/README.md`
+3. **应用性能报告** — AI（训练/推理）+ HPC　⚠️ 部分：AI ✅ `Conclusion/05-ai-dl/`；HPC（⑥）未做
+4. **扩展性报告** — 单卡 → 双卡 scaling efficiency　✅ 已交付：③ 内存带宽 2.00× + ⑤ `05-ai-dl/03-scaling.md`
+5. **能效报告** — perf/W 与功耗-性能曲线　⚠️ 部分：有单点 perf/W（②171 W / ③260 W / ④），**未做功耗-性能曲线**
+6. **瓶颈分析报告** — VTune Roofline 结果与优化建议　⚠️ 部分：②③④⑤ 均含定向 profiling 与瓶颈结论，**未用 VTune/Advisor Roofline**

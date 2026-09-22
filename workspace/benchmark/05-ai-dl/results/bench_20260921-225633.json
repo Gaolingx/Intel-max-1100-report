@@ -1,0 +1,1121 @@
+{
+  "meta": {
+    "timestamp": "2026-09-21T22:56:20",
+    "hostname": "hwt",
+    "platform": "Linux-6.14.0-37-generic-x86_64-with-glibc2.41",
+    "device": {
+      "device_index": 0,
+      "name": "Intel(R) Data Center GPU Max 1100",
+      "driver_version": "1.6.33578+77",
+      "device_count": 2,
+      "total_memory_gib": 50315264.0,
+      "max_compute_units": 448,
+      "gpu_eu_count": 448,
+      "gpu_subslice_count": 56,
+      "last_level_cache_mb": 196608.0,
+      "memory_clock_mhz": 3200,
+      "has_fp64": true,
+      "has_fp16": true,
+      "torch_version": "2.14.0+xpu",
+      "python_version": "3.13.3",
+      "oneapi_reference_clock_ghz": 1.55
+    },
+    "arguments": {
+      "suite": "quant",
+      "warmup": 5,
+      "iters": 20,
+      "size_mb": 1024,
+      "gemm_sizes": [
+        256,
+        512,
+        1024,
+        2048,
+        4096,
+        8192
+      ],
+      "bw_sizes": [
+        4,
+        16,
+        64,
+        128,
+        192,
+        256,
+        512,
+        1024,
+        2048
+      ],
+      "reduce_cols": 4096,
+      "xfer_mib": 256,
+      "real_shapes": true,
+      "batched": true,
+      "int8": true,
+      "manual_attn": true,
+      "dtype_bw": true,
+      "size_sweep": true,
+      "host_transfer": true,
+      "quant_verify": true,
+      "quant_compare": true,
+      "outdir": "/root/workspace/benchmark/05-ai-dl/results"
+    },
+    "triton_version": "3.8.0"
+  },
+  "highlights": [
+    "INT8 稠密 GEMM 峰值 400.0 TOPS @ 8192x8192x8192（int8×int8→int32，走 XMX）",
+    "W8A16 权重独占峰值 0.3 TOPS @ 2048x4096x4096（权重 16.0 MiB）",
+    "W4A16 权重独占峰值 114.7 TOPS @ 2048x4096x4096（权重 8.5 MiB）",
+    "decode（GEMV, M=1, 4096×4096）权重读取带宽 —— bf16 0.0768 ms / 437 GB/s；w4a16 0.1066 ms / 79 GB/s；w8a16 3.1739 ms / 5 GB/s。M 很小时算力不是瓶颈，权重字节数（BF16 32 MiB / INT8 16 MiB / INT4 8 MiB）直接决定延迟上限",
+    "⚠ W8A16（``_weight_int8pack_mm``）吞吐 0.26 TOPS 异常低，不足 W4A16 的 1/5（M=1 时 W8A16 3.157 ms vs W4A16 0.105 ms）；且其耗时几乎与 M 无关，疑似每次调用都重新打包权重（kernel 名中的 ``int8pack``），**该路径在本栈上不适合作为生产 W8A16 方案**，实际部署建议改用 INT8 稠密 GEMM + 显式反量化，或直接 FP8/BF16",
+    "⚠ W4A16 吞吐仅为 INT8 稠密的 0.29×，远低于 XMX INT4 = INT8 2× 的理论值；torch 2.14 的 XPU int4 kernel 未跑满 XMX INT4 算力路径。INT4 的现实收益来自**权重显存/带宽**（1/4 于 BF16、1/2 于 INT8），而非算力",
+    "⚠ INT4/INT8 的 scale/zero 张量布局在 XPU 上与 CUDA/CPU 约定不同（XPU 的 ``_weight_int4pack_mm`` 要求 **2D** int32/uint8 ``mat2``，CUDA 为 4D；``qScaleAndZeros`` 为 bf16 且接近 ``[K/gs, N, 2]``）。本 suite 结论以实测吞吐为准，数值正确性见 ``verify_*`` 各条目"
+  ],
+  "results": [
+    {
+      "suite": "quant",
+      "name": "verify_int8_dense",
+      "params": {
+        "m": 128,
+        "n": 256,
+        "k": 256
+      },
+      "stats": null,
+      "metrics": {
+        "max_abs_err": 0.0,
+        "mean_abs_err": 0.0,
+        "rel_err_pct": 0.0
+      },
+      "status": "ok",
+      "note": "int8×int8→int32，与 CPU 参考逐位一致"
+    },
+    {
+      "suite": "quant",
+      "name": "verify_int8_weight",
+      "params": {
+        "m": 128,
+        "n": 512,
+        "k": 512
+      },
+      "stats": null,
+      "metrics": {
+        "max_abs_err": 0.0,
+        "mean_abs_err": 0.0,
+        "rel_err_pct": 0.0
+      },
+      "status": "ok",
+      "note": "W8A16 per-channel scale，误差应为 bf16 舍入级别"
+    },
+    {
+      "suite": "quant",
+      "name": "verify_int4_weight",
+      "params": {
+        "m": 128,
+        "n": 512,
+        "k": 512,
+        "gs": 128
+      },
+      "stats": null,
+      "metrics": {
+        "max_abs_err": 2.0,
+        "mean_abs_err": 0.23751895129680634,
+        "rel_err_pct": 0.18134274107548212
+      },
+      "status": "ok",
+      "note": "dequant = scale*(q-8)+zero。尺度为 1/零点为 8 时（反量化退化为原始 4bit 码）max|err|=0.0005 → 打包/累加语义**逐位正确**；随机逐组 scale（布局 [K/gs,N,2]）的残差处于 bf16 累加噪声量级"
+    },
+    {
+      "suite": "quant",
+      "name": "int8_dense",
+      "params": {
+        "op": "int8_dense",
+        "m": 512,
+        "n": 512,
+        "k": 512,
+        "shape": "512x512x512"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.118076,
+        "median_ms": 0.11007999999999998,
+        "min_ms": 0.10192,
+        "max_ms": 0.21095999999999998,
+        "std_ms": 0.023500678798707066
+      },
+      "metrics": {
+        "tops": 2.4385488372093027,
+        "gops": 2438.5488372093027
+      },
+      "status": "ok",
+      "note": "int8×int8→int32，XMX"
+    },
+    {
+      "suite": "quant",
+      "name": "int8_dense",
+      "params": {
+        "op": "int8_dense",
+        "m": 1024,
+        "n": 1024,
+        "k": 1024,
+        "shape": "1024x1024x1024"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.11612,
+        "median_ms": 0.11407999999999999,
+        "min_ms": 0.10479999999999999,
+        "max_ms": 0.14304,
+        "std_ms": 0.00975237406993805
+      },
+      "metrics": {
+        "tops": 18.824365778401123,
+        "gops": 18824.365778401127
+      },
+      "status": "ok",
+      "note": "int8×int8→int32，XMX"
+    },
+    {
+      "suite": "quant",
+      "name": "int8_dense",
+      "params": {
+        "op": "int8_dense",
+        "m": 2048,
+        "n": 2048,
+        "k": 2048,
+        "shape": "2048x2048x2048"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.11432,
+        "median_ms": 0.11316,
+        "min_ms": 0.10815999999999999,
+        "max_ms": 0.12736,
+        "std_ms": 0.004390681040567625
+      },
+      "metrics": {
+        "tops": 151.81927522092613,
+        "gops": 151819.27522092612
+      },
+      "status": "ok",
+      "note": "int8×int8→int32，XMX"
+    },
+    {
+      "suite": "quant",
+      "name": "int8_dense",
+      "params": {
+        "op": "int8_dense",
+        "m": 4096,
+        "n": 4096,
+        "k": 4096,
+        "shape": "4096x4096x4096"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.397732,
+        "median_ms": 0.39436,
+        "min_ms": 0.38727999999999996,
+        "max_ms": 0.42912,
+        "std_ms": 0.010273640834679795
+      },
+      "metrics": {
+        "tops": 348.5113943401968,
+        "gops": 348511.39434019674
+      },
+      "status": "ok",
+      "note": "int8×int8→int32，XMX"
+    },
+    {
+      "suite": "quant",
+      "name": "int8_dense",
+      "params": {
+        "op": "int8_dense",
+        "m": 8192,
+        "n": 8192,
+        "k": 8192,
+        "shape": "8192x8192x8192"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 2.774072,
+        "median_ms": 2.74848,
+        "min_ms": 2.60696,
+        "max_ms": 2.93824,
+        "std_ms": 0.08880616158803394
+      },
+      "metrics": {
+        "tops": 400.04352506694613,
+        "gops": 400043.5250669461
+      },
+      "status": "ok",
+      "note": "int8×int8→int32，XMX"
+    },
+    {
+      "suite": "quant",
+      "name": "int8_dense",
+      "params": {
+        "op": "int8_dense",
+        "m": 1,
+        "n": 4096,
+        "k": 4096,
+        "shape": "1x4096x4096",
+        "label": "llm_decode_gemv"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.099128,
+        "median_ms": 0.09555999999999999,
+        "min_ms": 0.09168,
+        "max_ms": 0.11335999999999999,
+        "std_ms": 0.006896255215694964
+      },
+      "metrics": {
+        "tops": 0.3511347007115948
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "quant",
+      "name": "int8_dense",
+      "params": {
+        "op": "int8_dense",
+        "m": 16,
+        "n": 4096,
+        "k": 4096,
+        "shape": "16x4096x4096",
+        "label": "llm_decode_m16"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.10026399999999999,
+        "median_ms": 0.09844,
+        "min_ms": 0.09136,
+        "max_ms": 0.11903999999999999,
+        "std_ms": 0.006797180591980766
+      },
+      "metrics": {
+        "tops": 5.453788216172288
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "quant",
+      "name": "int8_dense",
+      "params": {
+        "op": "int8_dense",
+        "m": 64,
+        "n": 4096,
+        "k": 4096,
+        "shape": "64x4096x4096",
+        "label": "llm_decode_m64"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.10003199999999998,
+        "median_ms": 0.09655999999999999,
+        "min_ms": 0.09215999999999999,
+        "max_ms": 0.11711999999999999,
+        "std_ms": 0.007534046455922607
+      },
+      "metrics": {
+        "tops": 22.239888649544323
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "quant",
+      "name": "int8_dense",
+      "params": {
+        "op": "int8_dense",
+        "m": 2048,
+        "n": 4096,
+        "k": 4096,
+        "shape": "2048x4096x4096",
+        "label": "llm_prefill_m2k"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.228384,
+        "median_ms": 0.22688,
+        "min_ms": 0.22127999999999998,
+        "max_ms": 0.2448,
+        "std_ms": 0.005908074474818339
+      },
+      "metrics": {
+        "tops": 302.8890899858956
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "quant",
+      "name": "int8_dense",
+      "params": {
+        "op": "int8_dense",
+        "m": 4096,
+        "n": 11008,
+        "k": 4096,
+        "shape": "4096x11008x4096",
+        "label": "ffn_up"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 1.041704,
+        "median_ms": 1.03748,
+        "min_ms": 1.018,
+        "max_ms": 1.0956,
+        "std_ms": 0.020889302142484318
+      },
+      "metrics": {
+        "tops": 356.0234293249027
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "quant",
+      "name": "int8_dense",
+      "params": {
+        "op": "int8_dense",
+        "m": 4096,
+        "n": 4096,
+        "k": 11008,
+        "shape": "4096x4096x11008",
+        "label": "ffn_down"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.987632,
+        "median_ms": 0.98044,
+        "min_ms": 0.958,
+        "max_ms": 1.05368,
+        "std_ms": 0.02873842751439265
+      },
+      "metrics": {
+        "tops": 376.7361464811718
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "quant",
+      "name": "int8_dense",
+      "params": {
+        "op": "int8_dense",
+        "m": 4096,
+        "n": 4096,
+        "k": 16384,
+        "shape": "4096x4096x16384",
+        "label": "k_dominant"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 1.433356,
+        "median_ms": 1.44016,
+        "min_ms": 1.3495199999999998,
+        "max_ms": 1.506,
+        "std_ms": 0.04359802912976687
+      },
+      "metrics": {
+        "tops": 381.73245603821795
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "quant",
+      "name": "int8_dense",
+      "params": {
+        "op": "int8_dense",
+        "m": 4096,
+        "n": 16384,
+        "k": 4096,
+        "shape": "4096x16384x4096",
+        "label": "n_dominant"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 1.504392,
+        "median_ms": 1.50604,
+        "min_ms": 1.4494399999999998,
+        "max_ms": 1.5742399999999999,
+        "std_ms": 0.03792928072083622
+      },
+      "metrics": {
+        "tops": 365.0340056625322
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "quant",
+      "name": "int8_dense",
+      "params": {
+        "op": "int8_dense",
+        "m": 8192,
+        "n": 8192,
+        "k": 128,
+        "shape": "8192x8192x128",
+        "label": "skinny_k"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.387236,
+        "median_ms": 0.38676,
+        "min_ms": 0.38,
+        "max_ms": 0.39504,
+        "std_ms": 0.004479391030039691
+      },
+      "metrics": {
+        "tops": 44.419974102802776
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "quant",
+      "name": "int8_dense",
+      "params": {
+        "op": "int8_dense",
+        "m": 128,
+        "n": 8192,
+        "k": 8192,
+        "shape": "128x8192x8192",
+        "label": "skinny_m"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.14667999999999998,
+        "median_ms": 0.14532,
+        "min_ms": 0.14071999999999998,
+        "max_ms": 0.1656,
+        "std_ms": 0.005502086876813195
+      },
+      "metrics": {
+        "tops": 118.22095502339664
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "quant",
+      "name": "w8a16",
+      "params": {
+        "op": "w8a16",
+        "m": 1,
+        "n": 4096,
+        "k": 4096,
+        "shape": "1x4096x4096",
+        "label": "decode_m1"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 3.1574359999999997,
+        "median_ms": 3.1567600000000002,
+        "min_ms": 3.14424,
+        "max_ms": 3.1822399999999997,
+        "std_ms": 0.007584045358514142
+      },
+      "metrics": {
+        "tops": 0.010629389627339425,
+        "weight_gb_s": 5.314694813669712,
+        "weight_mb": 16.0,
+        "bytes_per_w": 1.0
+      },
+      "status": "ok",
+      "note": "权重仅 1 字节/元素，M 小 → 带宽受限"
+    },
+    {
+      "suite": "quant",
+      "name": "w8a16",
+      "params": {
+        "op": "w8a16",
+        "m": 8,
+        "n": 4096,
+        "k": 4096,
+        "shape": "8x4096x4096",
+        "label": "decode_m8"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 3.1218239999999997,
+        "median_ms": 3.11888,
+        "min_ms": 3.1151199999999997,
+        "max_ms": 3.13896,
+        "std_ms": 0.006743273982273036
+      },
+      "metrics": {
+        "tops": 0.08606790129790182,
+        "weight_gb_s": 5.379243831118863,
+        "weight_mb": 16.0,
+        "bytes_per_w": 1.0
+      },
+      "status": "ok",
+      "note": "权重仅 1 字节/元素，M 小 → 带宽受限"
+    },
+    {
+      "suite": "quant",
+      "name": "w8a16",
+      "params": {
+        "op": "w8a16",
+        "m": 32,
+        "n": 4096,
+        "k": 4096,
+        "shape": "32x4096x4096",
+        "label": "decode_m32"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 7.064659999999999,
+        "median_ms": 7.06784,
+        "min_ms": 6.91784,
+        "max_ms": 7.29,
+        "std_ms": 0.09067659587787796
+      },
+      "metrics": {
+        "tops": 0.15191937338706024,
+        "weight_gb_s": 2.373740209172816,
+        "weight_mb": 16.0,
+        "bytes_per_w": 1.0
+      },
+      "status": "ok",
+      "note": "权重仅 1 字节/元素，M 小 → 带宽受限"
+    },
+    {
+      "suite": "quant",
+      "name": "w8a16",
+      "params": {
+        "op": "w8a16",
+        "m": 128,
+        "n": 4096,
+        "k": 4096,
+        "shape": "128x4096x4096",
+        "label": "decode_m128"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 20.951664,
+        "median_ms": 20.97276,
+        "min_ms": 20.63496,
+        "max_ms": 21.1148,
+        "std_ms": 0.10772912282201151
+      },
+      "metrics": {
+        "tops": 0.20478789134095846,
+        "weight_gb_s": 0.799952700550619,
+        "weight_mb": 16.0,
+        "bytes_per_w": 1.0
+      },
+      "status": "ok",
+      "note": "权重仅 1 字节/元素，M 小 → 带宽受限"
+    },
+    {
+      "suite": "quant",
+      "name": "w8a16",
+      "params": {
+        "op": "w8a16",
+        "m": 512,
+        "n": 4096,
+        "k": 4096,
+        "shape": "512x4096x4096",
+        "label": "prefill_m512"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 69.89950400000001,
+        "median_ms": 69.91736,
+        "min_ms": 69.71176,
+        "max_ms": 69.9572,
+        "std_ms": 0.056954132282038446
+      },
+      "metrics": {
+        "tops": 0.24571678884900688,
+        "weight_gb_s": 0.2399578016103583,
+        "weight_mb": 16.0,
+        "bytes_per_w": 1.0
+      },
+      "status": "ok",
+      "note": "权重仅 1 字节/元素，M 小 → 带宽受限"
+    },
+    {
+      "suite": "quant",
+      "name": "w8a16",
+      "params": {
+        "op": "w8a16",
+        "m": 2048,
+        "n": 4096,
+        "k": 4096,
+        "shape": "2048x4096x4096",
+        "label": "prefill_m2048"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 262.35128799999995,
+        "median_ms": 262.35195999999996,
+        "min_ms": 262.22767999999996,
+        "max_ms": 262.48408,
+        "std_ms": 0.06243718840563068
+      },
+      "metrics": {
+        "tops": 0.26193620484481994,
+        "weight_gb_s": 0.06394926876094237,
+        "weight_mb": 16.0,
+        "bytes_per_w": 1.0
+      },
+      "status": "ok",
+      "note": "权重仅 1 字节/元素，M 小 → 带宽受限"
+    },
+    {
+      "suite": "quant",
+      "name": "w4a16",
+      "params": {
+        "op": "w4a16",
+        "m": 1,
+        "n": 4096,
+        "k": 4096,
+        "gs": 128,
+        "shape": "1x4096x4096",
+        "label": "decode_m1"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.10602400000000001,
+        "median_ms": 0.10511999999999999,
+        "min_ms": 0.10447999999999999,
+        "max_ms": 0.11104,
+        "std_ms": 0.0018415819286689364
+      },
+      "metrics": {
+        "tops": 0.3192012176560122,
+        "weight_gb_s": 84.78782343987824,
+        "weight_mb": 8.5,
+        "bytes_per_w": 0.5
+      },
+      "status": "ok",
+      "note": "4bit 权重，视觉显存为 BF16 的 1/4（含 scale/zero 约 1/4.06）"
+    },
+    {
+      "suite": "quant",
+      "name": "w4a16",
+      "params": {
+        "op": "w4a16",
+        "m": 8,
+        "n": 4096,
+        "k": 4096,
+        "gs": 128,
+        "shape": "8x4096x4096",
+        "label": "decode_m8"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.290784,
+        "median_ms": 0.28996,
+        "min_ms": 0.28624,
+        "max_ms": 0.30472,
+        "std_ms": 0.0035409015801063986
+      },
+      "metrics": {
+        "tops": 0.9257671954752379,
+        "weight_gb_s": 30.73836391226376,
+        "weight_mb": 8.5,
+        "bytes_per_w": 0.5
+      },
+      "status": "ok",
+      "note": "4bit 权重，视觉显存为 BF16 的 1/4（含 scale/zero 约 1/4.06）"
+    },
+    {
+      "suite": "quant",
+      "name": "w4a16",
+      "params": {
+        "op": "w4a16",
+        "m": 32,
+        "n": 4096,
+        "k": 4096,
+        "gs": 128,
+        "shape": "32x4096x4096",
+        "label": "decode_m32"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.304516,
+        "median_ms": 0.30479999999999996,
+        "min_ms": 0.29991999999999996,
+        "max_ms": 0.31112,
+        "std_ms": 0.002807130919640202
+      },
+      "metrics": {
+        "tops": 3.52277501312336,
+        "weight_gb_s": 29.24178477690289,
+        "weight_mb": 8.5,
+        "bytes_per_w": 0.5
+      },
+      "status": "ok",
+      "note": "4bit 权重，视觉显存为 BF16 的 1/4（含 scale/zero 约 1/4.06）"
+    },
+    {
+      "suite": "quant",
+      "name": "w4a16",
+      "params": {
+        "op": "w4a16",
+        "m": 128,
+        "n": 4096,
+        "k": 4096,
+        "gs": 128,
+        "shape": "128x4096x4096",
+        "label": "decode_m128"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.319032,
+        "median_ms": 0.31936,
+        "min_ms": 0.31448,
+        "max_ms": 0.3232,
+        "std_ms": 0.0019188163017860743
+      },
+      "metrics": {
+        "tops": 13.448670140280562,
+        "weight_gb_s": 27.90861723446894,
+        "weight_mb": 8.5,
+        "bytes_per_w": 0.5
+      },
+      "status": "ok",
+      "note": "4bit 权重，视觉显存为 BF16 的 1/4（含 scale/zero 约 1/4.06）"
+    },
+    {
+      "suite": "quant",
+      "name": "w4a16",
+      "params": {
+        "op": "w4a16",
+        "m": 512,
+        "n": 4096,
+        "k": 4096,
+        "gs": 128,
+        "shape": "512x4096x4096",
+        "label": "prefill_m512"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.39259999999999995,
+        "median_ms": 0.39088,
+        "min_ms": 0.38544,
+        "max_ms": 0.41087999999999997,
+        "std_ms": 0.0067209285072823005
+      },
+      "metrics": {
+        "tops": 43.9517733933688,
+        "weight_gb_s": 22.802128530495292,
+        "weight_mb": 8.5,
+        "bytes_per_w": 0.5
+      },
+      "status": "ok",
+      "note": "4bit 权重，视觉显存为 BF16 的 1/4（含 scale/zero 约 1/4.06）"
+    },
+    {
+      "suite": "quant",
+      "name": "w4a16",
+      "params": {
+        "op": "w4a16",
+        "m": 2048,
+        "n": 4096,
+        "k": 4096,
+        "gs": 128,
+        "shape": "2048x4096x4096",
+        "label": "prefill_m2048"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.6050639999999999,
+        "median_ms": 0.5991199999999999,
+        "min_ms": 0.59416,
+        "max_ms": 0.64304,
+        "std_ms": 0.014297616025058146
+      },
+      "metrics": {
+        "tops": 114.70068890372548,
+        "weight_gb_s": 14.876645747095743,
+        "weight_mb": 8.5,
+        "bytes_per_w": 0.5
+      },
+      "status": "ok",
+      "note": "4bit 权重，视觉显存为 BF16 的 1/4（含 scale/zero 约 1/4.06）"
+    },
+    {
+      "suite": "quant",
+      "name": "compare",
+      "params": {
+        "kind": "bf16",
+        "m": 1,
+        "n": 4096,
+        "k": 4096,
+        "shape": "1x4096x4096"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.079564,
+        "median_ms": 0.0768,
+        "min_ms": 0.07184,
+        "max_ms": 0.09192,
+        "std_ms": 0.005320419532330135
+      },
+      "metrics": {
+        "tops": 0.43690666666666667,
+        "weight_gb_s": 436.9066666666667,
+        "weight_mb": 32.0,
+        "bytes_per_w": 2.0
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "quant",
+      "name": "compare",
+      "params": {
+        "kind": "w8a16",
+        "m": 1,
+        "n": 4096,
+        "k": 4096,
+        "shape": "1x4096x4096"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 3.178184,
+        "median_ms": 3.17392,
+        "min_ms": 3.15104,
+        "max_ms": 3.2643199999999997,
+        "std_ms": 0.022301484793618504
+      },
+      "metrics": {
+        "tops": 0.01057192115743308,
+        "weight_gb_s": 5.285960578716541,
+        "weight_mb": 16.0,
+        "bytes_per_w": 1.0
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "quant",
+      "name": "compare",
+      "params": {
+        "kind": "w4a16",
+        "m": 1,
+        "n": 4096,
+        "k": 4096,
+        "shape": "1x4096x4096"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.106244,
+        "median_ms": 0.10664,
+        "min_ms": 0.10384,
+        "max_ms": 0.108,
+        "std_ms": 0.0012756112260402844
+      },
+      "metrics": {
+        "tops": 0.31465146286571644,
+        "weight_gb_s": 78.66286571642911,
+        "weight_mb": 8.0,
+        "bytes_per_w": 0.5
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "quant",
+      "name": "compare",
+      "params": {
+        "kind": "bf16",
+        "m": 32,
+        "n": 4096,
+        "k": 4096,
+        "shape": "32x4096x4096"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.073812,
+        "median_ms": 0.07219999999999999,
+        "min_ms": 0.06896,
+        "max_ms": 0.08632,
+        "std_ms": 0.004791009914412617
+      },
+      "metrics": {
+        "tops": 14.871770415512467,
+        "weight_gb_s": 464.7428254847646,
+        "weight_mb": 32.0,
+        "bytes_per_w": 2.0
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "quant",
+      "name": "compare",
+      "params": {
+        "kind": "w8a16",
+        "m": 32,
+        "n": 4096,
+        "k": 4096,
+        "shape": "32x4096x4096"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 7.060916000000001,
+        "median_ms": 7.075279999999999,
+        "min_ms": 6.92728,
+        "max_ms": 7.1691199999999995,
+        "std_ms": 0.059045519931659414
+      },
+      "metrics": {
+        "tops": 0.15175962279938038,
+        "weight_gb_s": 2.3712441062403182,
+        "weight_mb": 16.0,
+        "bytes_per_w": 1.0
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "quant",
+      "name": "compare",
+      "params": {
+        "kind": "w4a16",
+        "m": 32,
+        "n": 4096,
+        "k": 4096,
+        "shape": "32x4096x4096"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.299616,
+        "median_ms": 0.29947999999999997,
+        "min_ms": 0.29544,
+        "max_ms": 0.30352,
+        "std_ms": 0.0021413416355173256
+      },
+      "metrics": {
+        "tops": 3.585354026980099,
+        "weight_gb_s": 28.010578335782025,
+        "weight_mb": 8.0,
+        "bytes_per_w": 0.5
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "quant",
+      "name": "compare",
+      "params": {
+        "kind": "bf16",
+        "m": 512,
+        "n": 4096,
+        "k": 4096,
+        "shape": "512x4096x4096"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.144084,
+        "median_ms": 0.14339999999999997,
+        "min_ms": 0.13784,
+        "max_ms": 0.15792,
+        "std_ms": 0.004039047412447646
+      },
+      "metrics": {
+        "tops": 119.803829735007,
+        "weight_gb_s": 233.99185495118556,
+        "weight_mb": 32.0,
+        "bytes_per_w": 2.0
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "quant",
+      "name": "compare",
+      "params": {
+        "kind": "w8a16",
+        "m": 512,
+        "n": 4096,
+        "k": 4096,
+        "shape": "512x4096x4096"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 69.76182800000001,
+        "median_ms": 69.91164,
+        "min_ms": 66.7708,
+        "max_ms": 69.96696,
+        "std_ms": 0.6865358682661828
+      },
+      "metrics": {
+        "tops": 0.24573689279782304,
+        "weight_gb_s": 0.23997743437287405,
+        "weight_mb": 16.0,
+        "bytes_per_w": 1.0
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "quant",
+      "name": "compare",
+      "params": {
+        "kind": "w4a16",
+        "m": 512,
+        "n": 4096,
+        "k": 4096,
+        "shape": "512x4096x4096"
+      },
+      "stats": {
+        "iters": 20,
+        "warmup": 5,
+        "mean_ms": 0.38871599999999995,
+        "median_ms": 0.38608,
+        "min_ms": 0.38239999999999996,
+        "max_ms": 0.4092,
+        "std_ms": 0.007201132133213508
+      },
+      "metrics": {
+        "tops": 44.49821069208455,
+        "weight_gb_s": 21.727641939494408,
+        "weight_mb": 8.0,
+        "bytes_per_w": 0.5
+      },
+      "status": "ok",
+      "note": ""
+    }
+  ]
+}

@@ -1,6 +1,29 @@
+# 05-ai-dl —— PyTorch / torch.xpu 算子与模型微基准
+#
+# 入库：源码（run_bench.py、train_ddp.py、xpu_bench/、diagnostics/）、README、
+#       requirements.txt，以及 results/ 下的全部测量产物
+#       （bench_<时间戳>.{json,md} 与 ddp_raw/*.json）。
+# 不入库：字节码缓存、临时 telemetry、日志、虚拟环境。
+# 注：results/ 不做任何忽略，全部测量产物入库（docs/ 的溯源链接因此都有效）。
+
+# ---------- Python ----------
 __pycache__/
 *.py[cod]
-results/
-*.json
-!requirements.txt
+
+# ---------- 虚拟环境 ----------
+# 工程实际用的是 /root/workspace/venv1（uv 建的，--system-site-packages），
+# 这两个只是防止有人在本目录里再建一个。
+.venv/
+venv/
+
+# ---------- 临时产物 ----------
+# xpu-smi 遥测采样落盘（run_bench.py --telemetry 指定路径时才生成），
+# 兜住直接写在目录根部的情况。
+telemetry*.json
+
+# ---------- 日志 ----------
 *.log
+
+# ---------- 编辑器 / 系统 ----------
+.DS_Store
+*.swp

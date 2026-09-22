@@ -1,0 +1,279 @@
+{
+  "meta": {
+    "timestamp": "2026-09-22T01:11:18",
+    "hostname": "hwt",
+    "platform": "Linux-6.14.0-37-generic-x86_64-with-glibc2.41",
+    "device": {
+      "device_index": 0,
+      "name": "Intel(R) Data Center GPU Max 1100",
+      "driver_version": "1.6.33578+77",
+      "device_count": 2,
+      "total_memory_gib": 47.98,
+      "max_compute_units": 448,
+      "gpu_eu_count": 448,
+      "gpu_subslice_count": 56,
+      "last_level_cache_mb": 192.0,
+      "memory_clock_mhz": 3200,
+      "has_fp64": true,
+      "has_fp16": true,
+      "torch_version": "2.14.0+xpu",
+      "python_version": "3.13.3",
+      "oneapi_reference_clock_ghz": 1.55
+    },
+    "arguments": {
+      "suite": "ddp",
+      "warmup": 5,
+      "iters": 20,
+      "size_mb": 1024,
+      "gemm_sizes": [
+        256,
+        512,
+        1024,
+        2048,
+        4096,
+        8192
+      ],
+      "bw_sizes": [
+        4,
+        16,
+        64,
+        128,
+        192,
+        256,
+        512,
+        1024,
+        2048
+      ],
+      "reduce_cols": 4096,
+      "xfer_mib": 256,
+      "real_shapes": true,
+      "batched": true,
+      "int8": true,
+      "manual_attn": true,
+      "dtype_bw": true,
+      "size_sweep": true,
+      "host_transfer": true,
+      "quant_verify": true,
+      "quant_compare": true,
+      "model_batches": "64,128,256",
+      "model_dtypes": "fp32,bf16",
+      "bert_model": "bert-base-uncased",
+      "bert_seq_lens": "128,512",
+      "bert_batches": "16,32",
+      "llm_model": "Qwen/Qwen2.5-0.5B-Instruct",
+      "llm_batches": "1,4,8",
+      "llm_input_lens": "128,512,2048",
+      "llm_new_tokens": 32,
+      "llm_compile": "off",
+      "hf_endpoint": "https://hf-mirror.com",
+      "pipe_batch": 64,
+      "pipe_workers": "0,1,2,4,8",
+      "pipe_cpu_scale": 3,
+      "pipe_batches": 20,
+      "pipe_e2e_batches": 20,
+      "ddp_model": "resnet50",
+      "ddp_backends": "xccl",
+      "ddp_dtypes": "bf16",
+      "ddp_batches": "64,128",
+      "ddp_iters": 20,
+      "outdir": "/root/workspace/benchmark/05-ai-dl/results"
+    },
+    "triton_version": "3.8.0"
+  },
+  "highlights": [
+    "DDP resnet50/bf16/batch=64/xccl: 加速比 **1.87×**，扩展效率 **93.7%**（良好），通信占比 6.3%",
+    "DDP resnet50/bf16/batch=128/xccl: 加速比 **1.92×**，扩展效率 **95.9%**（良好），通信占比 4.0%"
+  ],
+  "results": [
+    {
+      "suite": "ddp",
+      "name": "ddp_step",
+      "params": {
+        "model": "resnet50",
+        "dtype": "bf16",
+        "batch": 64,
+        "world_size": 1,
+        "config": "1card_nodpp",
+        "backend": "xccl"
+      },
+      "stats": null,
+      "metrics": {
+        "samples_per_s": 708.3391439278735,
+        "samples_per_s_per_rank": 708.3391439278735,
+        "tflops": 17.382642591990013,
+        "ms_per_step": 90.3522,
+        "peak_mem_gib": 2.926,
+        "params_m": 25.6
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "ddp",
+      "name": "ddp_step",
+      "params": {
+        "model": "resnet50",
+        "dtype": "bf16",
+        "batch": 64,
+        "world_size": 1,
+        "config": "1card_ddp",
+        "backend": "xccl"
+      },
+      "stats": null,
+      "metrics": {
+        "samples_per_s": 680.4688430328497,
+        "samples_per_s_per_rank": 680.4688430328497,
+        "tflops": 16.698705408026132,
+        "ms_per_step": 94.05279999999999,
+        "peak_mem_gib": 3.023,
+        "params_m": 25.6
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "ddp",
+      "name": "ddp_step",
+      "params": {
+        "model": "resnet50",
+        "dtype": "bf16",
+        "batch": 64,
+        "world_size": 2,
+        "config": "2card_ddp",
+        "backend": "xccl"
+      },
+      "stats": null,
+      "metrics": {
+        "samples_per_s": 1328.129831331662,
+        "samples_per_s_per_rank": 664.064915665831,
+        "tflops": 32.59230606087899,
+        "ms_per_step": 96.37611999999999,
+        "comm_pct": 6.278152720819211,
+        "comm_ms": 6.050639999999987,
+        "peak_mem_gib": 3.023,
+        "params_m": 25.6
+      },
+      "status": "ok",
+      "note": "全局吞吐 = 每卡 batch × 2 / 步时；通信占比由 no_sync 差分法测得"
+    },
+    {
+      "suite": "ddp",
+      "name": "scaling",
+      "params": {
+        "model": "resnet50",
+        "dtype": "bf16",
+        "batch": 64,
+        "backend": "xccl",
+        "baseline": "1card_nodpp"
+      },
+      "stats": null,
+      "metrics": {
+        "speedup_2x": 1.8749914397881964,
+        "scaling_eff_pct": 93.74957198940982,
+        "samples_per_s_1card": 708.3391439278735,
+        "samples_per_s_2card": 1328.129831331662,
+        "tflops_1card": 17.382642591990013,
+        "tflops_2card": 32.59230606087899,
+        "speedup_2x_vs_1card_ddp": 1.951786396879227,
+        "scaling_eff_pct_vs_1card_ddp": 97.58931984396135
+      },
+      "status": "ok",
+      "note": "扩展效率 = (2卡吞吐 / 1卡吞吐) / 2；基线为 1卡无 DDP"
+    },
+    {
+      "suite": "ddp",
+      "name": "ddp_step",
+      "params": {
+        "model": "resnet50",
+        "dtype": "bf16",
+        "batch": 128,
+        "world_size": 1,
+        "config": "1card_nodpp",
+        "backend": "xccl"
+      },
+      "stats": null,
+      "metrics": {
+        "samples_per_s": 711.6643115025859,
+        "samples_per_s_per_rank": 711.6643115025859,
+        "tflops": 17.464242204273457,
+        "ms_per_step": 179.86007999999998,
+        "peak_mem_gib": 5.598,
+        "params_m": 25.6
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "ddp",
+      "name": "ddp_step",
+      "params": {
+        "model": "resnet50",
+        "dtype": "bf16",
+        "batch": 128,
+        "world_size": 1,
+        "config": "1card_ddp",
+        "backend": "xccl"
+      },
+      "stats": null,
+      "metrics": {
+        "samples_per_s": 698.5083136677777,
+        "samples_per_s_per_rank": 698.5083136677777,
+        "tflops": 17.141394017407265,
+        "ms_per_step": 183.24764,
+        "peak_mem_gib": 5.692,
+        "params_m": 25.6
+      },
+      "status": "ok",
+      "note": ""
+    },
+    {
+      "suite": "ddp",
+      "name": "ddp_step",
+      "params": {
+        "model": "resnet50",
+        "dtype": "bf16",
+        "batch": 128,
+        "world_size": 2,
+        "config": "2card_ddp",
+        "backend": "xccl"
+      },
+      "stats": null,
+      "metrics": {
+        "samples_per_s": 1364.702731495164,
+        "samples_per_s_per_rank": 682.351365747582,
+        "tflops": 33.489805030891326,
+        "ms_per_step": 187.58664,
+        "comm_pct": 3.9533945487802384,
+        "comm_ms": 7.4160400000000095,
+        "peak_mem_gib": 5.692,
+        "params_m": 25.6
+      },
+      "status": "ok",
+      "note": "全局吞吐 = 每卡 batch × 2 / 步时；通信占比由 no_sync 差分法测得"
+    },
+    {
+      "suite": "ddp",
+      "name": "scaling",
+      "params": {
+        "model": "resnet50",
+        "dtype": "bf16",
+        "batch": 128,
+        "backend": "xccl",
+        "baseline": "1card_nodpp"
+      },
+      "stats": null,
+      "metrics": {
+        "speedup_2x": 1.9176214254917086,
+        "scaling_eff_pct": 95.88107127458542,
+        "samples_per_s_1card": 711.6643115025859,
+        "samples_per_s_2card": 1364.702731495164,
+        "tflops_1card": 17.464242204273457,
+        "tflops_2card": 33.489805030891326,
+        "speedup_2x_vs_1card_ddp": 1.9537387097503318,
+        "scaling_eff_pct_vs_1card_ddp": 97.68693548751659
+      },
+      "status": "ok",
+      "note": "扩展效率 = (2卡吞吐 / 1卡吞吐) / 2；基线为 1卡无 DDP"
+    }
+  ]
+}

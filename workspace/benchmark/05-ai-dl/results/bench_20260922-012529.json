@@ -1,0 +1,458 @@
+{
+  "meta": {
+    "timestamp": "2026-09-22T01:25:21",
+    "hostname": "hwt",
+    "platform": "Linux-6.14.0-37-generic-x86_64-with-glibc2.41",
+    "device": {
+      "device_index": 0,
+      "name": "Intel(R) Data Center GPU Max 1100",
+      "driver_version": "1.6.33578+77",
+      "device_count": 2,
+      "total_memory_gib": 47.98,
+      "max_compute_units": 448,
+      "gpu_eu_count": 448,
+      "gpu_subslice_count": 56,
+      "last_level_cache_mb": 192.0,
+      "memory_clock_mhz": 3200,
+      "has_fp64": true,
+      "has_fp16": true,
+      "torch_version": "2.14.0+xpu",
+      "python_version": "3.13.3",
+      "oneapi_reference_clock_ghz": 1.55
+    },
+    "arguments": {
+      "suite": "pipeline",
+      "warmup": 5,
+      "iters": 20,
+      "size_mb": 1024,
+      "gemm_sizes": [
+        256,
+        512,
+        1024,
+        2048,
+        4096,
+        8192
+      ],
+      "bw_sizes": [
+        4,
+        16,
+        64,
+        128,
+        192,
+        256,
+        512,
+        1024,
+        2048
+      ],
+      "reduce_cols": 4096,
+      "xfer_mib": 256,
+      "real_shapes": true,
+      "batched": true,
+      "int8": true,
+      "manual_attn": true,
+      "dtype_bw": true,
+      "size_sweep": true,
+      "host_transfer": true,
+      "quant_verify": true,
+      "quant_compare": true,
+      "model_batches": "64,128,256",
+      "model_dtypes": "fp32,bf16",
+      "bert_model": "bert-base-uncased",
+      "bert_seq_lens": "128,512",
+      "bert_batches": "16,32",
+      "llm_model": "Qwen/Qwen2.5-0.5B-Instruct",
+      "llm_batches": "1,4,8",
+      "llm_input_lens": "128,512,2048",
+      "llm_new_tokens": 32,
+      "llm_compile": "off",
+      "hf_endpoint": "https://hf-mirror.com",
+      "pipe_batch": 64,
+      "pipe_workers": "0,1,2,4,8",
+      "pipe_cpu_scale": 3,
+      "pipe_batches": 20,
+      "pipe_e2e_batches": 20,
+      "ddp_model": "resnet50",
+      "ddp_backends": "xccl",
+      "ddp_dtypes": "bf16",
+      "ddp_batches": "64,128",
+      "ddp_iters": 20,
+      "outdir": "/root/workspace/benchmark/05-ai-dl/results"
+    },
+    "triton_version": "3.8.0"
+  },
+  "highlights": [
+    "DataLoader 主机侧上限 **9539 img/s**（num_workers=8, pin_memory=False, cpu_scale=3）",
+    "num_workers=8 时取数吞吐已到 95% 峰值（pin_memory=False）→ 再增加 worker 收益很小",
+    "num_workers=8 时取数吞吐已到 95% 峰值（pin_memory=True）→ 再增加 worker 收益很小",
+    "单 worker 时主机 CPU 占用约 19%（多进程时该值会按 worker 数抬升）",
+    "端到端 GPU 利用率最低 2.8%（num_workers=1, cpu_scale=3）→ 主机侧（取数/预处理）是瓶颈",
+    "端到端 GPU 利用率最高 9.0%（num_workers=8）"
+  ],
+  "results": [
+    {
+      "suite": "pipeline",
+      "name": "dataloader",
+      "params": {
+        "batch": 64,
+        "num_workers": 0,
+        "pin_memory": false,
+        "cpu_scale": 3,
+        "img_shape": "(3, 224, 224)",
+        "dataset": "synthetic-uint8"
+      },
+      "stats": null,
+      "metrics": {
+        "batch_per_s": 38.159115436736975,
+        "img_per_s": 2442.1833879511664,
+        "ms_per_batch": 26.206058200114057,
+        "cpu_pct": 1751.3439628494775
+      },
+      "status": "ok",
+      "note": "仅取数（不做 H2D），衡量主机侧上限"
+    },
+    {
+      "suite": "pipeline",
+      "name": "dataloader",
+      "params": {
+        "batch": 64,
+        "num_workers": 1,
+        "pin_memory": false,
+        "cpu_scale": 3,
+        "img_shape": "(3, 224, 224)",
+        "dataset": "synthetic-uint8"
+      },
+      "stats": null,
+      "metrics": {
+        "batch_per_s": 30.12905936212206,
+        "img_per_s": 1928.2597991758118,
+        "ms_per_batch": 33.19054830026289,
+        "cpu_pct": 12.050728868759515
+      },
+      "status": "ok",
+      "note": "仅取数（不做 H2D），衡量主机侧上限"
+    },
+    {
+      "suite": "pipeline",
+      "name": "dataloader",
+      "params": {
+        "batch": 64,
+        "num_workers": 2,
+        "pin_memory": false,
+        "cpu_scale": 3,
+        "img_shape": "(3, 224, 224)",
+        "dataset": "synthetic-uint8"
+      },
+      "stats": null,
+      "metrics": {
+        "batch_per_s": 57.56558624267854,
+        "img_per_s": 3684.1975195314267,
+        "ms_per_batch": 17.37148989996058,
+        "cpu_pct": 17.268221072615574
+      },
+      "status": "ok",
+      "note": "仅取数（不做 H2D），衡量主机侧上限"
+    },
+    {
+      "suite": "pipeline",
+      "name": "dataloader",
+      "params": {
+        "batch": 64,
+        "num_workers": 4,
+        "pin_memory": false,
+        "cpu_scale": 3,
+        "img_shape": "(3, 224, 224)",
+        "dataset": "synthetic-uint8"
+      },
+      "stats": null,
+      "metrics": {
+        "batch_per_s": 104.53534978195815,
+        "img_per_s": 6690.262386045321,
+        "ms_per_batch": 9.566141999675892,
+        "cpu_pct": 20.904141539797653
+      },
+      "status": "ok",
+      "note": "仅取数（不做 H2D），衡量主机侧上限"
+    },
+    {
+      "suite": "pipeline",
+      "name": "dataloader",
+      "params": {
+        "batch": 64,
+        "num_workers": 8,
+        "pin_memory": false,
+        "cpu_scale": 3,
+        "img_shape": "(3, 224, 224)",
+        "dataset": "synthetic-uint8"
+      },
+      "stats": null,
+      "metrics": {
+        "batch_per_s": 149.04913026470186,
+        "img_per_s": 9539.144336940919,
+        "ms_per_batch": 6.709197150121327,
+        "cpu_pct": 29.804135270271576
+      },
+      "status": "ok",
+      "note": "仅取数（不做 H2D），衡量主机侧上限"
+    },
+    {
+      "suite": "pipeline",
+      "name": "dataloader",
+      "params": {
+        "batch": 64,
+        "num_workers": 0,
+        "pin_memory": true,
+        "cpu_scale": 3,
+        "img_shape": "(3, 224, 224)",
+        "dataset": "synthetic-uint8"
+      },
+      "stats": null,
+      "metrics": {
+        "batch_per_s": 43.742564474882116,
+        "img_per_s": 2799.5241263924554,
+        "ms_per_batch": 22.861028199986322,
+        "cpu_pct": 1675.1837330522244
+      },
+      "status": "ok",
+      "note": "仅取数（不做 H2D），衡量主机侧上限"
+    },
+    {
+      "suite": "pipeline",
+      "name": "dataloader",
+      "params": {
+        "batch": 64,
+        "num_workers": 1,
+        "pin_memory": true,
+        "cpu_scale": 3,
+        "img_shape": "(3, 224, 224)",
+        "dataset": "synthetic-uint8"
+      },
+      "stats": null,
+      "metrics": {
+        "batch_per_s": 31.61138365951055,
+        "img_per_s": 2023.1285542086753,
+        "ms_per_batch": 31.634173649945296,
+        "cpu_pct": 18.964515756924
+      },
+      "status": "ok",
+      "note": "仅取数（不做 H2D），衡量主机侧上限"
+    },
+    {
+      "suite": "pipeline",
+      "name": "dataloader",
+      "params": {
+        "batch": 64,
+        "num_workers": 2,
+        "pin_memory": true,
+        "cpu_scale": 3,
+        "img_shape": "(3, 224, 224)",
+        "dataset": "synthetic-uint8"
+      },
+      "stats": null,
+      "metrics": {
+        "batch_per_s": 65.0506527641751,
+        "img_per_s": 4163.241776907206,
+        "ms_per_batch": 15.372635899984743,
+        "cpu_pct": 29.266578375301407
+      },
+      "status": "ok",
+      "note": "仅取数（不做 H2D），衡量主机侧上限"
+    },
+    {
+      "suite": "pipeline",
+      "name": "dataloader",
+      "params": {
+        "batch": 64,
+        "num_workers": 4,
+        "pin_memory": true,
+        "cpu_scale": 3,
+        "img_shape": "(3, 224, 224)",
+        "dataset": "synthetic-uint8"
+      },
+      "stats": null,
+      "metrics": {
+        "batch_per_s": 112.98774082099709,
+        "img_per_s": 7231.215412543814,
+        "ms_per_batch": 8.850517699829652,
+        "cpu_pct": 50.82494102773396
+      },
+      "status": "ok",
+      "note": "仅取数（不做 H2D），衡量主机侧上限"
+    },
+    {
+      "suite": "pipeline",
+      "name": "dataloader",
+      "params": {
+        "batch": 64,
+        "num_workers": 8,
+        "pin_memory": true,
+        "cpu_scale": 3,
+        "img_shape": "(3, 224, 224)",
+        "dataset": "synthetic-uint8"
+      },
+      "stats": null,
+      "metrics": {
+        "batch_per_s": 121.80425006297178,
+        "img_per_s": 7795.472004030194,
+        "ms_per_batch": 8.209894149695174,
+        "cpu_pct": 73.0602917212501
+      },
+      "status": "ok",
+      "note": "仅取数（不做 H2D），衡量主机侧上限"
+    },
+    {
+      "suite": "pipeline",
+      "name": "end_to_end",
+      "params": {
+        "batch": 64,
+        "num_workers": 0,
+        "pin_memory": true,
+        "cpu_scale": 3,
+        "gpu_op": "conv2d 3->32 bf16"
+      },
+      "stats": null,
+      "metrics": {
+        "ms_per_batch": 22.967364199939766,
+        "batch_per_s": 43.540041917505825,
+        "img_per_s": 2786.562682720373,
+        "gpu_ms_per_batch": 0.8430480000000001,
+        "gpu_busy_pct": 3.6706345258469457,
+        "cpu_pct": 1878.6792152710823,
+        "h2d_ms_per_batch": 0.32136
+      },
+      "status": "ok",
+      "note": "GPU 事件计时 / wall-clock = GPU 利用率；<80% 即主机侧瓶颈；h2d_ms 为单独测的单 batch H2D 耗时"
+    },
+    {
+      "suite": "pipeline",
+      "name": "end_to_end",
+      "params": {
+        "batch": 64,
+        "num_workers": 1,
+        "pin_memory": true,
+        "cpu_scale": 3,
+        "gpu_op": "conv2d 3->32 bf16"
+      },
+      "stats": null,
+      "metrics": {
+        "ms_per_batch": 31.119170099918847,
+        "batch_per_s": 32.134533047930084,
+        "img_per_s": 2056.6101150675254,
+        "gpu_ms_per_batch": 0.8803600000000001,
+        "gpu_busy_pct": 2.8289957514075734,
+        "cpu_pct": 22.49270593675019,
+        "h2d_ms_per_batch": 0.33064
+      },
+      "status": "ok",
+      "note": "GPU 事件计时 / wall-clock = GPU 利用率；<80% 即主机侧瓶颈；h2d_ms 为单独测的单 batch H2D 耗时"
+    },
+    {
+      "suite": "pipeline",
+      "name": "end_to_end",
+      "params": {
+        "batch": 64,
+        "num_workers": 2,
+        "pin_memory": true,
+        "cpu_scale": 3,
+        "gpu_op": "conv2d 3->32 bf16"
+      },
+      "stats": null,
+      "metrics": {
+        "ms_per_batch": 14.833739700043225,
+        "batch_per_s": 67.41388349945807,
+        "img_per_s": 4314.488543965316,
+        "gpu_ms_per_batch": 0.736,
+        "gpu_busy_pct": 4.961661825560113,
+        "cpu_pct": 33.703828168849114,
+        "h2d_ms_per_batch": 0.31967999999999996
+      },
+      "status": "ok",
+      "note": "GPU 事件计时 / wall-clock = GPU 利用率；<80% 即主机侧瓶颈；h2d_ms 为单独测的单 batch H2D 耗时"
+    },
+    {
+      "suite": "pipeline",
+      "name": "end_to_end",
+      "params": {
+        "batch": 64,
+        "num_workers": 4,
+        "pin_memory": true,
+        "cpu_scale": 3,
+        "gpu_op": "conv2d 3->32 bf16"
+      },
+      "stats": null,
+      "metrics": {
+        "ms_per_batch": 8.657358850177843,
+        "batch_per_s": 115.50866924956652,
+        "img_per_s": 7392.5548319722575,
+        "gpu_ms_per_batch": 0.684512,
+        "gpu_busy_pct": 7.9067070205359276,
+        "cpu_pct": 51.97169554481246,
+        "h2d_ms_per_batch": 0.33111999999999997
+      },
+      "status": "ok",
+      "note": "GPU 事件计时 / wall-clock = GPU 利用率；<80% 即主机侧瓶颈；h2d_ms 为单独测的单 batch H2D 耗时"
+    },
+    {
+      "suite": "pipeline",
+      "name": "end_to_end",
+      "params": {
+        "batch": 64,
+        "num_workers": 8,
+        "pin_memory": true,
+        "cpu_scale": 3,
+        "gpu_op": "conv2d 3->32 bf16"
+      },
+      "stats": null,
+      "metrics": {
+        "ms_per_batch": 7.912203300293186,
+        "batch_per_s": 126.38704568712802,
+        "img_per_s": 8088.770923976193,
+        "gpu_ms_per_batch": 0.7097640000000001,
+        "gpu_busy_pct": 8.970497509507876,
+        "cpu_pct": 75.81911129342448,
+        "h2d_ms_per_batch": 0.32352
+      },
+      "status": "ok",
+      "note": "GPU 事件计时 / wall-clock = GPU 利用率；<80% 即主机侧瓶颈；h2d_ms 为单独测的单 batch H2D 耗时"
+    },
+    {
+      "suite": "pipeline",
+      "name": "h2d_batch",
+      "params": {
+        "batch": 64,
+        "pin_memory": false,
+        "dtype": "uint8",
+        "bytes": 9633792,
+        "op": "host->device"
+      },
+      "stats": null,
+      "metrics": {
+        "ms_per_batch": 0.8009040000000001,
+        "gbps": 12.028647628180154,
+        "batch_per_s": 1248.5890943234144,
+        "img_per_s": 79909.70203669852
+      },
+      "status": "ok",
+      "note": "单 batch 粒度 H2D；小包传输会被 PCIe 延迟主导，带宽低于大块测试"
+    },
+    {
+      "suite": "pipeline",
+      "name": "h2d_batch",
+      "params": {
+        "batch": 64,
+        "pin_memory": true,
+        "dtype": "uint8",
+        "bytes": 9633792,
+        "op": "host->device"
+      },
+      "stats": null,
+      "metrics": {
+        "ms_per_batch": 0.34937199999999996,
+        "gbps": 27.574596704944874,
+        "batch_per_s": 2862.2786027500774,
+        "img_per_s": 183185.83057600496
+      },
+      "status": "ok",
+      "note": "单 batch 粒度 H2D；小包传输会被 PCIe 延迟主导，带宽低于大块测试"
+    }
+  ]
+}

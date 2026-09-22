@@ -1,0 +1,26 @@
+# 04-interconnect-xelink —— Xe Link / Level Zero P2P / GPU-aware MPI / oneCCL
+#
+# 入库：源码与脚本（probes/p2p_probe.cpp、probes/torch_ccl.py）、run_bench.py、
+#       README.md，以及 results/ 下的全部测量产物（含 IMB / xpu-smi / fi_pingpong
+#       的原始 dump）。
+# 不入库：编译产物、日志、字节码缓存。
+# 注：results/ 不做任何忽略，全部测量产物入库（docs/ 的溯源链接因此都有效）。
+
+# ---------- Python ----------
+__pycache__/
+*.py[cod]
+
+# ---------- 编译产物 ----------
+# build/p2p_probe 由
+#   g++ -O3 -std=c++17 -o build/p2p_probe probes/p2p_probe.cpp -lze_loader
+# 生成。
+/build/
+*.o
+*.a
+
+# ---------- 日志 ----------
+*.log
+
+# ---------- 编辑器 / 系统 ----------
+.DS_Store
+*.swp
